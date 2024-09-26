@@ -1,0 +1,11 @@
+{
+    "name": "DEMOModule",
+    "alias": "demomodule",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\DEMOModule\\Providers\\DEMOModuleServiceProvider"
+    ],
+    "files": []
+}
