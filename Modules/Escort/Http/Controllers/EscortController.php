@@ -8,84 +8,25 @@ use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-
+use App\Models\Region;
+use App\Models\Cities;
+use App\Models\Nationality;
 class EscortController extends Controller
 {
     public function __construct(){
         $this->middleware(AuthMiddleware::class);
     }
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        return view('escort::index');
-    }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('escort::create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
-    {
-        return view('escort::show');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('escort::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request)
-    {
-
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
-    }
     public function getProfile(Request $request){
 
         $user=auth()->user();
         $data=Profile::where('escort_id',$user->id)->first();
-        //if($data->isEmpty()){
-        //    return Response::json(['message'=>'No profile found'],404);
-        //}
         Log::info("get Profile function here");
         if(!$data){
 
             return Response::json(['message'=>'No profile found'],404);
         }
-        
-
         return Response::json(['profile'=>$data]);
-
-
     }
     public function updateProfile(Request $request){
 
@@ -123,7 +64,29 @@ class EscortController extends Controller
             
         }
 
-        
         return Response::json(['msg'=>'No user type found','user'=>$user]);
     }
+
+// public function countries(Request $request){
+//     $countries = Countries::all();
+//     Log::info("Countries: " . json_encode($countries));
+//     return Response::json(['countries' => $countries]);
+// }
+
+// public function regions(Request $request){
+//     Log::info("Regions function here");
+//     $regions = Region::all();
+//     //Log::info("Regions: " . json_encode($regions));
+//     return Response::json(['regions' => $regions]);
+// }
+
+//  public function cities(Request $request){
+//     Log::info("Cities function here");
+//     $cities = Cities::all();
+//     Log::info("Cities: " . json_encode($cities));
+//     return Response::json(['cities' => $cities]);
+// }
+
+
+
 }

@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Escort\Http\Controllers\EscortController;
 use Modules\Escort\Http\Controllers\ReviewsController;
+use Modules\Escort\Http\Controllers\MasterController;
+
+
 
 /*
  *--------------------------------------------------------------------------
@@ -22,6 +25,10 @@ Route::group(['prefix' => 'escort'],function(){
 
 });
 
+Route::get('/locations/countries',[MasterController::class,'countries']);
+Route::get('/locations/regions',[MasterController::class,'regions']);
+Route::get('/locations/cities',[MasterController::class,'cities']);
+Route::get('/locations/nationality',[MasterController::class,'nationality']);
 
 
 
