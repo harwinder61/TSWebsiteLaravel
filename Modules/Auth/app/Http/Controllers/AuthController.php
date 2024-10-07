@@ -7,14 +7,20 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Modules\Auth\Entities\User;
+use Modules\Escort\app\Models\Escort;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
+use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 
 class AuthController extends Controller
 {
+
+    public function __construct(){
+        $this->middleware(AuthMiddleware::class)->except(['register','login']);
+    }
 
     public function register(Request $request)
     {
@@ -38,6 +44,13 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'user_type' => $request->user_type,
+        ]);
+
+        $user_id=$user->id;
+        $escort=Escort::create([
+            'name'=>$user->username,
+            'escort_id'=>$user_id,
+
         ]);
 
         return Response::json(['message' => 'User registered successfully', 'response' => $user], 201);

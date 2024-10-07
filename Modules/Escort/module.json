@@ -1,0 +1,11 @@
+{
+    "name": "Escort",
+    "alias": "escort",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Escort\\Providers\\EscortServiceProvider"
+    ],
+    "files": []
+}
