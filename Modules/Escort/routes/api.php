@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Escort\Http\Controllers\EscortController;
+use Modules\Escort\Http\Controllers\ReviewsController;
 
 /*
  *--------------------------------------------------------------------------
@@ -13,8 +14,17 @@ use Modules\Escort\Http\Controllers\EscortController;
  * is assigned the "api" middleware group. Enjoy building your API!
  *
 */
-Route::get('/profile',[EscortController::class,'getProfile']);
-Route::put('/profile',[EscortController::class,'updateProfile']);
+Route::group(['prefix' => 'escort'],function(){
+
+    Route::get('/profile',[EscortController::class,'getProfile']);
+    Route::put('/profile',[EscortController::class,'updateProfile']);
+    Route::get('/reviews',[ReviewsController::class,'getUsers']);
+
+});
+
+
+
+
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('escort', EscortController::class)->names('escort');
 });

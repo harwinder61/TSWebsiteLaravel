@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/fan",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Fan\\": "app/",
+            "Modules\\Fan\\Database\\Factories\\": "database/factories/",
+            "Modules\\Fan\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Fan\\Tests\\": "tests/"
+        }
+    }
+}

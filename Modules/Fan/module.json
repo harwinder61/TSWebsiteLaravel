@@ -1,0 +1,11 @@
+{
+    "name": "Fan",
+    "alias": "fan",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Fan\\Providers\\FanServiceProvider"
+    ],
+    "files": []
+}

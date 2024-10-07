@@ -3,5 +3,6 @@
     "Auth": true,
     "DEMOModule": true,
     "Plans": true,
-    "Escort": true
+    "Escort": true,
+    "Fan": true
 }
