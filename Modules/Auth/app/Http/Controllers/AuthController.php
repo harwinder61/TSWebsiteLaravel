@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
+use Modules\Escort\app\Models\ProfileRates;
 
 class AuthController extends Controller
 {
@@ -51,6 +52,10 @@ class AuthController extends Controller
             'name'=>$user->username,
             'escort_id'=>$user_id,
 
+        ]);
+        Log::info("Profile rates table getting updated ------------------------");
+        $profile_rates=ProfileRates::create([
+            'escort_id'=>$user_id
         ]);
 
         return Response::json(['message' => 'User registered successfully', 'response' => $user], 201);
