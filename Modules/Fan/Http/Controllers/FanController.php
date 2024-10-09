@@ -18,7 +18,7 @@ class FanController extends Controller
 
     public function getUsers(Request $request){
         // Fetch user_ids from Reviews table
-        Log::info("Review Controller here getUsers");
+
         $userIds = EscortReviews::pluck('user_id')->unique();
         $users = User::whereIn('id', $userIds)->get();
         if ($users->isEmpty()) {
@@ -32,7 +32,7 @@ class FanController extends Controller
     {
         //$user=$request->user;
         $user=auth()->user();
-        Log::info("Review Controller here create function");
+
         Validator::make($request->all(), [
             'photo_accuracy' => 'nullable|integer',
             'service' => 'nullable|integer',
@@ -42,12 +42,12 @@ class FanController extends Controller
             'comments' => 'required|string',
             'escort_id' => 'required|integer',
         ]);
-        Log::info("Validation passed");
+
         if (EscortReviews::where('user_id', $user->id)->exists()) {
             return response()->json(['error' => 'You have already submitted a review.'], 409);
         }
 
-        Log::info("Review Controller here----------------------------------------------------");
+
         $review = EscortReviews::create([
             'user_id' => $user->id,
             'photo_accuracy' => $request->photo_accuracy,

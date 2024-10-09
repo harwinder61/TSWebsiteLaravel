@@ -22,7 +22,7 @@ class ReviewsController extends Controller
     {
        $productId = $request->product_id;
 
-        return Response::json(['message' => 'Review fetched successfully', 'reasponse' => "test successfully"], 200);
+        return Response::json(['message' => 'Review fetched successfully', 'response' => "test successfully"], 200);
     }
 
  

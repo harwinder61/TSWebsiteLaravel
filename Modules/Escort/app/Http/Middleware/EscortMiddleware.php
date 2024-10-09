@@ -13,7 +13,7 @@ class EscortMiddleware
      * Handle an incoming request.
      */
     public function handle(Request $request, Closure $next){
-    Log::info("Escort middleware here.----------------------------------");
+
         try {
             if (! $user = JWTAuth::parseToken()->authenticate()) {
                 return response()->json(['error' => 'User not found'], 404);

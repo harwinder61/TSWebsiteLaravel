@@ -23,15 +23,12 @@ class EscortController extends Controller
     
 
 
-    public function getProfile(Request $request){
+    public function find(Request $request){
 
         $user=auth()->user();
         $data=Profile::where('escort_id',$user->id)->first();
         $profile_rates=ProfileRates::where('escort_id',$user->id)->get();
-        //if($data->isEmpty()){
-        //    return Response::json(['message'=>'No profile found'],404);
-        //}
-        Log::info("get Profile function here");
+
         if(!$data){
 
             return Response::json(['message' => 'No profile found'], 404);
@@ -41,7 +38,7 @@ class EscortController extends Controller
 
     
 
-    public function updateProfile(Profile $profile ,Request $request){
+    public function update(Profile $profile ,Request $request){
 
         $user=auth()->user();
         // Get the user type
@@ -51,7 +48,7 @@ class EscortController extends Controller
         if ($userType == 1) {
             return Response::json(['msg' => 'User type 1 does not have access to update profile', 'user' => $user]);
         } elseif ($userType == 2) {
-            Log::info("Update profile function here---------------------------------------------------------");
+
             $validator = Validator::make($request->all(), $profile->rules());
 
             if ($validator->fails()) {
@@ -111,15 +108,6 @@ class EscortController extends Controller
             $customMessages=[];
             $rateFields=['category','15_min', '30_min', '1_hour', '2_hour', '4_hour', 'overnight'];
 
-            // Add validation for rate fields
-        //foreach ($rateFields as $field) {
-         //   $baseRules["rates.*.{$field}"] = [
-          //      'required',
-           // ];
-            
-        //}
-
-        // Add conditional rules based on enabled services
         if ($is_incall_enabled) {
             foreach ($rateFields as $field) {
                 $baseRules["rates.*.{$field}"] = [
@@ -154,7 +142,6 @@ class EscortController extends Controller
 
             $profile_rates=ProfileRates::where('escort_id', $user->id)->first();
             $rates_data=$request->input('rates');
-            Log::info("start of the loop");
             foreach($rates_data as $rate){
                 $category = strtolower($rate['category']);
                 $profile_rates = ProfileRates::where('escort_id', $user->id)
@@ -174,32 +161,15 @@ class EscortController extends Controller
 
                     if ($profile_rates) {
                         $profile_rates->update($rate_data);
-                        Log::info("Rates {$category} data: updating");
+
                     } else {
                         $rate_data['escort_id'] = $user->id;
                         ProfileRates::create($rate_data);
-                        Log::info("Rates {$category} data: creating");
+
                     }
                 }
             }
-            //$updated_profile_rates=$profile_rates->update([
-            //    'category'=>$request->input('category'),
-            //    '15_min'=>$request->input('15_min'),
-            //    '30_min'=>$request->input('30_min'),
-            //    '1_hour'=>$request->input('1_hour'),
-            //    '2_hour'=>$request->input('2_hour'),
-            //    '4_hour'=>$request->input('4_hour'),
-            //    'overnight'=>$request->input('overnight'),
-            //]);
-
-            Log::info("Updating profile rates --------------");
-            //if(!$updated_profile_rates){
-            //    Log::error('Profile rates update failed------------');
-            //    return Response::json(['error'=>'Failed to update profile rates']);
-            //}
-            //$data=Escort::find($user->id);
-            //$profile_rates=ProfileRates::where('escort_id', $user->id)->get();
-            //$profile_rates=ProfileRates::where('escort_id', $user->id)->first();
+            
             return Response::json(['msg'=>'profile updated successfully','data'=>$data]);
         } else {
             return Response::json(['msg' => 'Invalid user type', 'user' => $user]);

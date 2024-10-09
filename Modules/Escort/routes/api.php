@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Escort\Http\Controllers\EscortController;
 use Modules\Escort\Http\Controllers\ReviewsController;
 use Modules\Escort\Http\Controllers\MasterController;
+use Modules\Escort\Http\Controllers\MastersController;
 use Modules\Escort\Http\Controllers\MediaController;
 
 
@@ -12,9 +13,9 @@ use Modules\Escort\Http\Controllers\MediaController;
 
 Route::group(['prefix' => 'escort'],function(){
 
-    Route::get('/profile',[EscortController::class,'getProfile']);
-    Route::put('/profile',[EscortController::class,'updateProfile']);
-    Route::get('/reviews',[ReviewsController::class,'getUsers']);
+    Route::get('/profile',[EscortController::class,'find']);
+    Route::put('/profile',[EscortController::class,'update']);
+    Route::get('/reviews',[ReviewsController::class,'index']);
     Route::post('/media/gallary',[MediaController::class,'addGallary']);
     Route::post('/media/promovideo',[MediaController::class,'addPromoVideo']);
     
