@@ -1,19 +1,23 @@
 <?php
 
 namespace Modules\Escort\Http\Controllers;
+
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Modules\Escort\app\Models\Profile;
 use Modules\Escort\app\Models\ProfileRates;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
+use App\Models\Region;
+use App\Models\Cities;
+use App\Models\Nationality;
+use App\Models\AddGallary;
 
 class EscortController extends Controller
 {
-    public function __construct(){
+    public function __construct()
+    {
         $this->middleware(AuthMiddleware::class);
     }
     
@@ -30,13 +34,9 @@ class EscortController extends Controller
         Log::info("get Profile function here");
         if(!$data){
 
-            return Response::json(['message'=>'No profile found'],404);
+            return Response::json(['message' => 'No profile found'], 404);
         }
-        
-
-        return Response::json(['profile'=>$data,'rates'=>$profile_rates]);
-
-
+        return Response::json(['profile' => $data]);
     }
 
     
@@ -49,8 +49,7 @@ class EscortController extends Controller
 
         // Fetch user data based on user type
         if ($userType == 1) {
-            return Response::json(['msg'=>'User type 1 does not have access to update profile','user'=>$user]);
-            
+            return Response::json(['msg' => 'User type 1 does not have access to update profile', 'user' => $user]);
         } elseif ($userType == 2) {
             Log::info("Update profile function here---------------------------------------------------------");
             $validator = Validator::make($request->all(), $profile->rules());
@@ -203,12 +202,10 @@ class EscortController extends Controller
             //$profile_rates=ProfileRates::where('escort_id', $user->id)->first();
             return Response::json(['msg'=>'profile updated successfully','data'=>$data]);
         } else {
-            return Response::json(['msg'=>'Invalid user type','user'=>$user]);
-            
+            return Response::json(['msg' => 'Invalid user type', 'user' => $user]);
         }
 
-        
-        return Response::json(['msg'=>'No user type found','user'=>$user]);
+        return Response::json(['msg' => 'No user type found', 'user' => $user]);
     }
 }
 

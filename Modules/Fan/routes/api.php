@@ -9,6 +9,5 @@ use Modules\Fan\Http\Controllers\ReviewsController;
 Route::group(['prefix' => 'fan'],function(){
 
     Route::post('/reviews',[FanController::class,'create']);
-    Route::get('/reviews',[FanController::class,'getUsers']);
 });
 
