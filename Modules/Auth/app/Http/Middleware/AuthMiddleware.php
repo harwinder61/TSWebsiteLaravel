@@ -16,7 +16,7 @@ class AuthMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        Log::info("Auth middleware here.----------------------------------");
+
         try {
             if (! $user = JWTAuth::parseToken()->authenticate()) {
                 return response()->json(['error' => 'User not found'], 404);
@@ -28,7 +28,6 @@ class AuthMiddleware
         // Attach user to request
         $request->auth = $user;
         $request->merge(['user' => $user]);
-        Log::info("Auth middleware here.------  data : $user ");
 
 
         //$token=JWTAuth::getToken();

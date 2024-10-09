@@ -1,0 +1,98 @@
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Validator;
+use App\MasterData\Gender;
+use App\MasterData\Orientation;
+use App\MasterData\Ethnicity;
+use App\MasterData\Hair;
+use App\MasterData\Eyes;
+use App\MasterData\BreastsSize;
+use App\MasterData\BreastsCup;
+use App\MasterData\Butt;
+use App\MasterData\Body;
+use App\MasterData\CockSize;
+use App\MasterData\Languages;
+use App\MasterData\OfferServicesTo;
+use App\MasterData\ExtraServices;
+
+class BaseProfile extends Model
+{
+
+    protected $table = 'profile';
+    protected $fillable = [
+        'name', 
+        'phone_number',
+        'gender',
+        'date_of_birth',
+        'orientation',
+        'ethnicity', 
+        'height', 
+        'weight', 
+        'hair', 
+        'eyes', 
+        'breasts_size',
+        'breasts_cup', 
+        'butt', 
+        'body', 
+        'cock_size',
+        'languages',
+        'offer_services_to',
+        'has_twitter',
+        'has_snapchat',
+        'has_instagram',
+        'has_tiktok',
+        'twitter_handle',
+        'snapchat_handle',
+        'instagram_handle',
+        'tiktok_handle',
+        'extra_services',
+    ];
+
+    protected $casts = [
+        'languages' => 'json',
+        'offer_services_to' => 'json',
+        'extra_services' => 'json',
+    ];
+
+
+    public static function rules () {
+        return [
+        'name' => 'required|string|max:255',
+        'phone_number' => 'required|integer',
+        'gender' => 'required|in:'.implode(',',Gender::getValues()),
+        'date_of_birth' => 'required|string',
+        'orientation'=>'required|in:'.implode(',',Orientation::getValues()),
+        'ethnicity'=>'required|in:'.implode(',',Ethnicity::getValues()),
+        'height'=>'required|integer',
+        'weight'=>'required|integer',
+        'hair'=>'required|in:'.implode(',',Hair::getValues()),
+        'eyes'=>'required|in:'.implode(',',Eyes::getValues()),
+        'breasts_size'=>'required|in:'.implode(',',BreastsSize::getValues()),
+        'breasts_cup'=>'required|in:'.implode(',',BreastsCup::getValues()),
+        'butt'=>'required|in:'.implode(',',Butt::getValues()),
+        'body'=>'required|in:'.implode(',',Body::getValues()),
+        'cock_size'=>'required|in:'.implode(',',CockSize::getValues()),
+        //'languages'=>'required|in:'.implode(',',Languages::getValues()),
+        'languages' => 'required|array',
+        'languages.*' => 'in:'.implode(',', Languages::getValues()),
+        'offer_services_to'=>'required|array',
+        'offer_services_to.*'=>'in:'.implode(',',OfferServicesTo::getValues()),
+        'has_twitter' => 'required|boolean',
+        'has_snapchat' => 'required|boolean',
+        'has_instagram' => 'required|boolean',
+        'has_tiktok' => 'required|boolean',
+        'twitter_handle' => 'required_if:has_twitter,1|string|nullable',
+        'snapchat_handle' => 'required_if:has_snapchat,1|string|nullable',
+        'instagram_handle' => 'required_if:has_instagram,1|string|nullable',
+        'tiktok_handle' => 'required_if:has_tiktok,1|string|nullable',
+        'is_incall_enabled' => 'required|boolean',
+        'is_outcall_enabled' => 'required|boolean',
+        'extra_services' => 'required|array',
+        'extra_services.*.key'=>'in:'.implode(',',ExtraServices::getKeys()),
+ 
+        ];
+    }
+}
+

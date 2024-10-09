@@ -35,9 +35,9 @@ class PlansController extends Controller
             'description'=>'required|',
         ]);
 
-        Log::info("Plans controller heere");
+
         if ($validator->fails()) {
-            Log::info("Validation failed for store function");
+
             return Response::json(['error' => $validator->errors()], 422);
         }
 

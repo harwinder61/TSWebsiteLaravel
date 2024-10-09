@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
+use Modules\Escort\app\Models\ProfileRates;
 
 class AuthController extends Controller
 {
@@ -51,6 +52,9 @@ class AuthController extends Controller
             'name'=>$user->username,
             'escort_id'=>$user_id,
 
+        ]);
+        $profile_rates=ProfileRates::create([
+            'escort_id'=>$user_id
         ]);
 
         return Response::json(['message' => 'User registered successfully', 'response' => $user], 201);
@@ -90,21 +94,19 @@ class AuthController extends Controller
     {
         $token = $request->bearerToken() ?: $request->input('token');
 
-        Log::info("Token fetched from api : ".$token);
 
         if(!$token){
-            Log::info("No token found!!!");
             Response::json(['error'=>'No token found!!!'],401);
         }
         try{
-            Log::info("Token found!!!");
+
             JWTAuth::setToken($token);
             JWTAuth::invalidate($token);
             return Response::json(["message"=>"Successfully Logged out"],201);
 
         }
         catch(JWTException $e){
-            Log::info("Could not log out, token might be invalid");
+
             return Response::json(['error' => 'Could not log out, token might be invalid'], 401);
     
         }

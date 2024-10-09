@@ -8,6 +8,7 @@ use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Illuminate\Support\Facades\Log;
 use Modules\Escort\app\Models\EscortReviews;
 use Modules\Users\Entities\User;
+use Illuminate\Support\Facades\Validator;
 class FanController extends Controller
 {
     public function __construct()
@@ -17,7 +18,7 @@ class FanController extends Controller
 
     public function getUsers(Request $request){
         // Fetch user_ids from Reviews table
-        Log::info("Review Controller here getUsers");
+
         $userIds = EscortReviews::pluck('user_id')->unique();
         $users = User::whereIn('id', $userIds)->get();
         if ($users->isEmpty()) {
@@ -31,22 +32,22 @@ class FanController extends Controller
     {
         //$user=$request->user;
         $user=auth()->user();
-        Log::info("Review Controller here $user");
-        $request->validate([
+
+        Validator::make($request->all(), [
             'photo_accuracy' => 'nullable|integer',
             'service' => 'nullable|integer',
             'clean_liness' => 'nullable|integer',
             'location' => 'nullable|integer',
             'value_for_money' => 'nullable|integer',
-            'comment' => 'nullable|string',
+            'comments' => 'required|string',
             'escort_id' => 'required|integer',
         ]);
-    
+
         if (EscortReviews::where('user_id', $user->id)->exists()) {
             return response()->json(['error' => 'You have already submitted a review.'], 409);
         }
 
-        Log::info("Review Controller here----------------------------------------------------",);
+
         $review = EscortReviews::create([
             'user_id' => $user->id,
             'photo_accuracy' => $request->photo_accuracy,
@@ -54,7 +55,7 @@ class FanController extends Controller
             'clean_liness' => $request->clean_liness,
             'location' => $request->location,
             'value_for_money' => $request->value_for_money,
-            'comment' => $request->comment,
+            'comments' => $request->comments,
             'escort_id' => $request->escort_id,
         ]);
         //$review = EscortReviews::create($request->all());
