@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
 use Modules\Users\Entities\User;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
+use App\Services\Resp;
 
 class ReviewsController extends Controller
 {
@@ -21,10 +22,8 @@ class ReviewsController extends Controller
     public function index(Request $request)
     {
        $productId = $request->product_id;
+        return Resp::success(['message' => 'Review fetched successfully', 'reasponse' => "test successfully"], 200);
 
-        return Response::json(['message' => 'Review fetched successfully', 'reasponse' => "test successfully"], 200);
     }
-
- 
        
 }

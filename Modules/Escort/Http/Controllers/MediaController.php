@@ -33,7 +33,7 @@ public function addGallary(Media $media,Request $request)
     ]);
 
     if ($validator->fails()) {
-        return Resp::error('Validation failed', $validator->errors(), 422);
+        return Resp::error(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
     }
     $userId = $currentUser->id;
     if ($request->hasFile('image')) {
@@ -49,7 +49,7 @@ public function addGallary(Media $media,Request $request)
         $media->save();
         return Resp::success(['message' => 'Image uploaded successfully', 'image' => $media]);
     }
-    return Resp::error('No image file found', [], 400);
+    return Resp::error(['message' => 'No image file found'], 400);
 }
 
 public function addPromoVideo(Media $media, Request $request)
@@ -60,7 +60,7 @@ public function addPromoVideo(Media $media, Request $request)
     ]);
 
     if ($validator->fails()) {
-        return Resp::success('Validation failed', $validator->errors(), 422);
+        return Resp::error(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
      }
     $userId = $currentUser->id;
     if ($request->hasFile('video')) {
@@ -76,7 +76,7 @@ public function addPromoVideo(Media $media, Request $request)
         $media->save();
         return Resp::success(['message' => 'Video uploaded successfully', 'video' => $media]);
     }
-    return Resp::success('No video file found', [], 400);
+    return Resp::error(['message' => 'No video file found'], 400);
 } 
 
 }

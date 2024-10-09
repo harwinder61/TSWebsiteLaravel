@@ -36,12 +36,12 @@ public function regions(Request $request){
 
  public function cities(Request $request){
     $cities = Cities::all();
-    return Response::json(['cities' => $cities]);
+    return Resp::success(['list' => $cities]);
 }
 
 public function nationality(Request $request){  
     $nationality = Nationality::all();
-    return Response::json(['nationality' => $nationality]);
+    return Resp::success(['list' => $nationality]);
 }
 
 
@@ -55,7 +55,7 @@ public function AddGallary(Request $request)
     ]);
 
     if ($validator->fails()) {
-        return Resp::error('Validation failed', $validator->errors(), 422);
+        return Resp::error(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
     }
 
     $userId = $currentUser->id;
@@ -76,9 +76,9 @@ public function AddGallary(Request $request)
         $imageModel->path = $userFolder . '/' . $imageName; // Save full path
         $imageModel->save();
 
-        return Resp::success(['message' => 'Image uploaded successfully', 'image' => $imageModel]);
+        return Resp::success(['message' => 'Image uploaded successfully', 'image' => $imageModel], 200);
     }
-    return Resp::error('No image file found', [], 400);
+    return Resp::error(['message' => 'No image file found'], 400);
 }
 
 
