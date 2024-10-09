@@ -7,7 +7,6 @@ use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
 use Modules\Users\Entities\User;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 
@@ -22,8 +21,6 @@ class ReviewsController extends Controller
     public function index(Request $request)
     {
        $productId = $request->product_id;
-
-       Log::info("Review Controller here $productId");
 
         return Response::json(['message' => 'Review fetched successfully', 'reasponse' => "test successfully"], 200);
     }

@@ -1,44 +1,47 @@
 <?php
 
 namespace Modules\Escort\Http\Controllers;
+
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Modules\Escort\app\Models\Profile;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Region;
 use App\Models\Cities;
 use App\Models\Nationality;
+use App\Models\AddGallary;
+
 class EscortController extends Controller
 {
-    public function __construct(){
+    public function __construct()
+    {
         $this->middleware(AuthMiddleware::class);
     }
 
-    public function getProfile(Request $request){
+    public function getProfile(Request $request)
+    {
 
-        $user=auth()->user();
-        $data=Profile::where('escort_id',$user->id)->first();
-        Log::info("get Profile function here");
-        if(!$data){
+        $user = auth()->user();
+        $data = Profile::where('escort_id', $user->id)->first();
+        if (!$data) {
 
-            return Response::json(['message'=>'No profile found'],404);
+            return Response::json(['message' => 'No profile found'], 404);
         }
-        return Response::json(['profile'=>$data]);
+        return Response::json(['profile' => $data]);
     }
-    public function updateProfile(Request $request){
+    public function updateProfile(Request $request)
+    {
 
         test();
-        $user=auth()->user();
+        $user = auth()->user();
         // Get the user type
         $userType = $user->user_type;
 
         // Fetch user data based on user type
         if ($userType == 1) {
-            return Response::json(['msg'=>'User type 1 does not have access to update profile','user'=>$user]);
-            
+            return Response::json(['msg' => 'User type 1 does not have access to update profile', 'user' => $user]);
         } elseif ($userType == 2) {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
@@ -58,35 +61,11 @@ class EscortController extends Controller
             $data = Profile::where('escort_id', $user->id)->get();
 
             //$data=Escort::find($user->id);
-            return Response::json(['msg'=>'profile name updated successfully','data'=>$data]);
+            return Response::json(['msg' => 'profile name updated successfully', 'data' => $data]);
         } else {
-            return Response::json(['msg'=>'Invalid user type','user'=>$user]);
-            
+            return Response::json(['msg' => 'Invalid user type', 'user' => $user]);
         }
 
-        return Response::json(['msg'=>'No user type found','user'=>$user]);
+        return Response::json(['msg' => 'No user type found', 'user' => $user]);
     }
-
-// public function countries(Request $request){
-//     $countries = Countries::all();
-//     Log::info("Countries: " . json_encode($countries));
-//     return Response::json(['countries' => $countries]);
-// }
-
-// public function regions(Request $request){
-//     Log::info("Regions function here");
-//     $regions = Region::all();
-//     //Log::info("Regions: " . json_encode($regions));
-//     return Response::json(['regions' => $regions]);
-// }
-
-//  public function cities(Request $request){
-//     Log::info("Cities function here");
-//     $cities = Cities::all();
-//     Log::info("Cities: " . json_encode($cities));
-//     return Response::json(['cities' => $cities]);
-// }
-
-
-
 }
