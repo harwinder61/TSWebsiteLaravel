@@ -26,12 +26,6 @@ class EscortMiddleware
         $request->auth = $user;
 
 
-        //$token=JWTAuth::getToken();
-
-        
-        //if($request->email=="test@gmail.com"){
-        //    return Response::json(['msg'=>"testing middleware"]);
-        //}
     
         return $next($request);
     }

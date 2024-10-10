@@ -60,7 +60,7 @@ class EscortController extends Controller
             if (!$profile) {
                 return Response::json(['error' => 'Profile not found'], 404);
             }
-            //$languages = json_encode($request->input('languages'));
+
             $languages = $request->input('languages');
             $updated = $profile->update([
                 'name' => $request->input('name'),

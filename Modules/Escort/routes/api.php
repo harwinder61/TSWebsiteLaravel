@@ -15,9 +15,10 @@ Route::group(['prefix' => 'escort'],function(){
 
     Route::get('/profile',[EscortController::class,'find']);
     Route::put('/profile',[EscortController::class,'update']);
-    Route::get('/reviews',[ReviewsController::class,'index']);
+    Route::get('/reviews',[ReviewsController::class,'list']);
     Route::post('/media/gallary',[MediaController::class,'addGallary']);
     Route::post('/media/promovideo',[MediaController::class,'addPromoVideo']);
+    Route::get('/media/promovideo',[MediaController::class,'getPromoVideo']);
     
 
 });

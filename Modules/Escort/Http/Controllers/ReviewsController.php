@@ -19,11 +19,13 @@ class ReviewsController extends Controller
     }
 
     
-    public function index(Request $request)
+    public function list(Request $request)
     {
-       $productId = $request->product_id;
-        return Resp::success(['message' => 'Review fetched successfully', 'reasponse' => "test successfully"], 200);
+       $reviews=EscortReviews::with('fan')->get();
+        return Resp::success(['list'=>$reviews]);
 
     }
+
+    
        
 }

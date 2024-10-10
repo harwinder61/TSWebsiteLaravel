@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 use Modules\Plans\app\Models\Plans;
 use Illuminate\Support\Facades\Validator;
+use App\Services\Resp;
 
 class PlansController extends Controller
 {
@@ -17,8 +18,8 @@ class PlansController extends Controller
     public function index(Request $request)
     {
         $data=Plans::all();
-        return Response::json(['msg'=>$data]);
-        //return view('plans::index');
+        return Resp::success(['list'=>$data]);
+
     }
 
     /**
@@ -38,7 +39,7 @@ class PlansController extends Controller
 
         if ($validator->fails()) {
 
-            return Response::json(['error' => $validator->errors()], 422);
+            return Resp::error([$validator->errors()]);
         }
 
         $data =Plans::create([
@@ -49,47 +50,8 @@ class PlansController extends Controller
             'price' => $request->price,
             'description' => $request->description,
         ]);
-    return Response::json(['msg'=>'pricing  plan created successfully','data'=>$data],201);
-        //return view('plans::create');
+    return Resp::success(['details'=>$data]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
-    {
-        return view('plans::show');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('plans::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        //
-    }
+    
 }

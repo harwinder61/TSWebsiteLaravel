@@ -2,18 +2,43 @@
 
 namespace Modules\Fan\Http\Controllers;
 
+use App\Services\Resp;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Illuminate\Support\Facades\Log;
 use Modules\Escort\app\Models\EscortReviews;
-use Modules\Users\Entities\User;
+use Modules\Fan\app\Models\FanReviews;
+use Modules\Auth\Entities\User;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+
 class FanController extends Controller
 {
     public function __construct()
     {
         $this->middleware(AuthMiddleware::class);
+    }
+
+    public function find(Request $request){
+        $user=auth()->user();
+        $reviews=FanReviews::where('user_id',$user->id)->get();
+        $reviews->load('escort');
+
+        return Resp::success(['list'=>$reviews]);
+
+    }
+
+    public function find_escort_reviews($id){
+        $user=auth()->user();
+        $escort_id=$id;
+        $reviews=FanReviews::where('user_id',$user->id)->where('escort_id',$escort_id)->get();
+        $reviews->load('escort');
+
+        if($reviews->isEmpty()){
+            return Resp::error(['No reviews found']);
+        }
+        return Resp::success(['details'=>$reviews]);
     }
 
     public function getUsers(Request $request){
@@ -30,7 +55,6 @@ class FanController extends Controller
     public function create(Request $request)
 
     {
-        //$user=$request->user;
         $user=auth()->user();
 
         Validator::make($request->all(), [
@@ -39,12 +63,20 @@ class FanController extends Controller
             'clean_liness' => 'nullable|integer',
             'location' => 'nullable|integer',
             'value_for_money' => 'nullable|integer',
-            'comments' => 'required|string',
+            'comment' => 'required|string',
             'escort_id' => 'required|integer',
         ]);
 
-        if (EscortReviews::where('user_id', $user->id)->exists()) {
-            return response()->json(['error' => 'You have already submitted a review.'], 409);
+        if (EscortReviews::where('user_id', $user->id)->where('escort_id',$request->escort_id)->exists()) {
+            return Resp::error(['You have already submitted a review']);
+        }
+
+        $escort_exists=User::find($request->escort_id);
+        if(!$escort_exists){
+            return Resp::error(['Escort user not found']);
+        }
+        if($escort_exists->user_type!=2){
+            return Resp::error(["This user is not an escort"]);
         }
 
 
@@ -55,11 +87,11 @@ class FanController extends Controller
             'clean_liness' => $request->clean_liness,
             'location' => $request->location,
             'value_for_money' => $request->value_for_money,
-            'comments' => $request->comments,
+            'comment' => $request->comment,
             'escort_id' => $request->escort_id,
         ]);
-        //$review = EscortReviews::create($request->all());
-        return response()->json($review, 201);
+
+        return Resp::success([$review]);
     }
   
 }

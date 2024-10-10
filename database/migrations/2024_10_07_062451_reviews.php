@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer('clean_liness')->nullable();
             $table->integer('location')->nullable();
             $table->integer('value_for_money')->nullable();
-            $table->text('comments')->nullable();
+            $table->text('comment')->nullable();
             $table->timestamps();
         });
     }

@@ -16,8 +16,4 @@ class Escort extends Model
     protected $table="profile";
     protected $fillable = ['name','escort_id'];
 
-    // protected static function newFactory(): EscortFactory
-    // {
-    //     // return EscortFactory::new();
-    // }
 }

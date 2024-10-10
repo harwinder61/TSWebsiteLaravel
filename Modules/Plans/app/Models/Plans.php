@@ -18,8 +18,4 @@ class Plans extends Model
         'description'=>'json'
     ];
 
-    // protected static function newFactory(): PlansFactory
-    // {
-    //     // return PlansFactory::new();
-    // }
 }
