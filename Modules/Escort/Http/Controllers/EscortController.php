@@ -14,6 +14,8 @@ use App\Models\Cities;
 use App\Models\Nationality;
 use App\Models\AddGallary;
 use App\Services\Resp;
+use Illuminate\Support\Facades\Log;
+use Modules\Auth\Entities\User;
 class EscortController extends Controller
 {
     public function __construct()
@@ -24,16 +26,17 @@ class EscortController extends Controller
 
 
     public function find(Request $request){
+        //get user profile
 
         $user=auth()->user();
-        $data=Profile::where('escort_id',$user->id)->first();
-        $profile_rates=ProfileRates::where('escort_id',$user->id)->get();
-
-        if(!$data){
+        $user_data=User::find($user->id);
+        $user_data->profile;
+        $user_data->profile_rates;
+        if(!$user_data){
 
             return Resp::error(['message' => 'No profile found'], 404);
         }
-        return Resp::success(['profile' => $data]);
+        return Resp::success(['user' => $user_data]);
     }
 
     
@@ -46,7 +49,7 @@ class EscortController extends Controller
 
         // Fetch user data based on user type
         if ($userType == 1) {
-            return Resp::error(['msg' => 'User type 1 does not have access to update profile', 'user' => $user]); 
+            return Resp::error($user); 
         } elseif ($userType == 2) {
 
             $validator = Validator::make($request->all(), $profile->rules());
@@ -56,11 +59,13 @@ class EscortController extends Controller
                 }
 
             $user_id=$user->id;
-            $profile = Profile::where('escort_id', $user_id)->first();
+            //$profile = Profile::where('escort_id', $user_id)->first();\
+            $profile=User::find($user_id)->profile;
+
             if (!$profile) {
                 return Response::json(['error' => 'Profile not found'], 404);
             }
-            //$languages = json_encode($request->input('languages'));
+
             $languages = $request->input('languages');
             $updated = $profile->update([
                 'name' => $request->input('name'),
@@ -95,7 +100,7 @@ class EscortController extends Controller
             }
             // Find the updated escort profile
             //$data = Profile::where('escort_id', $user->id)->get();
-            $data = Profile::where('escort_id', $user->id)->first();
+            $profile_data = Profile::where('escort_id', $user->id)->first();
 
             $is_incall_enabled=$request->input('is_incall_enabled');
             $is_outcall_enabled=$request->input('is_outcall_enabled');
@@ -105,9 +110,14 @@ class EscortController extends Controller
                 
             ];
             $customMessages=[];
-            $rateFields=['category','15_min', '30_min', '1_hour', '2_hour', '4_hour', 'overnight'];
+            $rateFields=['15_min', '30_min', '1_hour', '2_hour', '4_hour', 'overnight'];
 
         if ($is_incall_enabled) {
+            
+            $baseRules["rates.*.category"] = [
+                'required',
+                'in:Incall,Outcall',
+            ];
             foreach ($rateFields as $field) {
                 $baseRules["rates.*.{$field}"] = [
                     'required',
@@ -119,6 +129,10 @@ class EscortController extends Controller
         }
 
         if ($is_outcall_enabled) {
+            $baseRules["rates.*.category"] = [
+                'required',
+                'in:Outcall,Incall',
+            ];
             foreach ($rateFields as $field) {
                 $baseRules["rates.*.{$field}"] = [
                     'required',
@@ -132,20 +146,25 @@ class EscortController extends Controller
         $validator = Validator::make($request->all(), $baseRules,$customMessages);
 
         if ($validator->fails()) {
-
-            
+ 
             return Response::json(['error' => $validator->errors()], 422);
         }
             
 
 
-            $profile_rates=ProfileRates::where('escort_id', $user->id)->first();
+            $profile_rates=ProfileRates::where('escort_id', $profile_data->id)->get();
             $rates_data=$request->input('rates');
+            if(!$profile_rates){
+                $profile_rates=ProfileRates::create([
+                    'escort_id'=>$profile_data->id,
+                ]);
+            }
             foreach($rates_data as $rate){
                 $category = strtolower($rate['category']);
                 $profile_rates = ProfileRates::where('escort_id', $user->id)
                                      ->where('category', $category)
                                      ->first();
+                
 
                 if (($category == 'outcall' && $is_outcall_enabled) || ($category == 'incall' && $is_incall_enabled)) {
                     $rate_data = [
@@ -168,14 +187,16 @@ class EscortController extends Controller
                     }
                 }
             }
-            
-            return Response::json(['msg'=>'profile updated successfully','data'=>$data]);
+           $profile_data=Profile::where('escort_id', $user->id)->first();
+           $profile_data->rates;
+            return Resp::success(['details'=>$profile_data]);
         } else {
-            return Resp::error(['msg' => 'Invalid user type', 'user' => $user]);
+            return Resp::error(['Invalid user type']);
         }
 
-        return Resp::error(['msg' => 'No user type found', 'user' => $user]);
+        return Resp::error(['No user type found']);
     }
+
 }
 
 

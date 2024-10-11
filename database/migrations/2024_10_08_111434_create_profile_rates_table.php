@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('profile_rates', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('escort_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('escort_id')->constrained('profile')->onDelete('cascade');
 
             $table->string('category');
             $table->float('15_min');

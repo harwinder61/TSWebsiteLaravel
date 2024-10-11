@@ -5,6 +5,8 @@ namespace Modules\Auth\Entities;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Modules\Escort\app\Models\ProfileRates;
+use Modules\Escort\app\Models\Profile;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -25,6 +27,15 @@ class User extends Authenticatable implements JWTSubject
      *
      * @return mixed
      */
+
+    public function profile_rates(){
+        return $this->hasMany(ProfileRates::class,'escort_id','id');
+    }
+
+    public function profile(){
+        return $this->hasOne(Profile::class,'escort_id','id');
+    }
+
     public function getJWTIdentifier()
     {
         return $this->getKey();

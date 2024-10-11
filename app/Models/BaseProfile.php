@@ -16,6 +16,7 @@ use App\MasterData\CockSize;
 use App\MasterData\Languages;
 use App\MasterData\OfferServicesTo;
 use App\MasterData\ExtraServices;
+use Modules\Auth\Entities\User;
 
 class BaseProfile extends Model
 {
@@ -48,6 +49,7 @@ class BaseProfile extends Model
         'instagram_handle',
         'tiktok_handle',
         'extra_services',
+        'escort_id',
     ];
 
     protected $casts = [
@@ -93,6 +95,10 @@ class BaseProfile extends Model
         'extra_services.*.key'=>'in:'.implode(',',ExtraServices::getKeys()),
  
         ];
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class,'escort_id','id');
     }
 }
 

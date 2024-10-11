@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Modules\Escort\app\Models\ProfileRates;
+use Modules\Escort\app\Models\Profile;
 
 class AuthController extends Controller
 {
@@ -48,15 +49,15 @@ class AuthController extends Controller
         ]);
 
         $user_id=$user->id;
-        $escort=Escort::create([
-            'name'=>$user->username,
-            'escort_id'=>$user_id,
+        Log::info("user_id: ".$user_id);
+        $escort=Profile::create([
+           'name'=>$user->username,
+           'escort_id'=>$user->id,
 
         ]);
-        $profile_rates=ProfileRates::create([
-            'escort_id'=>$user_id
-        ]);
 
+        echo $escort->toSql();
+        
         return Response::json(['message' => 'User registered successfully', 'response' => $user], 201);
     }
 

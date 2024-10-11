@@ -9,7 +9,7 @@ use Modules\Escort\Http\Controllers\MediaController;
 
 
 
-
+Route::get('/test',[EscortController::class,'test']);
 
 Route::group(['prefix' => 'escort'],function(){
 

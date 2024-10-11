@@ -4,6 +4,7 @@ namespace Modules\Escort\app\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Modules\Auth\Entities\User;
 // use Modules\Escort\Database\Factories\ProfileRatesFactory;
 
 class ProfileRates extends Model
@@ -34,6 +35,9 @@ class ProfileRates extends Model
         'overnight',
     ];
 
+    public function user(){
+        return $this->belongsTo(User::class);
+    }
 
     // protected static function newFactory(): ProfileRatesFactory
     // {

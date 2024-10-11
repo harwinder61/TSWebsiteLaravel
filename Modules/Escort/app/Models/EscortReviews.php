@@ -9,5 +9,6 @@ use App\Models\BaseReviews;
 
 class EscortReviews extends BaseReviews
 {
+
     
 }
