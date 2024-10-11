@@ -16,6 +16,8 @@ use App\Models\AddGallary;
 use App\Services\Resp;
 use Illuminate\Support\Facades\Log;
 use Modules\Auth\Entities\User;
+use Modules\Escort\app\Http\Middleware\AuthEscort;
+use Modules\Escort\app\Models\Orders;
 class EscortController extends Controller
 {
     public function __construct()

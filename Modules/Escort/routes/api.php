@@ -6,6 +6,7 @@ use Modules\Escort\Http\Controllers\ReviewsController;
 use Modules\Escort\Http\Controllers\MasterController;
 use Modules\Escort\Http\Controllers\MastersController;
 use Modules\Escort\Http\Controllers\MediaController;
+use Modules\Escort\Http\Controllers\OrderController;
 
 
 
@@ -19,6 +20,8 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/media/gallary',[MediaController::class,'addGallary']);
     Route::post('/media/promovideo',[MediaController::class,'addPromoVideo']);
     Route::get('/media/promovideo',[MediaController::class,'getPromoVideo']);
+    Route::post('/orders',[OrderController::class,'createOrder']);
+    Route::post('/webhook/payment-status-update',[OrderController::class,'webhook_payment_status_update']);
     
 
 });
