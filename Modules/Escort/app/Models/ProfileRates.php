@@ -39,8 +39,4 @@ class ProfileRates extends Model
         return $this->belongsTo(User::class);
     }
 
-    // protected static function newFactory(): ProfileRatesFactory
-    // {
-    //     // return ProfileRatesFactory::new();
-    // }
 }

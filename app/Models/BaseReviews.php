@@ -13,7 +13,7 @@ class BaseReviews extends Model
         'clean_liness',
         'location',
         'value_for_money',
-        'comments',
+        'comment',
         'escort_id'
     ];
 }

@@ -10,4 +10,10 @@ class Cities extends Model
 {
     protected $table = 'locations_cities';
     protected $fillable = ['name'];
+
+
+
+    public function country(){
+        return $this->belongsTo(Countries::class,'country_id','id');
+    }
 }

@@ -79,4 +79,10 @@ public function addPromoVideo(Media $media, Request $request)
     return Resp::error(['message' => 'No video file found'], 400);
 } 
 
+public function getPromoVideo(Request $request)
+{
+    $currentUser = auth()->user();
+    return Resp::success(['details' => $currentUser]);
+}
+
 }

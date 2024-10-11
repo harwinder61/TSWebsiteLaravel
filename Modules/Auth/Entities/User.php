@@ -5,6 +5,7 @@ namespace Modules\Auth\Entities;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Modules\Escort\app\Models\EscortReviews;
 use Modules\Escort\app\Models\ProfileRates;
 use Modules\Escort\app\Models\Profile;
 
@@ -21,6 +22,11 @@ class User extends Authenticatable implements JWTSubject
     protected $casts=[
         'user_type'=>'integer',
     ];
+
+
+    public function fan_reviews(){
+        return $this->hasMany(EscortReviews::class,'user_id','id');
+    }
 
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.
