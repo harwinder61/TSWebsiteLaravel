@@ -30,8 +30,8 @@ class PlansController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255|',
             'code' => 'required|string|max:255|unique:plans,code',
-            'duration_type' => 'required|string|',
-            'duration_count'=>'required|integer|',
+            'days' => 'required|integer|',
+            'allowed_user_account'=>'required|integer|',
             'price'=>'required|',
             'description'=>'required|',
         ]);
@@ -45,8 +45,8 @@ class PlansController extends Controller
         $data =Plans::create([
             'title' => $request->title,
             'code' => $request->code,
-            'duration_type' => $request->duration_type,
-            'duration_count' => $request->duration_count,
+            'days' => $request->days,
+            'allowed_user_account' => $request->allowed_user_account,
             'price' => $request->price,
             'description' => $request->description,
         ]);

@@ -11,7 +11,6 @@ use Modules\Escort\app\Models\EscortReviews;
 use Modules\Fan\app\Models\FanReviews;
 use Modules\Auth\Entities\User;
 use Illuminate\Support\Facades\Validator;
-use App\Services\Resp;
 class FanController extends Controller
 {
     public function __construct()

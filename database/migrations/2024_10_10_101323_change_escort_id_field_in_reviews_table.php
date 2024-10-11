@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('reviews', function (Blueprint $table) {
             //
-            $table->foreignId('escort_id')->references('id')->on('users')->cascadeOnDelete()->change();
+            //$table->foreignId('escort_id')->references('id')->on('users')->cascadeOnDelete()->change();
         });
     }
 

@@ -13,7 +13,7 @@ class Plans extends Model
     /**
      * The attributes that are mass assignable.
      */
-    protected $fillable = ['title','code','duration_type','duration_count','price','description'];
+    protected $fillable = ['title','code','days','allowed_user_account','price','description'];
     protected $casts=[
         'description'=>'json'
     ];

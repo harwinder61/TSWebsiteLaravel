@@ -29,14 +29,13 @@ class EscortController extends Controller
         //get user profile
 
         $user=auth()->user();
-        $user_data=User::find($user->id);
-        $user_data->profile;
-        $user_data->profile_rates;
-        if(!$user_data){
+        $profile_data=Profile::find($user->id);
+        $profile_data->rates;
+        if(!$profile_data){
 
             return Resp::error(['message' => 'No profile found'], 404);
         }
-        return Resp::success(['user' => $user_data]);
+        return Resp::success(['details' => $profile_data]);
     }
 
     
