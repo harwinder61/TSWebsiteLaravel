@@ -9,7 +9,6 @@ use Modules\Escort\Http\Controllers\MediaController;
 use Modules\Escort\Http\Controllers\OrderController;
 
 
-
 Route::get('/test',[EscortController::class,'test']);
 
 Route::group(['prefix' => 'escort'],function(){
@@ -22,8 +21,7 @@ Route::group(['prefix' => 'escort'],function(){
     Route::get('/media/promovideo',[MediaController::class,'getPromoVideo']);
     Route::post('/orders',[OrderController::class,'createOrder']);
     Route::post('/webhook/payment-status-update',[OrderController::class,'webhook_payment_status_update']);
-    
-
+    Route::get('/subscriptions',[OrderController::class,'getSubscription']);
 });
 
 Route::get('/locations/countries',[MasterController::class,'countries']);
@@ -31,6 +29,7 @@ Route::get('/locations/regions',[MasterController::class,'regions']);
 Route::get('/locations/cities',[MasterController::class,'cities']);
 Route::get('/locations/nationality',[MasterController::class,'nationality']);
 Route::get('/master-data',[MastersController::class,'getMasterData']);
+
 
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {

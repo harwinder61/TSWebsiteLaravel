@@ -95,6 +95,7 @@ class EscortController extends Controller
                 'instagram_handle' => $request->input('instagram_handle'),
                 'tiktok_handle' => $request->input('tiktok_handle'),
                 'extra_services' => $request->input('extra_services'),
+                'location' => $request->input('location'),
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);

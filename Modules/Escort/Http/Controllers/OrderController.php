@@ -14,6 +14,8 @@ use Modules\Escort\app\Models\Subscription;
 use Modules\Plans\app\Models\Plans;
 use Illuminate\Support\Facades\Log;
 
+
+
 class OrderController extends Controller
 {
     public function __construct()
@@ -90,15 +92,19 @@ class OrderController extends Controller
             if(!$subscription){
                 return Resp::error(['Failed to create subscription']);
             }
-
-            
         }else{
-            return Resp::error(['Order already paid']);
+          return Resp::error(['Order already paid']);
         }
-        
         return Resp::success([$order]);
     }
 
+    function getSubscription() {
+        $user = auth()->user();
+        $subscription = Subscription::where('escort_id', $user->id)
+            ->where('status', 'ACTIVE')
+            ->get(); 
+        return Resp::success(["list" => $subscription]);
+    }  
 
 }
 

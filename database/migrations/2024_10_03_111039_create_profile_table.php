@@ -31,6 +31,7 @@ return new class extends Migration
             $table->integer('cock_size')->nullable();
             $table->json('languages')->nullable();
             $table->json("offer_services_to")->nullable();
+            $table->string('location')->nullable();
 
             
             $table->timestamps();
