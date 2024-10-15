@@ -14,6 +14,3 @@ use Modules\Plans\Http\Controllers\PlansController;
 |
 */
 
-Route::group([], function () {
-    Route::resource('plans', PlansController::class)->names('plans');
-});

@@ -49,7 +49,6 @@ class AuthController extends Controller
         ]);
 
         $user_id=$user->id;
-        Log::info("user_id: ".$user_id);
         $escort=Profile::create([
            'name'=>$user->username,
            'escort_id'=>$user->id,

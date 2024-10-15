@@ -13,12 +13,16 @@ use Modules\Escort\app\Models\Orders;
 use Modules\Escort\app\Models\Subscription;
 use Modules\Plans\app\Models\Plans;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+use Stripe\Stripe;
+use Stripe\PaymentIntent;
+use Stripe\Checkout\Session;
 
 class OrderController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthEscort::class);
+        $this->middleware(AuthEscort::class)->except('paymentSuccess','paymentCancel');
     }
 
     function createOrder(Request $request){
@@ -31,18 +35,115 @@ class OrderController extends Controller
         if($validator->fails()){
             return Resp::error([$validator->errors()]);
         }
+        $plan=Plans::where('code',$request->input('plan_code'))->first();
+        if(!$plan){
+            return Resp::error(['Plan not found']);
+        }
+        $days=$plan->days;
+
+        //calculate end date
+        $end_date=date('Y-m-d',strtotime($request->input('start_date')." + $days days"));
+
+        //Get number of active subscribers with same plan code
+        $subscription_count=Subscription::where('plan_code',$request->input('plan_code'))
+                ->where('status','ACTIVE')
+                ->get()->count();
+
+
+        // Fetch pending orders created 5 minutes ago
+        $fiveMinutesAgo = now()->subMinutes(5)->toDateTimeString();
+        $pendingOrders = Orders::where('payment_status', 'PENDING')
+            ->where('created_at', '>=', $fiveMinutesAgo)
+            ->get();
+
+        $pending_orders_count=$pendingOrders->count();
+
+
+        $max_users=Plans::where('code',$request->input('plan_code'))
+                        ->first('allowed_user_account');
+        $max_users=$max_users->allowed_user_account;
+        
+        $total_orders_count=$subscription_count+$pending_orders_count;
+
+        if($total_orders_count>=$max_users){
+            return Resp::error(['Max subscription reached plan not available']);
+        }
+        $start_date2=Carbon::parse($request->input('start_date'));
+        $end_date2=Carbon::parse($end_date);
+
+        $weekly_sub_exists=null;
+        if($request->input('plan_code')=="P101"){
+        
+            $weekly_sub_exists = Subscription::where('plan_code', $request->input('plan_code'))
+            ->where('status', 'ACTIVE')
+            ->where(function ($query) use ($start_date2, $end_date2) {
+                $query->where(function ($q) use ($start_date2, $end_date2) {
+                    $q->where('start_date', '<=', $end_date2)
+                      ->where('end_date', '>=', $start_date2);
+                })                                              
+                ->orWhere(function ($q) use ($start_date2, $end_date2) {
+                    $q->whereBetween('start_date', [$start_date2, $end_date2]);
+                });
+            })->get();
+        
+
+            if($weekly_sub_exists->isNotEmpty()){
+                return Resp::error(['Weekly subscription is already owned by someone']);
+            }
+    
+        }
+        
+
         $order=Orders::create([
             'escort_id'=>$user->id,
             'plan_code'=>$request->input('plan_code'),
             'start_date'=>$request->input('start_date'),
+            'end_date'=>$end_date,
             'payment_status' => 'PENDING',
-//            'payment_status'=>$request->input('payment_status'),
         ]);
         if(!$order){
             return Resp::error(['Failed to create order']);
         }
-        return Resp::success([$order]);
+        $session_url="";
+        try{
+            // Set the Stripe secret key
+            Stripe::setApiKey(env('STRIPE_SECRET'));
+
+            $plan=Plans::where('code',$request->input('plan_code'))->first();
+            $amount=intval($plan->price)*100;
+            $title=$plan->title;
+            // Create a Checkout Session
+            //$session = Session::create([
+            //    'payment_method_types' => ['card'],
+            //    'line_items' => [[
+            //        'price_data' => [
+            //        'currency' => 'eur',
+             //       'product_data' => [
+             //           'name' => $title,
+             //       ],
+              //      'unit_amount' => $amount, // Amount in cents
+              //  ],
+               // 'quantity' => 1,
+            //]],
+            //'mode' => 'payment',
+            //'success_url' => env('APP_URL') . '/api/escort/payment-success', // Redirect after successful payment
+            //'cancel_url' => env('APP_URL') . '/api/escort/payment-cancel', // Redirect if canceled
+        //]);
+        $paymentIntent = PaymentIntent::create([
+            'amount' => $amount, // amount in cents
+            'currency' => 'eur',
+            'metadata' => ['order_id' => $order->id],
+        ]);
+
+        //$session_url=$session->url;
+        }catch(\Exception $e){
+            return Resp::error([$e->getMessage()]);
+        }
+        return Resp::success(['client_secret'=>$paymentIntent->client_secret,'dpmCheckerLink' => "https://dashboard.stripe.com/settings/payment_methods/review?transaction_id={$paymentIntent->id}",
+   ]);
     }
+
+
 
     function webhook_payment_status_update(Request $request){
         $order_id=$request->input('order_id');
@@ -65,20 +166,18 @@ class OrderController extends Controller
                 return Resp::error(['Plan not found']);
             }
             $days=$plan->days;
+            
+
             $subscription_exists=Subscription::where('escort_id',$order->escort_id)
                 ->where('plan_code',$order->plan_code)
                 ->where('status','ACTIVE')
                 ->first();
-                Log::info("Subscription query parameters:", [
-                    'escort_id' => $order->escort_id,
-                    'plan_code' => $order->plan_code,
-                    'status' => 'ACTIVE'
-                ]);
-            Log::info("Subscription exists :");
-            Log::info($subscription_exists);
+                
+
             if($subscription_exists){
                 return Resp::error(['Subscription already exists']);
             }
+            
             $subscription=Subscription::create([
                 'escort_id'=>$order->escort_id,
                 'order_id'=>$order->id,
@@ -99,6 +198,14 @@ class OrderController extends Controller
         return Resp::success([$order]);
     }
 
+
+    public function paymentSuccess(Request $request){
+        return Resp::success(['Payment successful']);
+    }
+
+    public function paymentCancel(Request $request){
+        return Resp::success(['Payment canceled']);
+    }
 
 }
 
