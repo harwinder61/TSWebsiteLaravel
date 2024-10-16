@@ -7,11 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
 use App\Services\Resp;
-use Modules\Auth\Entities\User;
+use Modules\Auth\app\Models\AuthUser;
 use Modules\Escort\app\Http\Middleware\AuthEscort;
 use Modules\Escort\app\Models\Orders;
 use Modules\Escort\app\Models\Subscription;
-use Modules\Plans\app\Models\Plans;
+use App\Models\Plan;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Stripe\Stripe;
@@ -35,7 +35,7 @@ class OrderController extends Controller
         if($validator->fails()){
             return Resp::error([$validator->errors()]);
         }
-        $plan=Plans::where('code',$request->input('plan_code'))->first();
+        $plan=Plan::where('code',$request->input('plan_code'))->first();
         if(!$plan){
             return Resp::error(['Plan not found']);
         }
@@ -59,7 +59,7 @@ class OrderController extends Controller
         $pending_orders_count=$pendingOrders->count();
 
 
-        $max_users=Plans::where('code',$request->input('plan_code'))
+        $max_users=Plan::where('code',$request->input('plan_code'))
                         ->first('allowed_user_account');
         $max_users=$max_users->allowed_user_account;
         
@@ -109,7 +109,7 @@ class OrderController extends Controller
             // Set the Stripe secret key
             Stripe::setApiKey(env('STRIPE_SECRET'));
 
-            $plan=Plans::where('code',$request->input('plan_code'))->first();
+            $plan=Plan::where('code',$request->input('plan_code'))->first();
             $amount=intval($plan->price)*100;
             $title=$plan->title;
             // Create a Checkout Session
@@ -161,7 +161,7 @@ class OrderController extends Controller
             $order->update([
                 'payment_status'=>'PAID',
             ]);
-            $plan=Plans::where('code',$order->plan_code)->first();
+            $plan=Plan::where('code',$order->plan_code)->first();
             if(!$plan){
                 return Resp::error(['Plan not found']);
             }

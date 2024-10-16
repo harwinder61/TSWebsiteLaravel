@@ -6,6 +6,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Modules\Escort\app\Models\EscortReviews;
+use Modules\Escort\app\Models\ProfileRates;
+use Modules\Escort\app\Models\Profile;
 
 class User extends Authenticatable
 {
@@ -22,6 +25,9 @@ class User extends Authenticatable
         'email',
         'password',
         'user_type',
+    ];
+    protected $casts=[
+        'user_type'=>'integer',
     ];
 
     /**
@@ -45,5 +51,23 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function fan_reviews(){
+        return $this->hasMany(EscortReviews::class,'user_id','id');
+    }
+
+    /**
+     * Get the identifier that will be stored in the subject claim of the JWT.
+     *
+     * @return mixed
+     */
+
+    public function profile_rates(){
+        return $this->hasMany(ProfileRates::class,'escort_id','id');
+    }
+
+    public function profile(){
+        return $this->hasOne(Profile::class,'escort_id','id');
     }
 }

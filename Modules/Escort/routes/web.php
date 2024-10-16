@@ -15,6 +15,4 @@ use Modules\Escort\Http\Controllers\OrderController;
 */
 Route::get('/payment-success',[OrderController::class,'paymentSuccess']);
 Route::get('/payment-cancel',[OrderController::class,'paymentCancel']);
-Route::group([], function () {
-    Route::resource('escort', EscortController::class)->names('escort');
-});
+

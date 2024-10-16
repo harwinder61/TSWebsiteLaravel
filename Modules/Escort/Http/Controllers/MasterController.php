@@ -16,6 +16,7 @@ use App\Models\Media;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use App\Models\Plan;
 class MasterController extends Controller
 {
 
@@ -39,6 +40,11 @@ public function nationality(Request $request){
     return Resp::success(['list' => $nationality]);
 }
 
+public function plans(Request $request){
+    $data=Plan::all();
+    return Resp::success(['list'=>$data]);
+
+}
 
 
 }
