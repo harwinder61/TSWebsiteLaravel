@@ -11,8 +11,7 @@ use Modules\Escort\Http\Controllers\OrderController;
 
 Route::get('/test',[EscortController::class,'test']);
 
-Route::group(['prefix' => 'escort'],function(){
-
+    Route::group(['prefix' => 'escort'],function(){
     Route::get('/profile',[EscortController::class,'find']);
     Route::put('/profile',[EscortController::class,'update']);
     Route::get('/reviews',[ReviewsController::class,'list']);

@@ -50,6 +50,9 @@ class BaseProfile extends Model
         'tiktok_handle',
         'extra_services',
         'escort_id',
+        'city_id',
+        'region_id',
+        'country_id',
     ];
 
     protected $casts = [

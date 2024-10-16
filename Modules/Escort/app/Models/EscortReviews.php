@@ -15,4 +15,6 @@ class EscortReviews extends BaseReviews
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
+
+    
 }
