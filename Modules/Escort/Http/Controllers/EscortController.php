@@ -15,7 +15,9 @@ use App\Models\Nationality;
 use App\Models\AddGallary;
 use App\Services\Resp;
 use Illuminate\Support\Facades\Log;
-use Modules\Auth\Entities\User;
+use Modules\Auth\app\Models\AuthUser;
+use Modules\Escort\app\Http\Middleware\AuthEscort;
+use Modules\Escort\app\Models\Orders;
 class EscortController extends Controller
 {
     public function __construct()
@@ -59,7 +61,7 @@ class EscortController extends Controller
 
             $user_id=$user->id;
             //$profile = Profile::where('escort_id', $user_id)->first();\
-            $profile=User::find($user_id)->profile;
+            $profile=AuthUser::find($user_id)->profile;
 
             if (!$profile) {
                 return Response::json(['error' => 'Profile not found'], 404);

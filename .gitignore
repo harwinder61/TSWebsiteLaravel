@@ -2,7 +2,7 @@
 .env*
 /vendor/*
 /config/app.php
-
+/uploads/*
 /tmp/cache/models/*
 !/tmp/cache/models/empty
 /tmp/cache/persistent/*

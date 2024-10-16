@@ -1,8 +1,5 @@
 {
-    "Users": true,
     "Auth": true,
-    "DEMOModule": true,
-    "Plans": true,
     "Escort": true,
     "Fan": true
 }

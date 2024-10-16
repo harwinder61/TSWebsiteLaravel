@@ -6,10 +6,10 @@ use Modules\Escort\Http\Controllers\ReviewsController;
 use Modules\Escort\Http\Controllers\MasterController;
 use Modules\Escort\Http\Controllers\MastersController;
 use Modules\Escort\Http\Controllers\MediaController;
+use Modules\Escort\Http\Controllers\OrderController;
 
 
 
-Route::get('/test',[EscortController::class,'test']);
 
 Route::group(['prefix' => 'escort'],function(){
 
@@ -19,6 +19,11 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/media/gallary',[MediaController::class,'addGallary']);
     Route::post('/media/promovideo',[MediaController::class,'addPromoVideo']);
     Route::get('/media/promovideo',[MediaController::class,'getPromoVideo']);
+    Route::post('/orders',[OrderController::class,'createOrder']);
+    Route::post('/webhook/payment-status-update',[OrderController::class,'webhook_payment_status_update']);
+    Route::get('/payment-success',[OrderController::class,'paymentSuccess']);
+    Route::get('/payment-cancel',[OrderController::class,'paymentCancel']);
+
     
 
 });
@@ -28,8 +33,6 @@ Route::get('/locations/regions',[MasterController::class,'regions']);
 Route::get('/locations/cities',[MasterController::class,'cities']);
 Route::get('/locations/nationality',[MasterController::class,'nationality']);
 Route::get('/master-data',[MastersController::class,'getMasterData']);
+Route::get('/plans/get',[MasterController::class,'plans']);
 
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::apiResource('escort', EscortController::class)->names('escort');
-});
