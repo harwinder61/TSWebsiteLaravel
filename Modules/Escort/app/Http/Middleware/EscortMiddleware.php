@@ -24,6 +24,9 @@ class EscortMiddleware
 
         // Attach user to request
         $request->auth = $user;
+        if($user->user_type!=2){
+            return Response::json(['error'=>'Unauthorized'],401);
+        }
 
 
     

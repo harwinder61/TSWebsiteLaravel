@@ -30,10 +30,10 @@ class AuthController extends Controller
             'username' => 'required|string|max:255|unique:users,username',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'user_type'=>'required|integer|in:1,2',
+            'user_type'=>'required|integer|in:1,2,3',
             'password_confirmation'=>'required|same:password',
         ],[
-            'user_type.in'=>'The user type must be either 1 or 2',
+            'user_type.in'=>'The user type must be either 1 or 2 or 3',
             'password.confirmed'=>'The password and confirm password do not match',
         ]);
 
@@ -55,7 +55,7 @@ class AuthController extends Controller
 
         ]);
 
-        echo $escort->toSql();
+        
         
         return Response::json(['message' => 'User registered successfully', 'response' => $user], 201);
     }

@@ -26,9 +26,9 @@ class AuthEscort
         // Attach user to request
         $request->auth = $user;
         if($user->user_type != 2){
-            return Resp::error(['User not an escort']);
+            return Resp::error(['Unauthorized user is not an escort']);
         }
-        $request->merge(['user' => $user]);
+
         return $next($request);
     }
 }

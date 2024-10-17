@@ -27,9 +27,9 @@ class AuthFan
         // Attach user to request
         $request->auth = $user;
         if($user->user_type != 1){
-            return Resp::error(['User not a fan']);
+            return Resp::error(['Unauthorized user is not a fan']);
         }
-        $request->merge(['user' => $user]);
+
         return $next($request);
     }
 }

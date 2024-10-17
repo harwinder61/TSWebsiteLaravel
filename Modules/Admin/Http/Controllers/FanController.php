@@ -1,66 +1,40 @@
 <?php
 
-namespace Modules\Escort\Http\Controllers;
+namespace Modules\Admin\Http\Controllers;
 
-use Illuminate\Routing\Controller;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Modules\Escort\app\Models\Profile;
-use Modules\Escort\app\Models\ProfileRates;
-use Illuminate\Support\Facades\Response;
-use Modules\Auth\app\Http\Middleware\AuthMiddleware;
-use Illuminate\Support\Facades\Validator;
-use App\Models\Region;
-use App\Models\Cities;
-use App\Models\Nationality;
-use App\Models\AddGallary;
 use App\Services\Resp;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Modules\Escort\app\Models\Profile;
+use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Models\AuthUser;
-use Modules\Escort\app\Http\Middleware\AuthEscort;
-use Modules\Escort\app\Models\Orders;
-class EscortController extends Controller
+
+class FanController extends Controller
 {
-    public function __construct()
-    {
-        //$this->middleware('jwtauth');
-        //$this->middleware(AuthMiddleware::class);
+    public function getFans(Request $request){
+        $fans=AuthUser::with('profile')->where('user_type',1)->get();
+        return Resp::success(['details'=>$fans]);
     }
-    
 
-
-    public function find(Request $request){
-        //get user profile
-
-        $user=auth()->user();
-        $profile_data=Profile::find($user->id);
-        $profile_data->rates;
-        if(!$profile_data){
-
-            return Resp::error(['message' => 'No profile found'], 404);
+    public function updateProfile($id,Profile $profile,Request $request){
+        $admin=auth()->user();
+        if($admin->user_type!=3){
+            return Resp::error(['Unauthorized user is not an admin']);
         }
-        return Resp::success(['details' => $profile_data]);
-    }
 
-    
 
-    public function update(Profile $profile ,Request $request){
-
-        $user=auth()->user();
-        // Get the user type
-        $userType = $user->user_type;
-
-        // Fetch user data based on user type
-        if ($userType == 1) {
-            return Resp::error(['Unauthorized user is not an escort']); 
-        } elseif ($userType == 2) {
-
-            $validator = Validator::make($request->all(), $profile->rules());
+        $validator = Validator::make($request->all(), $profile->rules());
 
             if ($validator->fails()) {
                 return Resp::error(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
                 }
 
-            $user_id=$user->id;
+            $user_id=$id;
+            $user_exists=AuthUser::find($user_id);
+            if(!$user_exists){
+                return Resp::error(['Profile not found']);
+            }
             //$profile = Profile::where('escort_id', $user_id)->first();\
             $profile=AuthUser::find($user_id)->profile;
 
@@ -101,8 +75,8 @@ class EscortController extends Controller
                 return Resp::error(['error' => 'Failed to update profile'], 500);
             }
             // Find the updated escort profile
-            //$data = Profile::where('escort_id', $user->id)->get();
-            $profile_data = Profile::where('escort_id', $user->id)->first();
+            //$data = Profile::where('escort_id', $user_id)->get();
+            $profile_data = Profile::where('escort_id', $user_id)->first();
 
             $is_incall_enabled=$request->input('is_incall_enabled');
             $is_outcall_enabled=$request->input('is_outcall_enabled');
@@ -163,7 +137,7 @@ class EscortController extends Controller
             }
             foreach($rates_data as $rate){
                 $category = strtolower($rate['category']);
-                $profile_rates = ProfileRates::where('escort_id', $user->id)
+                $profile_rates = ProfileRates::where('escort_id', $user_id)
                                      ->where('category', $category)
                                      ->first();
                 
@@ -183,22 +157,14 @@ class EscortController extends Controller
                         $profile_rates->update($rate_data);
 
                     } else {
-                        $rate_data['escort_id'] = $user->id;
+                        $rate_data['escort_id'] = $user_id;
                         ProfileRates::create($rate_data);
 
                     }
                 }
             }
-           $profile_data=Profile::where('escort_id', $user->id)->first();
+           $profile_data=Profile::where('escort_id', $user_id)->first();
            $profile_data->rates;
             return Resp::success(['details'=>$profile_data]);
-        } else {
-            return Resp::error(['Invalid user type']);
-        }
-
-        return Resp::error(['No user type found']);
     }
-
 }
-
-
