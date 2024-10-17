@@ -10,6 +10,8 @@ use App\Models\User;
 class EscortSubscription extends BaseSubscription
 {
 
+    protected $hidden = ['created_at', 'updated_at','password'];
+
     public function escort()
     {
         return $this->belongsTo(User::class, 'escort_id', 'id');
