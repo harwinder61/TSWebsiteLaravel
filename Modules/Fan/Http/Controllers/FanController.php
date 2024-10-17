@@ -9,7 +9,7 @@ use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Illuminate\Support\Facades\Log;
 use Modules\Escort\app\Models\EscortReviews;
 use Modules\Fan\app\Models\FanReviews;
-use Modules\Auth\Entities\User;
+use Modules\Auth\app\Models\AuthUser;
 use Illuminate\Support\Facades\Validator;
 use Modules\Escort\app\Models\EscortSubscription;
 class FanController extends Controller
@@ -45,7 +45,7 @@ class FanController extends Controller
         // Fetch user_ids from Reviews table
 
         $userIds = EscortReviews::pluck('user_id')->unique();
-        $users = User::whereIn('id', $userIds)->get();
+        $users = AuthUser::whereIn('id', $userIds)->get();
         if ($users->isEmpty()) {
             return response()->json(['message' => 'No users found with reviews'], 404);
         }
@@ -71,7 +71,7 @@ class FanController extends Controller
             return Resp::error(['You have already submitted a review']);
         }
 
-        $escort_exists=User::find($request->escort_id);
+        $escort_exists=AuthUser::find($request->escort_id);
         if(!$escort_exists){
             return Resp::error(['Escort user not found']);
         }

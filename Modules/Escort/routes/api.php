@@ -9,7 +9,6 @@ use Modules\Escort\Http\Controllers\MediaController;
 use Modules\Escort\Http\Controllers\OrderController;
 
 
-Route::get('/test',[EscortController::class,'test']);
 
     Route::group(['prefix' => 'escort'],function(){
     Route::get('/profile',[EscortController::class,'find']);
@@ -28,9 +27,6 @@ Route::get('/locations/regions',[MasterController::class,'regions']);
 Route::get('/locations/cities',[MasterController::class,'cities']);
 Route::get('/locations/nationality',[MasterController::class,'nationality']);
 Route::get('/master-data',[MastersController::class,'getMasterData']);
+Route::get('/plans/get',[MasterController::class,'plans']);
 
 
-
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::apiResource('escort', EscortController::class)->names('escort');
-});

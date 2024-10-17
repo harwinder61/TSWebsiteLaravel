@@ -16,7 +16,7 @@ use App\MasterData\CockSize;
 use App\MasterData\Languages;
 use App\MasterData\OfferServicesTo;
 use App\MasterData\ExtraServices;
-use Modules\Auth\Entities\User;
+use Modules\Auth\app\Models\AuthUser;
 
 class BaseProfile extends Model
 {
@@ -101,7 +101,7 @@ class BaseProfile extends Model
     }
 
     public function user(){
-        return $this->belongsTo(User::class,'escort_id','id');
+        return $this->belongsTo(AuthUser::class,'escort_id','id');
     }
 }
 

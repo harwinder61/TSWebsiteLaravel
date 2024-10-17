@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Modules\Auth\Entities\User;
+use Modules\Auth\app\Models\AuthUser;
 use Modules\Escort\app\Models\Escort;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -42,7 +42,7 @@ class AuthController extends Controller
             return Resp::error(['error' => $validator->errors()], 422);
         }
 
-        $user = User::create([
+        $user = AuthUser::create([
             'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -50,8 +50,7 @@ class AuthController extends Controller
         ]);
 
         $user_id=$user->id;
-        
-        // Log::info("user_id: ".$user_id);
+       
         $escort=Profile::create([
            'name'=>$user->username,
            'escort_id'=>$user->id,
