@@ -11,6 +11,7 @@ use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Region;
 use App\Models\Cities;
+use App\Models\Countries;
 use App\Models\Nationality;
 use App\Models\AddGallary;
 use App\Services\Resp;
@@ -67,6 +68,24 @@ class EscortController extends Controller
             if (!$profile) {
                 return Response::json(['error' => 'Profile not found'], 404);
             }
+            $city_id=$request->input('city_id');
+            $city_exists=Cities::find($city_id);
+            if(!$city_exists){
+                return Resp::error(['City not found']);
+            }
+            $country_id=$city_exists->country_id;
+            $country_exists=Countries::find($country_id);
+            if(!$country_exists){
+                return Resp::error(['Country not found']);
+            }
+            $region_id=$country_exists->region_id;
+            $region_exists=Region::find($region_id);
+            if(!$region_exists){
+                return Resp::error(['Region not found']);
+            }
+            Log::info($city_exists->name);
+            Log::info($country_exists->name);
+            Log::info($region_exists->name);
 
             $languages = $request->input('languages');
             $updated = $profile->update([
@@ -96,6 +115,10 @@ class EscortController extends Controller
                 'instagram_handle' => $request->input('instagram_handle'),
                 'tiktok_handle' => $request->input('tiktok_handle'),
                 'extra_services' => $request->input('extra_services'),
+                'location' => $request->input('location'),
+                'city_id' => $request->input('city_id'),
+                'region_id' => $region_id,
+                'country_id' => $country_id,
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
@@ -152,8 +175,6 @@ class EscortController extends Controller
             return Response::json(['error' => $validator->errors()], 422);
         }
             
-
-
             $profile_rates=ProfileRates::where('escort_id', $profile_data->id)->get();
             $rates_data=$request->input('rates');
             if(!$profile_rates){

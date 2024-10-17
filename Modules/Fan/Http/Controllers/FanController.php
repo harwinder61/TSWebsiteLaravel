@@ -11,8 +11,10 @@ use Modules\Escort\app\Models\EscortReviews;
 use Modules\Fan\app\Models\FanReviews;
 use Modules\Auth\app\Models\AuthUser;
 use Illuminate\Support\Facades\Validator;
+use Modules\Escort\app\Models\EscortSubscription;
 class FanController extends Controller
 {
+
     public function __construct()
     {
         $this->middleware(AuthMiddleware::class);
@@ -91,5 +93,8 @@ class FanController extends Controller
 
         return Resp::success([$review]);
     }
+
+
+
   
 }
