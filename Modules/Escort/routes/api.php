@@ -9,8 +9,7 @@ use Modules\Escort\Http\Controllers\MediaController;
 use Modules\Escort\Http\Controllers\OrderController;
 
 
-
-
+Route::middleware(['jwt_auth'])->group(function(){
 Route::group(['prefix' => 'escort'],function(){
 
     Route::get('/profile',[EscortController::class,'find']);
@@ -21,11 +20,11 @@ Route::group(['prefix' => 'escort'],function(){
     Route::get('/media/promovideo',[MediaController::class,'getPromoVideo']);
     Route::post('/orders',[OrderController::class,'createOrder']);
     Route::post('/webhook/payment-status-update',[OrderController::class,'webhook_payment_status_update']);
-    Route::get('/payment-success',[OrderController::class,'paymentSuccess']);
-    Route::get('/payment-cancel',[OrderController::class,'paymentCancel']);
+    Route::get('/subscriptions',[OrderController::class,'getSubscription']);
 
     
 
+});
 });
 
 Route::get('/locations/countries',[MasterController::class,'countries']);
