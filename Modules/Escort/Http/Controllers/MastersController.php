@@ -22,6 +22,7 @@ use App\MasterData\Body;
 use App\MasterData\CockSize;
 use App\MasterData\Languages;
 use App\MasterData\ExtraServices;
+use App\MasterData\Reference;
 
 class MastersController extends Controller
 {
@@ -41,6 +42,7 @@ class MastersController extends Controller
             'cockSize' => CockSize::getData(),
             'languages' => Languages::getData(),
             'extraServices' => ExtraServices::getData(),
+            'reference' => Reference::getData(),
         ];
         return response()->json($data);
     }

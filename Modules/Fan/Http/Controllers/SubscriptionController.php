@@ -9,33 +9,49 @@ use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Illuminate\Support\Facades\Log;
 use Modules\Escort\app\Models\EscortSubscription;
 use App\Models\BaseSubscription;
+use App\Models\Location;
 
 class SubscriptionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class);
+        $this->middleware(AuthMiddleware::class)->except('topLocation', 'getSubscriptions', 'locations');
     }
+    public function locations(Request $request)
+    {
+        try {
+
+            $locations = Location::query();
+
+
+            if (!is_null($request->query('type'))) {
+                $locations->where('type', $request->query('type'));
+            }
+            $result = $locations->get();
+            return Resp::success(["list" => $result]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => 'Failed to fetch locations']);
+        }
+    }
+
 
     public function topLocation()
     {
         $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-        ->leftJoin('locations_cities', 'profile.city_id', '=', 'locations_cities.id')
-        ->selectRaw('profile.city_id, COUNT(*) as subscription_count,locations_cities.name as city_name');
-        $result = $result->groupBy('profile.city_id','locations_cities.name');
+            ->leftJoin('locations_cities', 'profile.city_id', '=', 'locations_cities.id')
+            ->selectRaw('profile.city_id, COUNT(*) as subscription_count,locations_cities.name as city_name');
+        $result = $result->groupBy('profile.city_id', 'locations_cities.name');
         return Resp::success(["list" => $result->get()]);
-
     }
-
-
-
 
     public function getSubscriptions(Request $request)
     {
+
         try {
 
             $user = auth()->user();
             // $subscriptions = EscortSubscription::where('escort_id', $user->id);
+
             $subscriptions = EscortSubscription::query();
 
             // Filter by plan_code if provided
@@ -62,35 +78,36 @@ class SubscriptionController extends Controller
                 });
             }
 
+            if (!is_null($request->query('orientation'))) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('orientation', $request->query('orientation'));
+                });
+            }
+
+            if (!is_null($request->query('city_id'))) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('city_id', $request->query('city_id'));
+                });
+            }
+
+
+            if (!is_null($request->query('region_id'))) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('region_id', $request->query('region_id'));
+                });
+            }
+            if (!is_null($request->query('county_id'))) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('county_id', $request->query('county_id'));
+                });
+            }
+
             // Retrieve subscriptions with related escort and profile
-            $result = $subscriptions->with('escort', 'escort.profile')->get();
+            $result = $subscriptions->with('escort', 'escort.profile.county', 'escort.profile.region', 'escort.profile.city')->get();
             return Resp::success(["list" => $result]);
         } catch (\Exception $e) {
-            Log::error('Error fetching subscriptions: ' . $e->getMessage());
+          
         }
 
-
-        if (!is_null($request->query('orientation'))) {
-            $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
-                $query->where('orientation', $request->query('orientation'));
-            });
-        }
-
-        if (!is_null($request->query('city_id'))) {
-            $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
-                $query->where('city_id', $request->query('city_id'));
-            });
-        }
-
-        if (!is_null($request->query('region_id'))) {
-            $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
-                $query->where('region_id', $request->query('region_id'));
-            });
-        }
-
-
-        // Retrieve subscriptions with related escort and profile
-        $result = $subscriptions->with('escort', 'escort.profile')->get();
-        return Resp::success(["list" => $result]);
     }
 }

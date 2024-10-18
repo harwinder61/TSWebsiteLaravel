@@ -11,6 +11,7 @@ use Modules\Escort\app\Models\Profile;
 use Modules\Escort\app\Models\ProfileRates;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Models\AuthUser;
+use App\Models\Location;
 
 class AdminController extends Controller
 {
@@ -71,6 +72,20 @@ class AdminController extends Controller
                 return Response::json(['error' => 'Profile not found'], 404);
             }
 
+            $city_id=$request->input('city_id');
+            $city_exists=Location::where('id',$city_id)->where('type','city')->first();
+
+            $county_id=$city_exists->parent_id;
+            $county_exists=Location::where('id',$county_id)->where('type','county')->first();
+            if(!$county_exists){
+                return Resp::error(['County not found']);
+            }
+            $region_id=$county_exists->parent_id;
+            $region_exists=Location::where('id',$region_id)->where('type','region')->first();
+            if(!$region_exists){
+                return Resp::error(['Region not found']);
+            }
+
             $languages = $request->input('languages');
             $updated = $profile->update([
                 'name' => $request->input('name'),
@@ -99,6 +114,9 @@ class AdminController extends Controller
                 'instagram_handle' => $request->input('instagram_handle'),
                 'tiktok_handle' => $request->input('tiktok_handle'),
                 'extra_services' => $request->input('extra_services'),
+                'city_id' => $city_id,
+                'region_id' =>$region_id,
+                'county_id' => $county_id,
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);

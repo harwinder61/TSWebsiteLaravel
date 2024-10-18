@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Log;
 use Modules\Auth\app\Models\AuthUser;
 use Modules\Escort\app\Http\Middleware\AuthEscort;
 use Modules\Escort\app\Models\Orders;
+use App\Models\Location;
+
 class EscortController extends Controller
 {
     public function __construct()
@@ -34,6 +36,9 @@ class EscortController extends Controller
 
         $user=auth()->user();
         $profile_data=Profile::find($user->id);
+        $profile_data->county;
+        $profile_data->region;
+        $profile_data->city;
         $profile_data->rates;
         if(!$profile_data){
 
@@ -62,30 +67,27 @@ class EscortController extends Controller
                 }
 
             $user_id=$user->id;
-            //$profile = Profile::where('escort_id', $user_id)->first();\
             $profile=AuthUser::find($user_id)->profile;
 
             if (!$profile) {
                 return Response::json(['error' => 'Profile not found'], 404);
             }
+
+
             $city_id=$request->input('city_id');
-            $city_exists=Cities::find($city_id);
-            if(!$city_exists){
-                return Resp::error(['City not found']);
+            $city_exists=Location::where('id',$city_id)->where('type','city')->first();
+
+            $county_id=$city_exists->parent_id;
+            $county_exists=Location::where('id',$county_id)->where('type','county')->first();
+            if(!$county_exists){
+                return Resp::error(['County not found']);
             }
-            $country_id=$city_exists->country_id;
-            $country_exists=Countries::find($country_id);
-            if(!$country_exists){
-                return Resp::error(['Country not found']);
-            }
-            $region_id=$country_exists->region_id;
-            $region_exists=Region::find($region_id);
+            $region_id=$county_exists->parent_id;
+            $region_exists=Location::where('id',$region_id)->where('type','region')->first();
             if(!$region_exists){
                 return Resp::error(['Region not found']);
             }
-            Log::info($city_exists->name);
-            Log::info($country_exists->name);
-            Log::info($region_exists->name);
+      
 
             $languages = $request->input('languages');
             $updated = $profile->update([
@@ -118,7 +120,7 @@ class EscortController extends Controller
                 'location' => $request->input('location'),
                 'city_id' => $request->input('city_id'),
                 'region_id' => $region_id,
-                'country_id' => $country_id,
+                'county_id' => $county_id,
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
@@ -129,7 +131,6 @@ class EscortController extends Controller
 
             $is_incall_enabled=$request->input('is_incall_enabled');
             $is_outcall_enabled=$request->input('is_outcall_enabled');
-            // Define base validation rules
             $baseRules = [
                 'rates' => 'required|array',
                 

@@ -94,7 +94,5 @@ class FanController extends Controller
         return Resp::success([$review]);
     }
 
-
-
   
 }
