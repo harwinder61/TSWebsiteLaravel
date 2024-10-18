@@ -11,6 +11,10 @@ use Modules\Escort\app\Models\Profile;
 use Modules\Escort\app\Models\ProfileRates;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Models\AuthUser;
+
+use Illuminate\Support\Facades\Mail;
+
+use App\Services\EmailService as Mailer;
 use App\Models\Location;
 
 class AdminController extends Controller
@@ -45,6 +49,15 @@ class AdminController extends Controller
         $updated_plan=Plan::where('code',$code)->first();
         return Resp::success(['details'=>$updated_plan]);
 
+    }
+
+    public function getPlan($id,Request $request){
+        
+        $plan=Plan::where('code',$id)->first();
+        if(!$plan){
+            return Resp::error(['Plan not found']);
+        }
+        return Resp::success(['details'=>$plan]);
     }
 
     public function updateProfile($id,Profile $profile,Request $request){

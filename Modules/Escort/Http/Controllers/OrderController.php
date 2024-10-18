@@ -114,23 +114,7 @@ class OrderController extends Controller
             $plan=Plan::where('code',$request->input('plan_code'))->first();
             $amount=intval($plan->price)*100;
             $title=$plan->title;
-            // Create a Checkout Session
-            //$session = Session::create([
-            //    'payment_method_types' => ['card'],
-            //    'line_items' => [[
-            //        'price_data' => [
-            //        'currency' => 'eur',
-             //       'product_data' => [
-             //           'name' => $title,
-             //       ],
-              //      'unit_amount' => $amount, // Amount in cents
-              //  ],
-               // 'quantity' => 1,
-            //]],
-            //'mode' => 'payment',
-            //'success_url' => env('APP_URL') . '/api/escort/payment-success', // Redirect after successful payment
-            //'cancel_url' => env('APP_URL') . '/api/escort/payment-cancel', // Redirect if canceled
-        //]);
+            
         $paymentIntent = PaymentIntent::create([
             'amount' => $amount, // amount in cents
             'currency' => 'eur',
@@ -205,13 +189,7 @@ class OrderController extends Controller
         return Resp::success(["list" => $subscription]);
     }  
 
-    public function paymentSuccess(Request $request){
-        return Resp::success(['Payment successful']);
-    }
-
-    public function paymentCancel(Request $request){
-        return Resp::success(['Payment canceled']);
-    }
+    
 
 }
 
