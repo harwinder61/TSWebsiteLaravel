@@ -11,6 +11,8 @@
         "laravel/tinker": "^2.9",
         "nwidart/laravel-modules": "^11.0",
         "stripe/stripe-php": "^16.1",
+        "symfony/http-client": "*",
+        "symfony/mailgun-mailer": "*",
         "tymon/jwt-auth": "^2.1"
     },
     "require-dev": {
@@ -23,7 +25,7 @@
     },
     "autoload": {
         
-        "files": ["app/helpers.php"],
+
         "psr-4": {
             "App\\": "app/",
             "Modules\\": "./Modules",

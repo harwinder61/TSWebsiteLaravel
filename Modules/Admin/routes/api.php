@@ -17,6 +17,7 @@ use Modules\Admin\Http\Controllers\EscortController;
 Route::middleware('jwt_auth')->group(function(){
     Route::group(['prefix'=>'admin'],function(){
         Route::post('/plan/{plan_code}',[AdminController::class,'updatePlan']);
+        Route::get('/plan/{id}',[AdminController::class,'getPlan']);
         Route::put('/update-profile/{id}',[AdminController::class,'updateProfile']);
         Route::get('/fans',[FanController::class,'getFans']);
         Route::get('/escorts',[EscortController::class,'getEscorts']);

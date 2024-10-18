@@ -14,6 +14,6 @@ class EscortController extends Controller
 {
     public function getEscorts(Request $request){
         $escorts=AuthUser::with('profile')->where('user_type',2)->get();
-        return Resp::success(['details'=>$escorts]);
+        return Resp::success(['list'=>$escorts]);
     }
 }

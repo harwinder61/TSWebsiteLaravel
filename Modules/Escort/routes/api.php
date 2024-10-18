@@ -32,6 +32,6 @@ Route::get('/locations/regions',[MasterController::class,'regions']);
 Route::get('/locations/cities',[MasterController::class,'cities']);
 Route::get('/locations/nationality',[MasterController::class,'nationality']);
 Route::get('/master-data',[MastersController::class,'getMasterData']);
-Route::get('/plans/get',[MasterController::class,'plans']);
+Route::get('/plans',[MasterController::class,'plans']);
 
 

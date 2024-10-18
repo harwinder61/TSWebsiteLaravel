@@ -13,6 +13,4 @@ use Modules\Escort\Http\Controllers\OrderController;
 | contains the "web" middleware group. Now create something great!
 |
 */
-Route::get('/payment-success',[OrderController::class,'paymentSuccess']);
-Route::get('/payment-cancel',[OrderController::class,'paymentCancel']);
 

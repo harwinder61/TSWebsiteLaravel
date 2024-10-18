@@ -83,9 +83,7 @@ class EscortController extends Controller
             if(!$region_exists){
                 return Resp::error(['Region not found']);
             }
-            Log::info($city_exists->name);
-            Log::info($country_exists->name);
-            Log::info($region_exists->name);
+
 
             $languages = $request->input('languages');
             $updated = $profile->update([
