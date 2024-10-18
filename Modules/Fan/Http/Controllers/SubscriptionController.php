@@ -116,7 +116,7 @@ class SubscriptionController extends Controller
             $totalCount = $subscriptions->count();
     
             // Fetch the results with offset and limit
-            $result = $subscriptions->with('escort', 'escort.profile')
+            $result = $subscriptions->with('escort', 'escort.profile.county','escort.profile.city','escort.profile.region')
                 ->offset($offset)
                 ->limit($perPage)
                 ->get();
