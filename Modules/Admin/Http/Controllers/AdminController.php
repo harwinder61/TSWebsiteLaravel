@@ -20,6 +20,7 @@ class AdminController extends Controller
 {
     public function updatePlan($plan_code,Request $request){
         
+        
         $validator=Validator::make($request->all(),[
             'title'=>'string|required',
             'price'=>'decimal:2|required',
@@ -51,6 +52,7 @@ class AdminController extends Controller
     }
 
     public function getPlan($id,Request $request){
+        
         
         $plan=Plan::where('code',$id)->first();
         if(!$plan){
@@ -208,5 +210,13 @@ class AdminController extends Controller
            $profile_data=Profile::where('escort_id', $user_id)->first();
            $profile_data->rates;
             return Resp::success(['details'=>$profile_data]);
+    }
+    public function sendMail(Request $request){
+        $email=new Mailer();
+        $email->to('testdeveloper989@gmail.com');
+        $email->subject('Test Email');
+        $email->body('<h1>Hello, this is a test email.</h1>');
+        $email->send();
+        return Resp::success(['message' => 'Email sent successfully!']);
     }
 }

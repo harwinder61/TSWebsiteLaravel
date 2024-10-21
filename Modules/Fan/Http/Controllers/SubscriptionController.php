@@ -14,7 +14,7 @@ class SubscriptionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except('topLocation','getSubscriptions');
+    
     }
 
     public function topLocation()

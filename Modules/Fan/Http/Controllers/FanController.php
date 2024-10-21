@@ -22,6 +22,7 @@ class FanController extends Controller
 
     public function find(Request $request){
         $user=auth()->user();
+        
         $reviews=FanReviews::where('user_id',$user->id)->get();
         $reviews->load('escort');
 
@@ -31,6 +32,7 @@ class FanController extends Controller
 
     public function find_escort_reviews($id){
         $user=auth()->user();
+        
         $escort_id=$id;
         $reviews=FanReviews::where('user_id',$user->id)->where('escort_id',$escort_id)->get();
         $reviews->load('escort');
@@ -42,6 +44,7 @@ class FanController extends Controller
     }
 
     public function getUsers(Request $request){
+        
         // Fetch user_ids from Reviews table
 
         $userIds = EscortReviews::pluck('user_id')->unique();
@@ -56,6 +59,7 @@ class FanController extends Controller
 
     {
         $user=auth()->user();
+        
 
         Validator::make($request->all(), [
             'photo_accuracy' => 'nullable|integer',

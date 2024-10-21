@@ -33,6 +33,7 @@ class EscortController extends Controller
         //get user profile
 
         $user=auth()->user();
+        
         $profile_data=Profile::find($user->id);
         $profile_data->rates;
         if(!$profile_data){

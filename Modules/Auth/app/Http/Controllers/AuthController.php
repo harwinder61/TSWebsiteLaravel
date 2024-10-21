@@ -61,31 +61,7 @@ class AuthController extends Controller
         
         return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
     }
-/*
-    $validator = Validator::make($request->all(), [
-        'login' => 'required|string', // Changed from 'email' to 'login'
-        'password' => 'required|string',
-    ]);
 
-    if ($validator->fails()) {
-        return Resp::error(['error' => $validator->errors()], 422);
-    }
-
-    // Determine if the input is an email or username
-    $loginType = filter_var($request->input('login'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-    $credentials = [
-        $loginType => $request->input('login'),
-        'password' => $request->input('password'),
-    ];
-
-    try {
-        if (!$token = JWTAuth::attempt($credentials)) {
-            return Resp::error(['error' => 'Unauthorized'], 401);
-        }
-    } catch (JWTException $e) {
-        return Resp::error(['error' => 'Could not create token'], 401);
-    }
-    */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [

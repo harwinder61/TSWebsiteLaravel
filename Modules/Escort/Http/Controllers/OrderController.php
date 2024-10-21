@@ -24,11 +24,12 @@ class OrderController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthEscort::class)->except('paymentSuccess','paymentCancel');
+
     }
 
     function createOrder(Request $request){
         $user=auth()->user();
+        
         $validator=Validator::make($request->all(),[
             'plan_code'=>'required|string|exists:plans,code',
             'start_date'=>'required|date',
@@ -132,6 +133,7 @@ class OrderController extends Controller
 
 
     function webhook_payment_status_update(Request $request){
+        
         $order_id=$request->input('order_id');
         $validator=Validator::make($request->all(),[
             'order_id'=>'required|string|exists:orders,id',
@@ -183,6 +185,7 @@ class OrderController extends Controller
 
     function getSubscription() {
         $user = auth()->user();
+        
         $subscription = Subscription::where('escort_id', $user->id)
             ->where('status', 'ACTIVE')
             ->get(); 

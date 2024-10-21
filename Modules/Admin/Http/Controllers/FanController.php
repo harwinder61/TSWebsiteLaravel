@@ -13,6 +13,7 @@ use Modules\Auth\app\Models\AuthUser;
 class FanController extends Controller
 {
     public function getFans(Request $request){
+        
         $fans=AuthUser::with('profile')->where('user_type',1)->get();
         return Resp::success(['list'=>$fans]);
     }
