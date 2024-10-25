@@ -25,6 +25,8 @@ class User extends Authenticatable
         'email',
         'password',
         'user_type',
+        'email_verified',
+        'verification_token',
     ];
     protected $casts=[
         'user_type'=>'integer',
@@ -38,6 +40,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'verification_token',
     ];
 
     /**

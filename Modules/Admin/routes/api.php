@@ -21,5 +21,6 @@ Route::middleware('jwt_auth')->group(function(){
         Route::put('/update-profile/{id}',[AdminController::class,'updateProfile']);
         Route::get('/fans',[FanController::class,'getFans']);
         Route::get('/escorts',[EscortController::class,'getEscorts']);
+        Route::get('/inquiries',[AdminController::class,'inquiryFormList']);
     });
 });

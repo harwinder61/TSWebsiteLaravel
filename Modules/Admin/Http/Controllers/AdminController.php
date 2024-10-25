@@ -11,6 +11,8 @@ use Modules\Escort\app\Models\Profile;
 use Modules\Escort\app\Models\ProfileRates;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Models\AuthUser;
+use Modules\Escort\app\Models\Inquiry;
+
 
 use Illuminate\Support\Facades\Mail;
 
@@ -19,6 +21,12 @@ use App\Models\Location;
 
 class AdminController extends Controller
 {
+    public function inquiryFormList(Request $request){
+        $inquiries=Inquiry::get();
+        return Resp::success(['list'=>$inquiries]);
+    }
+
+
     public function updatePlan($plan_code,Request $request){
         
         $validator=Validator::make($request->all(),[
@@ -183,7 +191,7 @@ class AdminController extends Controller
 
         if ($validator->fails()) {
  
-            return Response::json(['error' => $validator->errors()], 422);
+            return Response::json(['error' => $validator->errors()], );
         }
             
 
@@ -227,4 +235,13 @@ class AdminController extends Controller
            $profile_data->rates;
             return Resp::success(['details'=>$profile_data]);
     }
+    public function sendEmail(Request $request){
+        $email=new Mailer();
+        $email->to('testdeveloper989@gmail.com');
+        $email->subject('Test Email');
+        $email->body('<h1>Hello, this is a test email.</h1>');
+        $email->send();
+        return Resp::success(['message' => 'Email sent successfully!']);
+    }
 }
+

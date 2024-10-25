@@ -11,12 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('Media', function (Blueprint $table) {
-            $table->id();
-            $table->string('type');
-            $table->string('path');
-            $table->foreignId('escort_id')->constrained('users');
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            $table->boolean('email_verified')->default(false);
+            $table->string('verification_token')->nullable();
         });
     }
 
@@ -25,6 +22,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('Media');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('email_verified');
+            $table->dropColumn('verification_token');
+        });
     }
 };

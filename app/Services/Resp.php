@@ -12,4 +12,8 @@ class Resp extends Response
     {
         return response()->json(['status' => false, 'message' => $message, 'data' => $data], $code);
     }
+    public static function fieldErrors(array $data = [], string $message = 'Field Errors', $code = 400)
+    {
+        return response()->json(['status' => false, 'message' => $message, 'data' => $data], $code);
+    }
 }

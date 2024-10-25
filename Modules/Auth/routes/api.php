@@ -30,3 +30,8 @@ Route::post('login', [AuthController::class, 'login']);//->middleware(AuthMiddle
 Route::post('register', [AuthController::class, 'register']);
 Route::get('logout',[AuthController::class,'logout']); 
 Route::get('user',[AuthController::class,'me']);
+Route::post('verify-email/',[AuthController::class,'verifyEmail']);
+Route::post('recover-password',[AuthController::class,'recoverPassword']);
+Route::post('reset-password',[AuthController::class,'resetPassword']);
+
+
