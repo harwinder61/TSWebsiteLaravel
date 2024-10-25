@@ -239,24 +239,24 @@ class AuthController extends Controller
         }
     }
 
-    public function verifyEmail(Request $request)
+    public function verifyEmail($token,Request $request)
     {
-        $token = $request->query('token');
+
         if (!$token) {
             return Resp::error(['error' => 'No token provided'], 401);
         }
-        $verification_email = $request->query('verification_email');
-        if (!$verification_email) {
-            return Resp::error(['error' => 'No verification email provided'], 401);
-        }
-        $user = AuthUser::where('email', $verification_email)
-            ->where('verification_token', $token)->first();
+        
+        $user = AuthUser::where('verification_token', $token)->first();
         if (!$user) {
-            return Resp::error(['error' => 'No user found'], 401);
+            //return Resp::error(['Token is invalid']);
+            return view('emailTemplates.token-invalid');
         }
+
+
         $user->email_verified = true;
         $user->save();
-        return Resp::success(['message' => 'Email verified successfully']);
+        //return Resp::success(['message' => 'Email verified successfully']);
+        return view('emailTemplates.email-verify-succesfully');
     }
 
      
