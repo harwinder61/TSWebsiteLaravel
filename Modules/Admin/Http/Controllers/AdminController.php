@@ -63,23 +63,26 @@ class AdminController extends Controller
 
     public function updateProfile($id,Profile $profile,Request $request){
         $admin=auth()->user();
+        Log::info("Running update profile......");
         if($admin->user_type!=3){
             return Resp::error(['Unauthorized user is not an admin']);
         }
 
+        $request_data=$request->all();
 
         $validator = Validator::make($request->all(), $profile->rules());
 
-            if ($validator->fails()) {
+        if ($validator->fails()) {
                 return Resp::error(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
-                }
+            }
+        Log::info("Validation passed");
 
             $user_id=$id;
             $user_exists=AuthUser::find($user_id);
             if(!$user_exists){
                 return Resp::error(['Profile not found']);
             }
-            //$profile = Profile::where('escort_id', $user_id)->first();\
+
             $profile=AuthUser::find($user_id)->profile;
 
             if (!$profile) {
@@ -114,6 +117,14 @@ class AdminController extends Controller
                 'instagram_handle' => $request->input('instagram_handle'),
                 'tiktok_handle' => $request->input('tiktok_handle'),
                 'extra_services' => $request->input('extra_services'),
+                'is_incall_enabled' => $request->input('is_incall_enabled'),
+                'is_outcall_enabled' => $request->input('is_outcall_enabled'),
+                'has_onlyfans' => $request->input('has_onlyfans'),
+                'has_manyvids' => $request->input('has_manyvids'),
+                'has_fancentro' => $request->input('has_fancentro'),
+                'onlyfans_handle' => $request->input('onlyfans_handle'),
+                'manyvids_handle' => $request->input('manyvids_handle'),
+                'fancentro_handle' => $request->input('fancentro_handle'),
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
@@ -218,5 +229,35 @@ class AdminController extends Controller
         $email->body('<h1>Hello, this is a test email.</h1>');
         $email->send();
         return Resp::success(['message' => 'Email sent successfully!']);
+    }
+
+    public function getUsers(Request $request){
+        $users=AuthUser::query();
+        $users=$users->whereIn('user_type', [1, 2]);
+        //$users=$users->where('user_type', 1);
+        // Pagination parameters
+        $perPage = $request->query('per_page', 10); // Default items per page
+        $page = $request->query('page', 1); // Default to first page
+        $offset = ($page - 1) * $perPage;
+
+        // Get total count for pagination info
+        $totalCount = $users->count();
+        Log::info("Total count : ");
+        Log::info($totalCount);
+
+        // Fetch the results with offset and limit
+        $result = $users->offset($offset)
+            ->limit($perPage)
+            ->get();
+        return Resp::success(['list'=>$result,'total_count'=>$totalCount,'page'=>$page,'per_page'=>$perPage]);
+    }
+
+    public function getProfile($id){
+        $profile=AuthUser::with('profile')->find($id);
+        if(!$profile){
+            return Resp::error(['Profile not found']);
+        }
+        $profile->profile->rates;
+        return Resp::success(['details'=>$profile]);
     }
 }

@@ -53,6 +53,14 @@ class BaseProfile extends Model
         'city_id',
         'region_id',
         'country_id',
+        'has_onlyfans',
+        'has_manyvids',
+        'has_fancentro',
+        'onlyfans_handle',
+        'manyvids_handle',
+        'fancentro_handle',
+        'is_incall_enabled',
+        'is_outcall_enabled',
     ];
 
     protected $casts = [
