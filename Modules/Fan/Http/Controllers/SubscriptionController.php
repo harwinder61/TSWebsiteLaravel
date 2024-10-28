@@ -9,33 +9,49 @@ use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Illuminate\Support\Facades\Log;
 use Modules\Escort\app\Models\EscortSubscription;
 use App\Models\BaseSubscription;
+use App\Models\Location;
 
 class SubscriptionController extends Controller
 {
     public function __construct()
     {
-    
+        $this->middleware(AuthMiddleware::class)->except('topLocation', 'getSubscriptions', 'locations')->except('topLocation','getSubscriptions');
     }
+    public function locations(Request $request)
+    {
+        try {
+
+            $locations = Location::query();
+
+
+            if (!is_null($request->query('type'))) {
+                $locations->where('type', $request->query('type'));
+            }
+            $result = $locations->get();
+            return Resp::success(["list" => $result]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => 'Failed to fetch locations']);
+        }
+    }
+
 
     public function topLocation()
     {
         $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-        ->leftJoin('locations_cities', 'profile.city_id', '=', 'locations_cities.id')
-        ->selectRaw('profile.city_id, COUNT(*) as subscription_count,locations_cities.name as city_name');
-        $result = $result->groupBy('profile.city_id','locations_cities.name');
+            ->leftJoin('locations_cities', 'profile.city_id', '=', 'locations_cities.id')
+            ->selectRaw('profile.city_id, COUNT(*) as subscription_count,locations_cities.name as city_name');
+        $result = $result->groupBy('profile.city_id', 'locations_cities.name');
         return Resp::success(["list" => $result->get()]);
-
     }
-
-
-
 
     public function getSubscriptions(Request $request)
     {
+
         try {
 
             $user = auth()->user();
             // $subscriptions = EscortSubscription::where('escort_id', $user->id);
+
             $subscriptions = EscortSubscription::query();
 
             // Filter by plan_code if provided
@@ -61,7 +77,6 @@ class SubscriptionController extends Controller
                     $query->where('cock_size', $request->query('cock_size'));
                 });
             }
-
             if(!is_null($request->query('status'))){
                 if($request->query('status')=='active'){
                     $subscriptions->where('end_date','>',now());
@@ -88,32 +103,38 @@ class SubscriptionController extends Controller
                     $query->where('region_id', $request->query('region_id'));
                 });
             }
-
-            // Pagination parameters
+            if (!is_null($request->query('county_id'))) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('county_id', $request->query('county_id'));
+                });
+            }
             $perPage = $request->query('per_page', 10); // Default items per page
             $page = $request->query('page', 1); // Default to first page
             $offset = ($page - 1) * $perPage;
-
+    
             // Get total count for pagination info
             $totalCount = $subscriptions->count();
-
+            
+    
             // Fetch the results with offset and limit
-            $result = $subscriptions->with('escort', 'escort.profile')
+            $result = $subscriptions->with('escort', 'escort.profile.county','escort.profile.city','escort.profile.region')
                 ->offset($offset)
                 ->limit($perPage)
                 ->get();
+    
+                return Resp::success(["list" => $result,'pagination'=>['total_results'=>$totalCount,'total_pages'=>ceil($totalCount/$perPage),'page_number'=>$page,'page_size'=>$perPage]]);
 
             // Retrieve subscriptions with related escort and profile
-            //$result = $subscriptions->with('escort', 'escort.profile');
-            return Resp::success(["list" => $result,'pagination'=>['total_results'=>$totalCount,'total_pages'=>ceil($totalCount/$perPage),'page_number'=>$page,'page_size'=>$perPage]]);
         } catch (\Exception $e) {
-            return Resp::error(['error' => $e->getMessage()]);
+            
+            return Resp::error(['message' => 'Something went wrong'.$e->getMessage()]);
         }
 
 
         
 
-
-
+        // Retrieve subscriptions with related escort and profile
+        //$result = $subscriptions->with('escort', 'escort.profile')->get();
+        //return Resp::success(["list" => $result]);
     }
 }

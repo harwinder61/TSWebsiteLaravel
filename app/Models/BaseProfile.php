@@ -17,7 +17,7 @@ use App\MasterData\Languages;
 use App\MasterData\OfferServicesTo;
 use App\MasterData\ExtraServices;
 use Modules\Auth\app\Models\AuthUser;
-
+use Illuminate\Validation\Rule;
 class BaseProfile extends Model
 {
 
@@ -104,7 +104,13 @@ class BaseProfile extends Model
         'is_outcall_enabled' => 'required|boolean',
         'extra_services' => 'required|array',
         'extra_services.*.key'=>'in:'.implode(',',ExtraServices::getKeys()),
- 
+        'city_id' => [
+            'required',
+            'integer',
+            Rule::exists('locations', 'id')->where(function ($query) {
+                $query->where('type', 'city');
+            }),
+            ]
         ];
     }
 

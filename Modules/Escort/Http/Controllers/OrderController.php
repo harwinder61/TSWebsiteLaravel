@@ -17,6 +17,13 @@ use Carbon\Carbon;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Stripe\Checkout\Session;
+use Illuminate\Support\Facades\Mail;
+use Modules\Escort\app\Mail\OrderPaidNotification;
+use App\Services\EmailService;
+
+
+
+
 
 
 
@@ -44,16 +51,13 @@ class OrderController extends Controller
         }
         $days=$plan->days;
 
-        //calculate end date
         $end_date=date('Y-m-d',strtotime($request->input('start_date')." + $days days"));
 
-        //Get number of active subscribers with same plan code
         $subscription_count=Subscription::where('plan_code',$request->input('plan_code'))
                 ->where('status','ACTIVE')
                 ->get()->count();
 
-
-        // Fetch pending orders created 5 minutes ago
+       
         $fiveMinutesAgo = now()->subMinutes(5)->toDateTimeString();
         $pendingOrders = Orders::where('payment_status', 'PENDING')
             ->where('created_at', '>=', $fiveMinutesAgo)
@@ -142,6 +146,7 @@ class OrderController extends Controller
             return Resp::error([$validator->errors()]);
         }
         $order=Orders::find($order_id);
+
         if(!$order){
             return Resp::error(['Order not found']);
         }
@@ -149,6 +154,13 @@ class OrderController extends Controller
             $order->update([
                 'payment_status'=>'PAID',
             ]);
+            $escort=AuthUser::find($order->escort_id);
+            $email = new EmailService ();  
+            $email->to($escort->email);
+            $email->subject('Thanku for purchasing subscription hope you enjoy our services');
+            $email->setBodyPurchasingEmail('purchasing',['user' => $order->escort_id]);
+            $email->send();
+
             $plan=Plan::where('code',$order->plan_code)->first();
             if(!$plan){
                 return Resp::error(['Plan not found']);

@@ -18,3 +18,5 @@ Route::group(['prefix' => 'fan'],function(){
 });
 Route::get('/subscriptions',[SubscriptionController::class,'getSubscriptions']);
 Route::get('/topLocation',[SubscriptionController::class,'topLocation']);
+Route::get('/locations',[SubscriptionController::class,'locations']);
+

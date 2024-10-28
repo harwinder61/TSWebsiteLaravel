@@ -11,13 +11,22 @@ use Modules\Escort\app\Models\Profile;
 use Modules\Escort\app\Models\ProfileRates;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Models\AuthUser;
-use Illuminate\Support\Facades\Log;
+use Modules\Escort\app\Models\Inquiry;
+
+
 use Illuminate\Support\Facades\Mail;
 
 use App\Services\EmailService as Mailer;
+use App\Models\Location;
 
 class AdminController extends Controller
 {
+    public function inquiryFormList(Request $request){
+        $inquiries=Inquiry::get();
+        return Resp::success(['list'=>$inquiries]);
+    }
+
+
     public function updatePlan($plan_code,Request $request){
         
         
@@ -89,6 +98,20 @@ class AdminController extends Controller
                 return Response::json(['error' => 'Profile not found'], 404);
             }
 
+            $city_id=$request->input('city_id');
+            $city_exists=Location::where('id',$city_id)->where('type','city')->first();
+
+            $county_id=$city_exists->parent_id;
+            $county_exists=Location::where('id',$county_id)->where('type','county')->first();
+            if(!$county_exists){
+                return Resp::error(['County not found']);
+            }
+            $region_id=$county_exists->parent_id;
+            $region_exists=Location::where('id',$region_id)->where('type','region')->first();
+            if(!$region_exists){
+                return Resp::error(['Region not found']);
+            }
+
             $languages = $request->input('languages');
             $updated = $profile->update([
                 'name' => $request->input('name'),
@@ -125,6 +148,9 @@ class AdminController extends Controller
                 'onlyfans_handle' => $request->input('onlyfans_handle'),
                 'manyvids_handle' => $request->input('manyvids_handle'),
                 'fancentro_handle' => $request->input('fancentro_handle'),
+                'city_id' => $city_id,
+                'region_id' =>$region_id,
+                'county_id' => $county_id,
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
@@ -178,7 +204,7 @@ class AdminController extends Controller
 
         if ($validator->fails()) {
  
-            return Response::json(['error' => $validator->errors()], 422);
+            return Response::json(['error' => $validator->errors()], );
         }
             
 
@@ -221,43 +247,5 @@ class AdminController extends Controller
            $profile_data=Profile::where('escort_id', $user_id)->first();
            $profile_data->rates;
             return Resp::success(['details'=>$profile_data]);
-    }
-    public function sendMail(Request $request){
-        $email=new Mailer();
-        $email->to('testdeveloper989@gmail.com');
-        $email->subject('Test Email');
-        $email->body('<h1>Hello, this is a test email.</h1>');
-        $email->send();
-        return Resp::success(['message' => 'Email sent successfully!']);
-    }
-
-    public function getUsers(Request $request){
-        $users=AuthUser::query();
-        $users=$users->whereIn('user_type', [1, 2]);
-        //$users=$users->where('user_type', 1);
-        // Pagination parameters
-        $perPage = $request->query('per_page', 10); // Default items per page
-        $page = $request->query('page', 1); // Default to first page
-        $offset = ($page - 1) * $perPage;
-
-        // Get total count for pagination info
-        $totalCount = $users->count();
-        Log::info("Total count : ");
-        Log::info($totalCount);
-
-        // Fetch the results with offset and limit
-        $result = $users->offset($offset)
-            ->limit($perPage)
-            ->get();
-        return Resp::success(['list'=>$result,'total_count'=>$totalCount,'page'=>$page,'per_page'=>$perPage]);
-    }
-
-    public function getProfile($id){
-        $profile=AuthUser::with('profile')->find($id);
-        if(!$profile){
-            return Resp::error(['Profile not found']);
-        }
-        $profile->profile->rates;
-        return Resp::success(['details'=>$profile]);
     }
 }

@@ -10,9 +10,11 @@ use Illuminate\Support\Facades\Validator;
 use App\Services\Resp;
 use App\Models\Media;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\File;    
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Illuminate\Support\Facades\Auth;
+use Modules\Auth\app\Models\AuthUser;       
+
  
 
 
@@ -24,6 +26,44 @@ class MediaController extends Controller
         
     }
 
+    public function getMedia(Request $request)
+    {
+        $currentUser = auth()->user();
+        
+        if (!$currentUser) {
+            return Resp::error(['error' => 'Unauthorized'], 401);
+        }
+
+        $gallery = Media::where('escort_id', $currentUser->id)
+                        ->where('type', 'gallary')
+                        ->get();
+
+        $privateGallery = Media::where('escort_id', $currentUser->id)
+                               ->where('type', 'private_gallery')
+                               ->get();
+
+        $promoVideo = Media::where('escort_id', $currentUser->id)
+                           ->where('type', 'promo_video')
+                           ->first();
+
+        return Resp::success(['list'=>[
+            'gallery' => $gallery,
+            'private_gallery' => $privateGallery,
+            'promo_video' => $promoVideo
+        ]]);
+    }
+
+public function getGallary(Request $request){
+    $currentUser = auth()->user();
+    if (!$currentUser) {
+        return Resp::error(['error' => 'Unauthorized'], 401);
+    }
+    $gallary = Media::where('escort_id', $currentUser->id)
+                    ->where('type', 'gallary')
+                    ->get();
+    return Resp::success(['gallary'=>$gallary]);    
+}
+
 public function addGallary(Media $media,Request $request)
 {
     $currentUser = auth()->user();
@@ -34,7 +74,7 @@ public function addGallary(Media $media,Request $request)
     ]);
 
     if ($validator->fails()) {
-        return Resp::error(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
     $userId = $currentUser->id;
     if ($request->hasFile('image')) {
@@ -47,6 +87,7 @@ public function addGallary(Media $media,Request $request)
         $image->move(base_path($userFolder), $imageName);
         $media->type = $request->input('type');
         $media->path = $userFolder . '/' . $imageName; 
+        $media->escort_id = $userId;
         $media->save();
         return Resp::success(['message' => 'Image uploaded successfully', 'image' => $media]);
     }
@@ -58,12 +99,11 @@ public function addPromoVideo(Media $media, Request $request)
     $currentUser = auth()->user();
     
     $validator = Validator::make($request->all(), [
-     'video' => 'required|mimes:mp4,mov,avi,mkv|max:512000',     
+        'video' => 'required|mimes:mp4,mov,avi,mkv|max:512000',     
     ]);
-
     if ($validator->fails()) {
-        return Resp::error(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
-     }
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
     $userId = $currentUser->id;
     if ($request->hasFile('video')) {
         $video = $request->file('video');
@@ -73,9 +113,20 @@ public function addPromoVideo(Media $media, Request $request)
             File::makeDirectory(base_path($userFolder), 0755, true);
         }
         $video->move(base_path($userFolder), $videoName);
-        $media->type = "promo";
-        $media->path = $userFolder . '/' . $videoName; 
-        $media->save();
+        
+        $existingPromoVideo = Media::where('escort_id', $userId)
+                                   ->where('type', 'promo_video')
+                                   ->first();
+        if ($existingPromoVideo) {
+            $existingPromoVideo->path = $userFolder . '/' . $videoName;
+            $existingPromoVideo->save();
+            $media = $existingPromoVideo;
+        } else {
+            $media->type = "promo_video";
+            $media->path = $userFolder . '/' . $videoName; 
+            $media->escort_id = $userId;
+            $media->save();
+        }
         return Resp::success(['message' => 'Video uploaded successfully', 'video' => $media]);
     }
     return Resp::error(['message' => 'No video file found'], 400);

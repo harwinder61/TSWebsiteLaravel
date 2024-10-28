@@ -12,6 +12,7 @@ use Modules\Fan\app\Models\FanReviews;
 use Modules\Auth\app\Models\AuthUser;
 use Illuminate\Support\Facades\Validator;
 use Modules\Escort\app\Models\EscortSubscription;
+
 class FanController extends Controller
 {
 
@@ -20,31 +21,36 @@ class FanController extends Controller
         $this->middleware(AuthMiddleware::class);
     }
 
-    public function find(Request $request){
-        $user=auth()->user();
-        
-        $reviews=FanReviews::where('user_id',$user->id)->get();
+    public function find(Request $request)
+    {
+        $user = auth()->user();
+        $reviews = FanReviews::where('user_id', $user->id)->get();
         $reviews->load('escort');
+        $totalRating = 0;
+        foreach ($reviews as $review) {
+            $totalRating += $review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money;
+        }
+        
+        $averageRating = $reviews->count() > 0 ? $totalRating / (5 * $reviews->count()) : 0;
 
-        return Resp::success(['list'=>$reviews]);
-
+        return Resp::success([
+            'list' => $reviews,
+            'average_rating' => round($averageRating, 2)
+        ]);
     }
 
     public function find_escort_reviews($id){
         $user=auth()->user();
-        
         $escort_id=$id;
         $reviews=FanReviews::where('user_id',$user->id)->where('escort_id',$escort_id)->get();
         $reviews->load('escort');
-
-        if($reviews->isEmpty()){
+        if ($reviews->isEmpty()) {
             return Resp::error(['No reviews found']);
         }
-        return Resp::success(['details'=>$reviews]);
+        return Resp::success(['details' => $reviews]);
     }
 
     public function getUsers(Request $request){
-        
         // Fetch user_ids from Reviews table
 
         $userIds = EscortReviews::pluck('user_id')->unique();
@@ -59,7 +65,6 @@ class FanController extends Controller
 
     {
         $user=auth()->user();
-        
 
         Validator::make($request->all(), [
             'photo_accuracy' => 'nullable|integer',
@@ -71,15 +76,15 @@ class FanController extends Controller
             'escort_id' => 'required|integer',
         ]);
 
-        if (EscortReviews::where('user_id', $user->id)->where('escort_id',$request->escort_id)->exists()) {
+        if (EscortReviews::where('user_id', $user->id)->where('escort_id', $request->escort_id)->exists()) {
             return Resp::error(['You have already submitted a review']);
         }
 
-        $escort_exists=AuthUser::find($request->escort_id);
-        if(!$escort_exists){
+        $escort_exists = AuthUser::find($request->escort_id);
+        if (!$escort_exists) {
             return Resp::error(['Escort user not found']);
         }
-        if($escort_exists->user_type!=2){
+        if ($escort_exists->user_type != 2) {
             return Resp::error(["This user is not an escort"]);
         }
 
@@ -97,8 +102,4 @@ class FanController extends Controller
 
         return Resp::success([$review]);
     }
-
-
-
-  
 }

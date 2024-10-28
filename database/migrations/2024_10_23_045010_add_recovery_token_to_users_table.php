@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+
 return new class extends Migration
 {
     /**
@@ -11,18 +12,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('Media', function (Blueprint $table) {
-            $table->id();
-            $table->string('type');
-            $table->string('path');
-            $table->foreignId('escort_id')->constrained('users');
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('recovery_token')->nullable();
         });
     }
 
-    
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('Media');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('recovery_token');
+        });
     }
 };
