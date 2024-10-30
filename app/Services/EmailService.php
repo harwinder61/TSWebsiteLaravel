@@ -58,15 +58,5 @@ class EmailService{
         return $this;
     }
 
-
-    private  $header = "<div style='text-align: center;'>
-            <img src='https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png' 
-            alt='Company Logo' style='max-width: 100px; margin-bottom: 20px;' />
-        </div>
-        ";
-
-
-     private $footer = "<div style='text-align: center'>
-        </div>";  
 }
 ?>

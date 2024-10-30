@@ -12,6 +12,7 @@ use Modules\Fan\app\Models\FanReviews;
 use Modules\Auth\app\Models\AuthUser;
 use Illuminate\Support\Facades\Validator;
 use Modules\Escort\app\Models\EscortSubscription;
+use Modules\Fan\app\Models\ProfileLike;
 
 class FanController extends Controller
 {
@@ -19,6 +20,20 @@ class FanController extends Controller
     public function __construct()
     {
         $this->middleware(AuthMiddleware::class);
+    }
+     
+    public function likeProfile(Request $request)
+    {
+        $user = auth()->user();
+        $escort_id = $request->escort_id;
+        $is_like = $request->is_like ? 1 : 0;
+        $existingLike = ProfileLike::where('fan_id', $user->id)->where('escort_id', $escort_id)->first();
+        if($existingLike){
+            $existingLike->update(['is_like' => $is_like]);
+        }else{
+            ProfileLike::create(['fan_id' => $user->id, 'escort_id' => $escort_id, 'is_like' => $is_like]);
+        }
+        return Resp::success(['message' => $is_like ? 'Profile liked ' : 'Profile unliked']);
     }
 
     public function find(Request $request)
@@ -81,7 +96,6 @@ class FanController extends Controller
         if (EscortReviews::where('user_id', $user->id)->where('escort_id', $request->escort_id)->exists()) {
             return Resp::error(['You have already submitted a review']);
         }
-
         $escort_exists = AuthUser::find($request->escort_id);
         if (!$escort_exists) {
             return Resp::error(['Escort user not found']);

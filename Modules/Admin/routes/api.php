@@ -22,5 +22,12 @@ Route::middleware('jwt_auth')->group(function(){
         Route::get('/fans',[FanController::class,'getFans']);
         Route::get('/escorts',[EscortController::class,'getEscorts']);
         Route::get('/inquiries',[AdminController::class,'inquiryFormList']);
+        Route::get('/recent-signups',[AdminController::class,'recentSignups']);
+        Route::get('/permissions',[AdminController::class,'getPermissions']);
+        Route::post('/assign-permissions/{id}',[AdminController::class,'assignPermissions']);
+        Route::post('/create-subscription',[AdminController::class,'createSubscription']);
+        Route::get('/user-quick-list',[AdminController::class,'userQuickList']);
     });
 });
+
+
