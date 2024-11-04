@@ -23,6 +23,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/escorts',[EscortController::class,'getEscorts']);
         Route::get('/users',[AdminController::class,'getUsers']);
         Route::get('/profile/{id}',[AdminController::class,'getProfile']);
+        
         Route::get('/inquiries',[AdminController::class,'inquiryFormList']);
 
 

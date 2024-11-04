@@ -52,7 +52,7 @@ class BaseProfile extends Model
         'escort_id',
         'city_id',
         'region_id',
-        'country_id',
+        'county_id',
         'has_onlyfans',
         'has_manyvids',
         'has_fancentro',
@@ -61,12 +61,17 @@ class BaseProfile extends Model
         'fancentro_handle',
         'is_incall_enabled',
         'is_outcall_enabled',
+        'allow_whatsapp',
+        'whatsapp_number',
+        'country_code'
     ];
 
     protected $casts = [
         'languages' => 'json',
         'offer_services_to' => 'json',
         'extra_services' => 'json',
+        'whatsapp_number' => 'integer',
+        'phone_number' => 'integer',
     ];
 
 
@@ -74,6 +79,9 @@ class BaseProfile extends Model
         return [
         'name' => 'required|string|max:255',
         'phone_number' => 'required|integer',
+        'allow_whatsapp' => 'boolean',
+        'whatsapp_number' => 'integer|required_if:allow_whatsapp,1',
+        'country_code' => 'integer|required_if:allow_whatsapp,1',
         'gender' => 'required|in:'.implode(',',Gender::getValues()),
         'date_of_birth' => 'required|string',
         'orientation'=>'required|in:'.implode(',',Orientation::getValues()),

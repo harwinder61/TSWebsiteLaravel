@@ -12,6 +12,7 @@ use Modules\Escort\app\Models\ProfileRates;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Models\AuthUser;
 use Modules\Escort\app\Models\Inquiry;
+use Illuminate\Support\Facades\Log;
 
 
 use Illuminate\Support\Facades\Mail;
@@ -72,7 +73,7 @@ class AdminController extends Controller
 
     public function updateProfile($id,Profile $profile,Request $request){
         $admin=auth()->user();
-        Log::info("Running update profile......");
+
         if($admin->user_type!=3){
             return Resp::error(['Unauthorized user is not an admin']);
         }
@@ -84,7 +85,7 @@ class AdminController extends Controller
         if ($validator->fails()) {
                 return Resp::error(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
             }
-        Log::info("Validation passed");
+
 
             $user_id=$id;
             $user_exists=AuthUser::find($user_id);
@@ -110,6 +111,14 @@ class AdminController extends Controller
             $region_exists=Location::where('id',$region_id)->where('type','region')->first();
             if(!$region_exists){
                 return Resp::error(['Region not found']);
+            }
+
+            $whatsapp_number="";
+            $country_code=0;
+            $allow_whatsapp=$request->input('allow_whatsapp');
+            if($allow_whatsapp){
+                $whatsapp_number=$request->input('whatsapp_number');
+                $country_code=$request->input('country_code');
             }
 
             $languages = $request->input('languages');
@@ -151,6 +160,9 @@ class AdminController extends Controller
                 'city_id' => $city_id,
                 'region_id' =>$region_id,
                 'county_id' => $county_id,
+                'allow_whatsapp' => $allow_whatsapp,
+                'whatsapp_number' => $whatsapp_number,
+                'country_code' => $country_code,
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
@@ -248,4 +260,35 @@ class AdminController extends Controller
            $profile_data->rates;
             return Resp::success(['details'=>$profile_data]);
     }
+    public function getProfile($id){
+        $profile=AuthUser::with('profile')->find($id);
+        if(!$profile){
+            return Resp::error(['Profile not found']);
+        }
+        $profile->profile->rates;
+        return Resp::success(['details'=>$profile]);
+    }
+
+    
+    public function getUsers(Request $request){
+        $users=AuthUser::query();
+        $users=$users->whereIn('user_type', [1, 2]);
+        $users=$users->leftJoin('subscriptions','subscriptions.escort_id','=','users.id');
+        //$users=$users->where('user_type', 1);
+        // Pagination parameters
+        $perPage = $request->query('per_page', 10); // Default items per page
+        $page = $request->query('page', 1); // Default to first page
+        $offset = ($page - 1) * $perPage;
+
+        // Get total count for pagination info
+        $totalCount = $users->count();
+
+        // Fetch the results with offset and limit
+        $result = $users->offset($offset)
+            ->limit($perPage)
+            ->get();
+        return Resp::success(['list'=>$result,'total_count'=>$totalCount,'page'=>$page,'per_page'=>$perPage]);
+    }
 }
+
+
