@@ -195,6 +195,7 @@ class AuthController extends Controller
         if (!$token) {
             return Resp::error(['error' => 'No token found!!!'], 401);
         }
+        
         try {
 
             JWTAuth::setToken($token);
