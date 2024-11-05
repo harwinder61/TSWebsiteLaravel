@@ -29,6 +29,17 @@ class AuthController extends Controller
         $this->middleware(AuthMiddleware::class)->except(['register', 'login', 'verifyEmail']);
     }
 
+    public function verificationToken(Request $request){
+        $user = AuthUser::where('email', auth()->user()->email)->first();
+        if (!$user) {
+            return Resp::error(['message' => 'User not found'],);
+        }
+        
+        return Resp::success([
+            'verification_token' => $user->verification_token
+        ]);
+    }
+
     public function resetPassword(Request $request){
         $validator = Validator::make($request->all(), [
             'token' => 'required|string',

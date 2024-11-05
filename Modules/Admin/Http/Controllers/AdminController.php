@@ -20,14 +20,61 @@ use App\Models\Location;
 use App\Models\Subscription as subscriptions;
 use Modules\Escort\app\Models\Subscription;
 use Illuminate\Support\Facades\Log;
-
-
-
-
-
+use App\Models\Image;
+use App\Models\Media;
+use Illuminate\Support\Facades\File;
 
 class AdminController extends Controller    
 {
+
+
+
+
+    public function updatePlanDetails($plan_code, Request $request)
+    {
+        $plan = Plan::where('code', $plan_code)->first();
+        if (!$plan) {
+            return Resp::error(['message' => 'Plan not found'],);
+        }
+        $validator = Validator::make($request->all(), [
+            'price' => 'required|numeric',
+            'description' => 'nullable|string',
+            'advert_spaces' => 'nullable|integer',
+            'checkout_text' => 'nullable|string',
+            'desktop_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
+            'mobile_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000'
+        ]);
+        if ($validator->fails()) {
+            return Resp::error(['message' => $validator->errors()]);
+        }
+    
+        $plan->update($request->only(['price', 'description', 'advert_spaces', 'checkout_text','desktop_placeholder','mobile_placeholder']));
+        if ($request->hasFile('desktop_placeholder') || $request->hasFile('mobile_placeholder')) {
+            $image = $request->file('desktop_placeholder') ?? $request->file('mobile_placeholder');
+            $imageName = $plan_code . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $userFolder = 'uploads/media/plan/' . $plan_code;   
+            if (!File::isDirectory(public_path($userFolder))) {
+                File::makeDirectory(public_path($userFolder), 0755, true);
+            }
+    
+            if ($plan->desktop_placeholder) {
+                $oldPath = public_path($plan->desktop_placeholder);
+                if (File::exists($oldPath)) {
+                    File::delete($oldPath);
+                }
+            }
+            $image->move(public_path($userFolder), $imageName);
+            $imagePath = $userFolder . '/' . $imageName;
+            $plan->desktop_placeholder = $imagePath;
+            $plan->mobile_placeholder = $imagePath;
+            $plan->save();
+        }
+    
+        return Resp::success([
+            'message' => 'Plan updated successfully', 
+            'plan' => $plan
+        ]);
+    }
 
     public function userQuickList(Request $request) { 
         $user_type = $request->query('user_type');
@@ -45,41 +92,49 @@ class AdminController extends Controller
     }
 
 
-    // public function createSubscription(Request $request)
-    // {
-        
-    //     $validated = Validator::make($request->all(), [
-    //         'user_id' => 'required|exists:users,id',
-    //         'plan_code' => 'required|exists:plans,code',
-    //         'start_date' => 'required|date',
-    //         'end_date' => 'required|date|after:start_date'
-    //     ]);
+    public function createSubscription(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'plan_code' => 'required|exists:plans,code',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date', 
+            'image_id' => 'required|exists:media,id',
+        ]);
 
-    //         if ($validated->fails()) {
-    //         return Resp::error(['message' => $validated->errors()]);
-    //     }
-    //     try {
+            if ($validated->fails()) {
+            return Resp::error(['message' => $validated->errors()]);
+        }
+        $media_exists=Media::where('escort_id',$request->input('user_id'))
+        ->where('id',$request->input('image_id'))
+        ->first();
+        if(!$media_exists){
+            return Resp::error(['Media not found']);
+        }
+    
+        try {
           
-    //         $plan = Plan::where('code', $request->input('plan_code'))->first();
-    //         $subscription = Subscription::create([
-    //             'escort_id' => $request->input('user_id'),
-    //             'plan_code' => $request->input('plan_code'),
-    //             'status' => 'ACTIVE',
-    //             'start_date' => $request->input('start_date'),
-    //             'end_date' => $request->input('end_date'),
-    //             'created_by' => auth()->id(),
-    //             'created_more' => 'Admin'
+            $plan = Plan::where('code', $request->input('plan_code'))->first();
+            $subscription = Subscription::create([
+                'escort_id' => $request->input('user_id'),
+                'plan_code' => $request->input('plan_code'),
+                'status' => 'ACTIVE',
+                'start_date' => $request->input('start_date'),
+                'end_date' => $request->input('end_date'),
+                'created_by' => auth()->user()->id,
+                'image_id' => $request->input('image_id'),
+                'created_mode' => 'Admin',
                
-    //         ]);
-    //         return Resp::success([
+            ]);
+            return Resp::success([
 
-    //             'message' => 'Subscription created successfully',
-    //             'subscription' => $subscription
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return Resp::error(['message' => $e->getMessage()]);
-    //     }
-    // }
+                'message' => 'Subscription created successfully',
+                'subscription' => $subscription
+            ]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
 
 public function assignPermissions($id,Request $request){
         $validator = Validator::make($request->all(), [
@@ -107,7 +162,7 @@ public function assignPermissions($id,Request $request){
 
 
     public function inquiryFormList(Request $request){
-        $inquiries=Inquiry::get();
+        $inquiries=Inquiry::orderBy('created_at','desc')->get();
         return Resp::success(['list'=>$inquiries]);
     }
 

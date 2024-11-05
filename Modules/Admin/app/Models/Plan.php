@@ -13,7 +13,7 @@ class Plan extends Model
     /**
      * The attributes that are mass assignable.
      */
-    protected $fillable = ['title','price','description','days','allowed_user_account'];
+    protected $fillable = ['title','price','description','days','allowed_user_account','advert_spaces','checkout_text','desktop_placeholder','mobile_placeholder'];
     protected $casts=[
         'description'=>'json',
         'allowed_user_account'=>'integer',
