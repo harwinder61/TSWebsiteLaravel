@@ -21,9 +21,9 @@ return new class extends Migration
     public function down()
     {
         Schema::table('subscriptions', function (Blueprint $table) {
-            //$table->dropForeign(['order_id']);
-            //$table->unsignedBigInteger('order_id')->nullable(false)->change();
-            //$table->foreign('order_id')->references('id')->on('orders');
+            $table->dropForeign(['order_id']);
+            $table->unsignedBigInteger('order_id')->nullable(false)->change();
+            $table->foreign('order_id')->references('id')->on('orders');
 
         });
     }
