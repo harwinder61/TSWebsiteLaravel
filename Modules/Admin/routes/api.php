@@ -27,6 +27,9 @@ Route::middleware('jwt_auth')->group(function(){
         Route::post('/assign-permissions/{id}',[AdminController::class,'assignPermissions']);
         Route::post('/create-subscription',[AdminController::class,'createSubscription']);
         Route::get('/user-quick-list',[AdminController::class,'userQuickList']);
+        Route::post('/update-plan-details/{plan_code}',[AdminController::class,'updatePlanDetails']);
+        Route::get('/recent-inquiries',[AdminController::class,'inquiriesList']);
+        
     });
 });
 

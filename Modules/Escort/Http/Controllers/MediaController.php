@@ -75,6 +75,7 @@ public function addGallary(Media $media,Request $request)
     if ($validator->fails()) {
         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
+    
     $userId = $currentUser->id;
     if ($request->hasFile('image')) {
         $image = $request->file('image');

@@ -9,10 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class BaseSubscription extends Model
 {
     protected $table = 'subscriptions';
-    protected $fillable = ['escort_id','order_id','plan_code','status','start_date','end_date'];
+    protected $fillable = ['escort_id','order_id','plan_code','status','image_id','start_date','created_by','created_mode','end_date'];
     protected $hidden=['created_at','updated_at'];
     protected $casts=['start_date'=>'date','end_date'=>'date'];
-
-
 
 }
