@@ -12,7 +12,10 @@ return new class extends Migration
     public function up()
     {
         Schema::table('subscriptions', function (Blueprint $table) {
-            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->dropColumn('created_by');
+            // Change the column to a foreignId (nullable)
+            $table->foreignId('created_by')->nullable()->constrained('users')->change();
+
         });
     }
 
@@ -20,7 +23,9 @@ return new class extends Migration
     {
         Schema::table('subscriptions', function (Blueprint $table) {
             $table->dropForeign(['created_by']);
-            $table->dropColumn('created_by');
+            
+            // Change the column back to an integer (non-nullable in this example)
+            $table->integer('created_by')->nullable()->change();
         });
     }
 };

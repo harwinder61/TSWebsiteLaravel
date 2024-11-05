@@ -21,7 +21,7 @@ return new class extends Migration
     {
         Schema::table('subscriptions', function (Blueprint $table) {
             $table->dropColumn('created_by');
-            $table->dropColumn('created_mode');
+            $table->dropColumn('created_more');
         });
     }
 };
