@@ -32,6 +32,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/user-quick-list',[AdminController::class,'userQuickList']);
         Route::post('/update-plan-details/{plan_code}',[AdminController::class,'updatePlanDetails']);
         Route::get('/recent-inquiries',[AdminController::class,'inquiriesList']);
+        Route::get('/recent-purchases',[AdminController::class,'recentPurchases']);
         
     });
 });

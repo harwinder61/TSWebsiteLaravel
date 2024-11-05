@@ -26,8 +26,23 @@ class AuthController extends Controller
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['register', 'login', 'verifyEmail']);
+        $this->middleware(AuthMiddleware::class)->except(['register', 'login', 'verifyEmail', 'verificationEmailToken']);
     }
+
+    public function verificationEmailToken($token,Request $request){
+        if (!$token) {
+            return Resp::error(['error' => 'No token provided'], 401);
+        }
+        // Fix typo in column name from 'verfiication_token' to 'verification_token'
+        $user = AuthUser::where('verification_token', $token)->first();
+        if (!$user) {
+            return Resp::error(['error' => 'Token is invalid'], 401);
+        }
+        $user->email_verified = true;
+        $user->save();
+        return Resp::success(["current user" => $user], 201);
+    }
+
 
     public function verificationToken(Request $request){
         $user = AuthUser::where('email', auth()->user()->email)->first();
@@ -255,20 +270,19 @@ class AuthController extends Controller
     {
 
         if (!$token) {
-            return Resp::error(['error' => 'No token provided'], 401);
+         return Resp::error(['error' => 'No token provided'], 401);
         }
         
-        $user = AuthUser::where('verification_token', $token)->first();
+        $user = AuthUser::where('verfiication_token', $token)->first();
         if (!$user) {
             //return Resp::error(['Token is invalid']);
             return view('emailTemplates.token-invalid');
         }
 
-
         $user->email_verified = true;
         $user->save();
         //return Resp::success(['message' => 'Email verified successfully']);
-        return view('emailTemplates.email-verify-succesfully');
+        return Resp::success(["current user" => $user], 201);
     }
 
      
