@@ -114,6 +114,7 @@ class OrderController extends Controller
         $session_url="";
         try{
             // Set the Stripe secret key
+            Stripe::setVerifySslCerts(false);
             Stripe::setApiKey(env('STRIPE_SECRET'));
 
             $plan=Plan::where('code',$request->input('plan_code'))->first();

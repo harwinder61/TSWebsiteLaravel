@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
 use App\Services\Mailer;
+use Illuminate\Support\Facades\Log;
 
 
 class EmailService{
