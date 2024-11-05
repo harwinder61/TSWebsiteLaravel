@@ -42,7 +42,7 @@ class AdminController extends Controller
             'advert_spaces' => 'nullable|integer',
             'checkout_text' => 'nullable|string',
             'desktop_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
-            'mobile_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
+            'mobile_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000'
         ]);
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
