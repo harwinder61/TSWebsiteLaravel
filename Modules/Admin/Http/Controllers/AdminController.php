@@ -27,7 +27,10 @@ use Illuminate\Support\Facades\File;
 class AdminController extends Controller    
 {
 
-
+    public function recentPurchases(Request $request){
+        $purchases=Subscription::orderBy('created_at','desc')->get();
+        return Resp::success(['list'=>$purchases]);
+    }
 
 
     public function updatePlanDetails($plan_code, Request $request)
