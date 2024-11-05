@@ -34,4 +34,5 @@ Route::get('verify-email/{token}',[AuthController::class,'verifyEmail']);
 Route::post('recover-password',[AuthController::class,'recoverPassword']);
 Route::post('reset-password',[AuthController::class,'resetPassword']);
 Route::get('verification-token',[AuthController::class,'verificationToken']);
+Route::post('verify-email-token/{token}',[AuthController::class,'verificationEmailToken']);
 
