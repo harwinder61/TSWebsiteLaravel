@@ -139,9 +139,6 @@ class AuthController extends Controller
             'escort_id' => $user->id,
 
         ]);
-
-
-
         return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
     }
 
@@ -252,7 +249,6 @@ class AuthController extends Controller
             return Resp::success(["current user" => $user], 201);
         } catch (JWTException $e) {
 
-            // Return a response based on the type of JWTException
             if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenExpiredException) {
                 return Resp::error(['error' => 'Token has expired'], 401);
             } elseif ($e instanceof \Tymon\JWTAuth\Exceptions\TokenInvalidException) {
@@ -272,21 +268,14 @@ class AuthController extends Controller
         if (!$token) {
          return Resp::error(['error' => 'No token provided'], 401);
         }
-        
-        $user = AuthUser::where('verfiication_token', $token)->first();
+        $user = AuthUser::where('verification_token', $token)->first();
         if (!$user) {
-            //return Resp::error(['Token is invalid']);
             return view('emailTemplates.token-invalid');
         }
-
         $user->email_verified = true;
         $user->save();
-        //return Resp::success(['message' => 'Email verified successfully']);
-        return Resp::success(["current user" => $user], 201);
+        return view('emailTemplates.email-verify-succesfully');
     }
-
-     
-
-
+   
 
 }

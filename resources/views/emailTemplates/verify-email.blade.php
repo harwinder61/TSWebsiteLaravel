@@ -13,7 +13,7 @@
             <p>Thanks for signing up with us.</p>
             <p>Please click the button below to verify your email.</p>
             <p>
-                <a href="{{ url('api/verify-email/'.$verification_token) }}" style="
+                <a href="{{ env('WEBAPP_URL') }}/account-verification?token={{ $verification_token }}" style="
                     display: inline-block; 
                     padding: 8px 16px; 
                     font-size: 12px; 
