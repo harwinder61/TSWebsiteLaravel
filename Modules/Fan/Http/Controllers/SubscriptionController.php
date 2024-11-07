@@ -53,6 +53,10 @@ class SubscriptionController extends Controller
             // $subscriptions = EscortSubscription::where('escort_id', $user->id);
 
             $subscriptions = EscortSubscription::query();
+            // Add join with plans table
+            $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
+            ->select('subscriptions.*', 'plans.title as plan_title'); // Add plans.title to the selection
+
 
             // Filter by plan_code if provided
             if (!is_null($request->query('plan_code'))) {

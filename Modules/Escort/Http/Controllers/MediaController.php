@@ -25,7 +25,7 @@ class MediaController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class);
+        
     }
 
     public function mediaSingle(Request $request)
@@ -101,6 +101,7 @@ public function getGallary(Request $request){
 public function addGallary(Media $media, Request $request)
 {
     $currentUser = auth()->user();
+    
     $validator = Validator::make($request->all(), [
         'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
         'type' => 'required|string|in:gallary,private_gallery',
@@ -137,6 +138,7 @@ public function addGallary(Media $media, Request $request)
 public function addPromoVideo(Media $media, Request $request)
 {
     $currentUser = auth()->user();
+    
     $validator = Validator::make($request->all(), [
         'video' => 'required|mimes:mp4,mov,avi,mkv|max:512000',     
     ]);
@@ -174,6 +176,7 @@ public function addPromoVideo(Media $media, Request $request)
 public function getPromoVideo(Request $request)
 {
     $currentUser = auth()->user();
+    
     return Resp::success(['details' => $currentUser]);
 }
 

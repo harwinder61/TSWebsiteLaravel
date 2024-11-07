@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('subscriptions', function (Blueprint $table) {
-            $table->integer('created_by');
-            $table->string('created_more');
+            $table->integer('created_by')->nullable();
+            $table->string('created_more')->nullable();
         });
     }
 
