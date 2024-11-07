@@ -8,23 +8,37 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Illuminate\Support\Facades\Route;
+use App\Services\Resp;
 
 class AuthMiddleware
 {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
     /**
      * Handle an incoming request.
      */
-    public function handle(Request $request, Closure $next,)
+    public function handle(Request $request, Closure $next,$guard=null)
     {
 
         try {
             if (! $user = JWTAuth::parseToken()->authenticate()) {
-                return response()->json(['error' => 'User not found'], 404);
+                return Resp::error(['User not found']);
+            }
+            if($guard=='admin' && $user->user_type!=3){
+            
+                return Resp::error(['Unauthorized']);
+            }
+            if($guard=='escort' && $user->user_type!=2){
+                
+                return Resp::error(['Unauthorized']);
+            }
+            if($guard=='fan' && $user->user_type!=1){
+                
+                return Resp::error(['Unauthorized']);
             }
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Token is invalid'], 401);
+            return Resp::error(['Token is invalid']);
         }
-
+   
         // Attach user to request
         $request->auth = $user;
         $request->merge(['user' => $user]);

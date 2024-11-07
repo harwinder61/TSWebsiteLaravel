@@ -54,11 +54,10 @@ class FanController extends Controller
         ]);
     }
 
-    public function find_escort_reviews($id)
-    {
-        $user = auth()->user();
-        $escort_id = $id;
-        $reviews = FanReviews::where('user_id', $user->id)->where('escort_id', $escort_id)->get();
+    public function find_escort_reviews($id){
+        $user=auth()->user();
+        $escort_id=$id;
+        $reviews=FanReviews::where('user_id',$user->id)->where('escort_id',$escort_id)->get();
         $reviews->load('escort');
         if ($reviews->isEmpty()) {
             return Resp::error(['No reviews found']);
@@ -66,8 +65,7 @@ class FanController extends Controller
         return Resp::success(['details' => $reviews]);
     }
 
-    public function getUsers(Request $request)
-    {
+    public function getUsers(Request $request){
         // Fetch user_ids from Reviews table
 
         $userIds = EscortReviews::pluck('user_id')->unique();
@@ -81,7 +79,7 @@ class FanController extends Controller
     public function create(Request $request)
 
     {
-        $user = auth()->user();
+        $user=auth()->user();
 
         Validator::make($request->all(), [
             'photo_accuracy' => 'nullable|integer',

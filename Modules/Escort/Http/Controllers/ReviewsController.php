@@ -15,12 +15,13 @@ class ReviewsController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class);
+        
     }
 
     
     public function list(Request $request)
     {
+                
        $reviews=EscortReviews::with('fan')->get();
         return Resp::success(['list'=>$reviews]);
 

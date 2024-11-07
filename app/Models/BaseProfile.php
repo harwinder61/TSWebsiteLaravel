@@ -53,12 +53,25 @@ class BaseProfile extends Model
         'city_id',
         'region_id',
         'county_id',
+        'has_onlyfans',
+        'has_manyvids',
+        'has_fancentro',
+        'onlyfans_handle',
+        'manyvids_handle',
+        'fancentro_handle',
+        'is_incall_enabled',
+        'is_outcall_enabled',
+        'allow_whatsapp',
+        'whatsapp_number',
+        'country_code'
     ];
 
     protected $casts = [
         'languages' => 'json',
         'offer_services_to' => 'json',
         'extra_services' => 'json',
+        'whatsapp_number' => 'integer',
+        'phone_number' => 'integer',
     ];
 
 
@@ -66,6 +79,9 @@ class BaseProfile extends Model
         return [
         'name' => 'required|string|max:255',
         'phone_number' => 'required|integer',
+        'allow_whatsapp' => 'boolean',
+        'whatsapp_number' => 'integer|required_if:allow_whatsapp,1',
+        'country_code' => 'integer|required_if:allow_whatsapp,1',
         'gender' => 'required|in:'.implode(',',Gender::getValues()),
         'date_of_birth' => 'required|string',
         'orientation'=>'required|in:'.implode(',',Orientation::getValues()),
@@ -84,10 +100,10 @@ class BaseProfile extends Model
         'languages.*' => 'in:'.implode(',', Languages::getValues()),
         'offer_services_to'=>'required|array',
         'offer_services_to.*'=>'in:'.implode(',',OfferServicesTo::getValues()),
-        'has_twitter' => 'required|boolean',
-        'has_snapchat' => 'required|boolean',
-        'has_instagram' => 'required|boolean',
-        'has_tiktok' => 'required|boolean',
+        'has_twitter' => 'boolean|nullable',
+        'has_snapchat' => 'boolean|nullable',
+        'has_instagram' => 'boolean|nullable',
+        'has_tiktok' => 'boolean|nullable',
         'twitter_handle' => 'required_if:has_twitter,1|string|nullable',
         'snapchat_handle' => 'required_if:has_snapchat,1|string|nullable',
         'instagram_handle' => 'required_if:has_instagram,1|string|nullable',

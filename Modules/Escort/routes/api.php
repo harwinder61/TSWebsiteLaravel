@@ -9,7 +9,7 @@ use Modules\Escort\Http\Controllers\MediaController;
 use Modules\Escort\Http\Controllers\OrderController;
 
 
-Route::middleware(['jwt_auth'])->group(function(){
+Route::middleware(['jwt_auth:escort'])->group(function(){
 Route::group(['prefix' => 'escort'],function(){
 
     Route::get('/profile',[EscortController::class,'find']);
@@ -22,6 +22,7 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/orders',[OrderController::class,'createOrder']);
     Route::post('/webhook/payment-status-update',[OrderController::class,'webhook_payment_status_update']);
     Route::get('/subscriptions',[OrderController::class,'getSubscription']);
+    Route::get('/plans',[MasterController::class,'plans']);
     Route::get('/media',[MediaController::class,'getMedia']);
 
     
@@ -34,8 +35,5 @@ Route::get('/locations/cities',[MasterController::class,'cities']);
 Route::get('/locations/nationality',[MasterController::class,'nationality']);
 Route::get('/master-data',[MastersController::class,'getMasterData']);
 Route::get('/plans',[MasterController::class,'plans']);
-Route::post('/inquiry-form',[EscortController::class,'inquiryForm']);
-Route::get('/escort-profile-id/{id}',[EscortController::class,'getEscortProfile']);
-
 
 
