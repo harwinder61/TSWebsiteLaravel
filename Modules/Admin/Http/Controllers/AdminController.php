@@ -277,7 +277,7 @@ public function assignPermissions($id,Request $request){
                 return Resp::error(['Region not found']);
             }
 
-            $whatsapp_number="";
+            $whatsapp_number=0;
             $country_code=0;
             $allow_whatsapp=$request->input('allow_whatsapp');
             if($allow_whatsapp){
