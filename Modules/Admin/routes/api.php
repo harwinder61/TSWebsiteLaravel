@@ -30,6 +30,7 @@ Route::middleware('jwt_auth')->group(function(){
         Route::post('/update-plan-details/{plan_code}',[AdminController::class,'updatePlanDetails']);
         Route::get('/recent-inquiries',[AdminController::class,'inquiriesList']);
         Route::get('/recent-purchases',[AdminController::class,'recentPurchases']);
+        Route::get('/spotlight-media',[AdminController::class,'spotlightMedia']);
         
     });
 });

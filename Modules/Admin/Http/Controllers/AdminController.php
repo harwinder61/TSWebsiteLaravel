@@ -23,16 +23,27 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Image;
 use App\Models\Media;
 use Illuminate\Support\Facades\File;
+use Stripe\Service\SubscriptionService;
+use App\Models\User;
 
 class AdminController extends Controller    
 {
-
+    
+    
     public function recentPurchases(Request $request){
         $purchases=Subscription::orderBy('created_at','desc')->get();
         return Resp::success(['list'=>$purchases]);
     }
 
-
+    public function spotlightMedia(Request $request)
+    {
+        
+        $subs_data=Subscription::leftJoin('users','users.id','=','subscriptions.escort_id')
+                    ->where('plan_code','P104')->where('status','ACTIVE')->get();
+        return Resp::success([
+            'subscribers' => $subs_data
+        ]);
+    }
     public function updatePlanDetails($plan_code, Request $request)
     {
         $plan = Plan::where('code', $plan_code)->first();

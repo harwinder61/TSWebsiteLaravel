@@ -29,18 +29,23 @@ class AuthController extends Controller
         $this->middleware(AuthMiddleware::class)->except(['register', 'login', 'verifyEmail', 'verificationEmailToken']);
     }
 
-    public function verificationEmailToken($token,Request $request){
-        if (!$token) {
-            return Resp::error(['error' => 'No token provided'], 401);
+    public function verificationEmailToken(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required|string'
+        ]);
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-        // Fix typo in column name from 'verfiication_token' to 'verification_token'
+        $token = $request->token;
+        
         $user = AuthUser::where('verification_token', $token)->first();
         if (!$user) {
-            return Resp::error(['error' => 'Token is invalid'], 401);
+            return Resp::error(['message' => 'Email verification failed.'], 401);
         }
         $user->email_verified = true;
         $user->save();
-        return Resp::success(["current user" => $user], 201);
+        return Resp::success(["current user" => $user], "email verified successfully");
     }
 
 
@@ -49,7 +54,6 @@ class AuthController extends Controller
         if (!$user) {
             return Resp::error(['message' => 'User not found'],);
         }
-        
         return Resp::success([
             'verification_token' => $user->verification_token
         ]);
@@ -98,6 +102,7 @@ class AuthController extends Controller
     return Resp::success(['message' => 'Password recovery token sent successfully']);
 
    }
+
 
     public function register(Request $request)
 

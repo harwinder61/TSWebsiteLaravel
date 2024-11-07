@@ -23,6 +23,7 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/webhook/payment-status-update',[OrderController::class,'webhook_payment_status_update']);
     Route::get('/subscriptions',[OrderController::class,'getSubscription']);
     Route::get('/media',[MediaController::class,'getMedia']);
+    Route::post('/media/single',[MediaController::class,'mediaSingle']);
 
     
 });
