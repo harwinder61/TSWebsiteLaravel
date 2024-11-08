@@ -103,16 +103,15 @@ class OrderController extends Controller
             }
         }
     
-        // Ensure to capture the input values and save them properly
         $order = Orders::create([
             'escort_id' => $user->id,
             'plan_code' => $request->input('plan_code'),
             'start_date' => $request->input('start_date'),
             'end_date' => $end_date,
             'payment_status' => 'PENDING',
-            'only_fans_link' => $request->input('only_fans_link'),  // Save the only_fans_link if it exists
-            'many_vids_link' => $request->input('many_vids_link'),  // Save the many_vids_link if it exists
-            'fan_centro_link' => $request->input('fan_centro_link'),  // Save the fan_centro_link if it exists
+            'only_fans_link' => $request->input('only_fans_link'),  
+            'many_vids_link' => $request->input('many_vids_link'),  
+            'fan_centro_link' => $request->input('fan_centro_link'), 
             'image_id' => $request->input('image_id'),
         ]);
         
@@ -140,7 +139,6 @@ class OrderController extends Controller
             return Resp::error([$e->getMessage()]);
         }
     
-        // Return the response, conditionally including the links if they are present
         $response = [
             'client_secret' => $paymentIntent->client_secret,
             'dpmCheckerLink' => "https://dashboard.stripe.com/settings/payment_methods/review?transaction_id={$paymentIntent->id}",
@@ -171,10 +169,6 @@ if (!$media || $media->id != $request->input('image_id')) {
     }
     
     
-
-
-
-
     function webhook_payment_status_update(Request $request){
         
         $order_id=$request->input('order_id');

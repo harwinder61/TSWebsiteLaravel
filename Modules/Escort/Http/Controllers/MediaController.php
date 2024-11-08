@@ -35,22 +35,33 @@ class MediaController extends Controller
             return Resp::error(['error' => 'Unauthorized'], 401);
         }
     
+        // Validation for file type
         $validator = Validator::make($request->all(), [
-            'image' => 'required|image|max:500000',
-            'type' => 'required|in:gallary,private_gallery,promo_video'
+            'file' => 'required|mimes:jpeg,png,jpg,gif,mp4,avi,mkv|max:5000000',
+            'type' => 'required|string|in:gellery,private_gallery,promo_video',
         ]);
     
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
+    
         try {
-            $image = $request->file('image');
-            $filename = time() . '_' . $image->getClientOriginalName();
-            $path = $image->storeAs('public/media/' . $currentUser->id, $filename);
+            $file = $request->file('file');
+            $fileExtension = $file->getClientOriginalExtension();
+            $fileName = $request->input('type') . '_' . time() . '.' . $fileExtension;
+    
+            $userFolder = 'uploads/media/user_' . $currentUser->id;
+            $directoryPath = public_path($userFolder);
+    
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }
+    
+            $file->move($directoryPath, $fileName);
             $media = new Media();
             $media->escort_id = $currentUser->id;
             $media->type = $request->type;
-            $media->path = $path;
+            $media->path = $userFolder . '/' . $fileName;
             $media->save();
     
             return Resp::success(['media' => $media]);
@@ -58,7 +69,7 @@ class MediaController extends Controller
             return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
         }
     }
-
+    
 
     public function getMedia(Request $request)
     {

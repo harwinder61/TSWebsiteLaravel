@@ -209,7 +209,7 @@ public function assignPermissions($id,Request $request){
         $validator=Validator::make($request->all(),[
             'title'=>'string|required',
             'price'=>'decimal:2|required',
-            'description'=>'array|required',
+            'description'=>'required',
             'days'=>'integer|required',
             'allowed_user_account'=>'integer|required',
         ]);
