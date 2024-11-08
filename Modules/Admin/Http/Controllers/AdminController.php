@@ -48,8 +48,10 @@ class AdminController extends Controller
     {
         $plan = Plan::where('code', $plan_code)->first();
         if (!$plan) {
-            return Resp::error(['message' => 'Plan not found'],);
+            
+            return Resp::error(['message' => 'Plan not found']);
         }
+    
         $validator = Validator::make($request->all(), [
             'price' => 'required|numeric',
             'description' => 'nullable|string',
@@ -58,15 +60,19 @@ class AdminController extends Controller
             'desktop_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
             'mobile_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000'
         ]);
+    
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
     
-        $plan->update($request->only(['price', 'description', 'advert_spaces', 'checkout_text','desktop_placeholder','mobile_placeholder']));
-        if ($request->hasFile('desktop_placeholder') || $request->hasFile('mobile_placeholder')) {
-            $image = $request->file('desktop_placeholder') ?? $request->file('mobile_placeholder');
-            $imageName = $plan_code . '_' . time() . '.' . $image->getClientOriginalExtension();
+        $plan->update($request->only(['price', 'description', 'advert_spaces', 'checkout_text']));
+        
+        // Handle desktop placeholder
+        if ($request->hasFile('desktop_placeholder')) {
+            $desktopImage = $request->file('desktop_placeholder');
+            $desktopImageName = $plan_code . '_desktop_' . time() . '_' . $plan->id . '.' . $desktopImage->getClientOriginalExtension();
             $userFolder = 'uploads/media/plan/' . $plan_code;   
+            
             if (!File::isDirectory(public_path($userFolder))) {
                 File::makeDirectory(public_path($userFolder), 0755, true);
             }
@@ -77,12 +83,33 @@ class AdminController extends Controller
                     File::delete($oldPath);
                 }
             }
-            $image->move(public_path($userFolder), $imageName);
-            $imagePath = $userFolder . '/' . $imageName;
-            $plan->desktop_placeholder = $imagePath;
-            $plan->mobile_placeholder = $imagePath;
-            $plan->save();
+            
+            $desktopImage->move(public_path($userFolder), $desktopImageName);
+            $plan->desktop_placeholder = $userFolder . '/' . $desktopImageName;
         }
+    
+        // Handle mobile placeholder
+        if ($request->hasFile('mobile_placeholder')) {
+            $mobileImage = $request->file('mobile_placeholder');
+            $mobileImageName = $plan_code . '_mobile_' . time() . '_' . $plan->id . '.' . $mobileImage->getClientOriginalExtension();
+            $userFolder = 'uploads/media/plan/' . $plan_code;   
+            
+            if (!File::isDirectory(public_path($userFolder))) {
+                File::makeDirectory(public_path($userFolder), 0755, true);
+            }
+    
+            if ($plan->mobile_placeholder) {
+                $oldPath = public_path($plan->mobile_placeholder);
+                if (File::exists($oldPath)) {
+                    File::delete($oldPath);
+                }
+            }
+            
+            $mobileImage->move(public_path($userFolder), $mobileImageName);
+            $plan->mobile_placeholder = $userFolder . '/' . $mobileImageName;
+        }
+    
+        $plan->save();
     
         return Resp::success([
             'message' => 'Plan updated successfully', 
@@ -204,7 +231,6 @@ public function assignPermissions($id,Request $request){
     }
 
     public function updatePlan($plan_code,Request $request){
-        
         
         $validator=Validator::make($request->all(),[
             'title'=>'string|required',
