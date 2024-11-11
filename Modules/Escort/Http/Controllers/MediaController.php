@@ -35,7 +35,6 @@ class MediaController extends Controller
             return Resp::error(['error' => 'Unauthorized'], 401);
         }
     
-        // Validation for file type
         $validator = Validator::make($request->all(), [
             'file' => 'required|mimes:jpeg,png,jpg,gif,mp4,avi,mkv|max:5000000',
             'type' => 'required|string|in:gellery,private_gallery,promo_video',
@@ -141,7 +140,6 @@ public function addGallary(Media $media, Request $request)
 
         return Resp::success(['message' => 'Image uploaded successfully', 'image' => $media]);
     }
-
     return Resp::error(['message' => 'No image file found'], 400);
 }
 
@@ -162,8 +160,9 @@ public function addPromoVideo(Media $media, Request $request)
         $videoName = 'promo_video_' . time() . '.' . $video->getClientOriginalExtension();
         $userFolder = 'uploads/media/user_' . $userId;
         if (!File::isDirectory(public_path($userFolder))) {
-            File::makeDirectory(public_path($userFolder), 0755, true);
+            File::makeDirectory(public_path($userFolder), 0755, true);     
         }
+
         $video->move(public_path($userFolder), $videoName);
         
         $existingPromoVideo = Media::where('escort_id', $userId)

@@ -46,6 +46,7 @@ class AdminController extends Controller
     }
     public function updatePlanDetails($plan_code, Request $request)
     {
+
         $plan = Plan::where('code', $plan_code)->first();
         if (!$plan) {
             
