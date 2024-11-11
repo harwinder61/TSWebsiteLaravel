@@ -16,8 +16,8 @@
             <h2 style="color: #333; font-size: 24px;">Password Recovery</h2>
             <p style="color: #555; font-size: 16px; line-height: 1.5;">We received a request to reset your password. 
                 Click the button below to create a new password:</p>
-                <p> {{$recovery_token}} </p>
-            <a href="{{$recovery_token}}" style="display: inline-block; margin-top: 20px;
+                <p>{{ env('WEBAPP_URL') }}/reset-password?token={{ $recovery_token }} </p>
+            <a href="{{ env('WEBAPP_URL') }}/reset-password?token={{ $recovery_token }}" style="display: inline-block; margin-top: 20px;
              padding: 12px 25px; background-color: #a50000; color: white; text-decoration: none;
              border-radius: 5px; font-weight: bold; font-size: 16px;">Reset Password</a>
         </div>
