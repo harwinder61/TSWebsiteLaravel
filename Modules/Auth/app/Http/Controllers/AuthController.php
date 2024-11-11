@@ -26,7 +26,7 @@ class AuthController extends Controller
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['register', 'login', 'verifyEmail', 'verificationEmailToken']);
+        $this->middleware(AuthMiddleware::class)->except(['register', 'login', 'verifyEmail', 'verificationEmailToken', 'recoverPassword','resetPassword']);
     }
 
     public function verificationEmailToken(Request $request)

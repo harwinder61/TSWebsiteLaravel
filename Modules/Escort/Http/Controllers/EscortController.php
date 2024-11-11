@@ -35,6 +35,63 @@ class EscortController extends Controller
         //$this->middleware(AuthMiddleware::class);
     }
 
+
+    public function updateMedia(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'gallery' => 'array',
+            'gallery.*' => 'exists:media,id',
+            'private_gallery' => 'array',
+            'private_gallery.*' => 'exists:media,id',
+            'promo_video' => 'exists:media,id'
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        $user = auth()->user();
+        if ($request->has('gallery')) {
+            Media::where('escort_id', $user->id)
+                ->where('type', 'gallery')
+                ->whereIn('id', $request->input('gallery'))
+                ->update(['is_temp' => false]);
+    
+            Media::where('escort_id', $user->id)
+                ->where('type', 'gallery')
+                ->whereNotIn('id', $request->input('gallery'))
+                ->forceDelete();
+        }
+    
+        if ($request->has('private_gallery')) {
+            Media::where('escort_id', $user->id)
+                ->where('type', 'private_gallery')
+                ->whereIn('id', $request->input('private_gallery'))
+                ->update(['is_temp' => false]);
+    
+            Media::where('escort_id', $user->id)
+                ->where('type', 'private_gallery')
+                ->whereNotIn('id', $request->input('private_gallery'))
+                ->forceDelete();
+        }
+    
+        if ($request->has('promo_video')) {
+            Media::where('escort_id', $user->id)
+                ->where('type', 'promo_video')
+                ->where('id', $request->input('promo_video'))
+                ->update(['is_temp' => false]);
+    
+            Media::where('escort_id', $user->id)
+                ->where('type', 'promo_video')
+                ->whereNotIn('id', [$request->input('promo_video')])
+                ->forceDelete();
+        }
+    
+        return Resp::success(['message' => 'Media updated successfully']);
+    }
+    
+    
+
     public function getEscortProfile($id,Request $request)
     {
         $user = auth()->user();
