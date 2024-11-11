@@ -13,8 +13,8 @@ return new class extends Migration
     {
         DB::table('users')->insert([
             [
-                'username' => 'admin',
-                'email' => 'tstesting@yopmail.com',
+                'username' => 'adminTs_test',
+                'email' => 'adminTs0011@yopmail.com',
                 'password' => Hash::make('123456789'),
                 'user_type' => 3,
                 'created_at' => now(),
