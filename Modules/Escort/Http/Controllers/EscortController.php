@@ -23,8 +23,7 @@ use App\Models\Location;
 use Modules\Escort\app\Models\Inquiry;
 use App\Enums\InqueryFormSubject;
 use App\Models\Media;
-
-
+use Modules\Escort\app\Models\EscortSubscription;
 
 
 class EscortController extends Controller
@@ -33,9 +32,33 @@ class EscortController extends Controller
     {
         //$this->middleware('jwtauth');
         //$this->middleware(AuthMiddleware::class);
+    } 
+    public function updateSubscription(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'subscription_id' => 'required|exists:subscriptions,id',
+        'image_id' => 'required|exists:media,id'
+    ]);
+
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+    $user = auth()->user();
+    $subscription = EscortSubscription::find($request->subscription_id);
+    
+    if (!$subscription) {
+        return Resp::error(['message' => 'Subscription not found'], 404);
+    }
+    $subscription->update([
+        'image_id' => $request->image_id
+    ]);
+    return Resp::success([
+        'message' => 'Subscription updated successfully',
+        'subscription' => $subscription
+        ]);
     }
 
-
+    
     public function updateMedia(Request $request)
     {
         $validator = Validator::make($request->all(), [

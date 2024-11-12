@@ -25,6 +25,7 @@ Route::group(['prefix' => 'escort'],function(){
     Route::get('/media',[MediaController::class,'getMedia']);
     Route::post('/media/single',[MediaController::class,'mediaSingle']);
     Route::post('/update-media',[EscortController::class,'updateMedia']);
+    Route::post('/update-subscription',[EscortController::class,'updateSubscription']);
    
 });
 });
