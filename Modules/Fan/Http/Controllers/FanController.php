@@ -23,7 +23,7 @@ class FanController extends Controller
     }
      
     public function likeProfile(Request $request)
-    {
+     {
         $user = auth()->user();
         $escort_id = $request->escort_id;
         $is_like = $request->is_like ? 1 : 0;
@@ -35,6 +35,8 @@ class FanController extends Controller
         }
         return Resp::success(['message' => $is_like ? 'Profile liked ' : 'Profile unliked']);
     }
+    
+
 
     public function find(Request $request)
     {
