@@ -29,6 +29,68 @@ class AuthController extends Controller
         $this->middleware(AuthMiddleware::class)->except(['register', 'login', 'verifyEmail', 'verificationEmailToken', 'recoverPassword','resetPassword']);
     }
 
+    public function resetOldEmail(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'old_email' => 'required|string|email',
+            'new_email' => 'required|string|email|max:255|unique:users,email',
+            'confirm_email' => 'required|same:new_email',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }  
+    
+        $user = auth()->user();  
+        
+        if ($request->old_email !== $user->email) {
+            return Resp::error(['message' => 'Old email is incorrect']);
+        }
+    
+        $user->email = $request->new_email;
+        $user->save();
+        
+        return Resp::success(['message' => 'Email changed successfully']);
+    }
+
+public function changePassword(Request $request) {
+    $validator = Validator::make($request->all(), [
+        'old_password' => 'required|string',
+        'new_password' => 'required|string|min:8',
+        'confirm_password' => 'required|same:new_password',
+    ]);
+
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+
+    $user = auth()->user();
+    
+    // Check if old password matches
+    if (!Hash::check($request->old_password, $user->password)) {
+        return Resp::error(['message' => 'Old password is incorrect']);
+    }
+
+    $user->password = Hash::make($request->new_password);
+    $user->save();
+    
+    return Resp::success(['message' => 'Password changed successfully']);
+}
+
+    public function resetEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email|max:255|unique:users,email',
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $user = auth()->user();
+        $user->email = $request->email;
+        $user->save();
+        return Resp::success(['message' => 'Email reset successfully']);
+    }
+
     public function verificationEmailToken(Request $request)
     {
         $validator = Validator::make($request->all(), [
