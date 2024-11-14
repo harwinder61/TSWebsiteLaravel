@@ -31,6 +31,49 @@ class EscortController extends Controller
         //$this->middleware('jwtauth');
         //$this->middleware(AuthMiddleware::class);
     } 
+    public function hideProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'is_hidden' => 'required|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $user = auth()->user();
+        if ($request->is_hidden) {
+            $user->is_hidden = true;
+            $user->save();
+            
+            return Resp::success(['message' => 'Profile hidden successfully']);
+        }
+        
+        return Resp::success(['message' => 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully']);
+    }
+
+    public function deleteProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'is_delete' => 'required|boolean'
+        ]);
+
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+
+    $user = auth()->user();
+    // Only update if is_delete is true
+    if ($request->is_delete) {
+        $user->delete_on = now();
+        $user->is_delete = true; 
+        $user->save();
+        
+        return Resp::success(['message' => 'Profile deleted successfully']);
+    }
+    
+        return Resp::error(['message' => 'Invalid request']);
+    }
+    
     public function updateSubscription(Request $request)
 {
     $validator = Validator::make($request->all(), [
@@ -240,11 +283,12 @@ class EscortController extends Controller
                 'city_id' => $request->input('city_id'),
                 'region_id' => $region_id,
                 'county_id' => $county_id,
+                'is_profile' => true,
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
             }
-            
+
             $profile_data = Profile::where('escort_id', $user->id)->first();
 
             $is_incall_enabled = $request->input('is_incall_enabled');
