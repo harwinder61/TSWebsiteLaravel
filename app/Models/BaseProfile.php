@@ -63,7 +63,9 @@ class BaseProfile extends Model
         'is_outcall_enabled',
         'allow_whatsapp',
         'whatsapp_number',
-        'country_code'
+        'country_code',
+        'is_profile',
+        'is_media',
     ];
 
     protected $casts = [

@@ -240,11 +240,12 @@ class EscortController extends Controller
                 'city_id' => $request->input('city_id'),
                 'region_id' => $region_id,
                 'county_id' => $county_id,
+                'is_profile' => true,
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
             }
-            
+
             $profile_data = Profile::where('escort_id', $user->id)->first();
 
             $is_incall_enabled = $request->input('is_incall_enabled');

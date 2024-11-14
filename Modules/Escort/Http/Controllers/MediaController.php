@@ -115,6 +115,8 @@ public function addGallary(Media $media, Request $request)
     $validator = Validator::make($request->all(), [
         'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
         'type' => 'required|string|in:gallary,private_gallery',
+        
+         
     ]);
 
     if ($validator->fails()) {
@@ -138,10 +140,18 @@ public function addGallary(Media $media, Request $request)
         $media->escort_id = $userId;
         $media->save();
 
-        return Resp::success(['message' => 'Image uploaded successfully', 'image' => $media]);
+        $profile = Profile::where('escort_id', $userId)->first();
+        if ($profile) {
+            $profile->is_media = true;
+            $profile->save();
+        }
+
+        return Resp::success(['message' => 'Image uploaded successfully', 'image' => $media,'profile'=>$profile
+    ]);
     }
     return Resp::error(['message' => 'No image file found'], 400);
 }
+
 
 
 public function addPromoVideo(Media $media, Request $request)
