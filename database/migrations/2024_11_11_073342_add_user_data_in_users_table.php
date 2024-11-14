@@ -17,10 +17,21 @@ return new class extends Migration
                 'email' => 'adminTs0011@yopmail.com',
                 'password' => Hash::make('123456789'),
                 'user_type' => 3,
+            
                 'created_at' => now(),
                 'updated_at' => now(),
                 'email_verified' => 1,   
             ]
         ]);
+
+    $user = DB::table('users')->where('email', 'adminTs0011@yopmail.com')->first();
+    DB::table('profile')->insert([
+        [
+            'name' => 'adminTs_test',
+            'escort_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]
+    ]);
     }   
 };

@@ -1,7 +1,5 @@
 <?php
-
 namespace Modules\Escort\Http\Controllers;
-
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Modules\Escort\app\Models\Profile;
@@ -175,10 +173,8 @@ class EscortController extends Controller
     {
 
         $user = auth()->user();
-        // Get the user type
         $userType = $user->user_type;
 
-        // Fetch user data based on user type
         if ($userType == 1) {
             return Resp::error(['Unauthorized user is not an escort']);
         } elseif ($userType == 2) {
@@ -248,8 +244,7 @@ class EscortController extends Controller
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
             }
-            // Find the updated escort profile
-            //$data = Profile::where('escort_id', $user->id)->get();
+            
             $profile_data = Profile::where('escort_id', $user->id)->first();
 
             $is_incall_enabled = $request->input('is_incall_enabled');
@@ -288,10 +283,7 @@ class EscortController extends Controller
                 }
             }
 
-            // Validate request data
             $validator = Validator::make($request->all(), $baseRules, $customMessages);
-
-
             if ($validator->fails()) {
                 return Resp::fieldErrors(['field_errors' => $validator->errors()]);
             }
@@ -308,7 +300,6 @@ class EscortController extends Controller
                 $profile_rates = ProfileRates::where('escort_id', $user->id)
                     ->where('category', $category)
                     ->first();
-
 
                 if (($category == 'outcall' && $is_outcall_enabled) || ($category == 'incall' && $is_incall_enabled)) {
                     $rate_data = [
@@ -335,7 +326,8 @@ class EscortController extends Controller
         } else {
             return Resp::error(['Invalid user type']);
         }
-
         return Resp::error(['No user type found']);
     }
+
+
 }
