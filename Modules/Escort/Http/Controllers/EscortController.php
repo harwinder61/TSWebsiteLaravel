@@ -31,6 +31,16 @@ class EscortController extends Controller
         //$this->middleware('jwtauth');
         //$this->middleware(AuthMiddleware::class);
     } 
+    
+   public function profileViews( $id,Request $request)
+   {
+    $user = auth()->user();
+    $profile = Profile::where('escort_id', $user->id)->first();
+    $profile->profile_views++;
+    $profile->save();
+    return Resp::success(['message' => 'Profile views updated successfully']);
+   }
+
     public function hideProfile(Request $request)
     {
         $validator = Validator::make($request->all(), [

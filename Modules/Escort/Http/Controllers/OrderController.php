@@ -34,9 +34,12 @@ class OrderController extends Controller
 
     }
 
-
-    public function createOrder(Request $request){
-        $user = auth()->user();
+    function createOrder(Request $request){
+        $user=auth()->user();
+        $image_id=0;
+        if($request->input('image_id')){
+            $image_id=$request->input('image_id');
+        }
         
         $validator = Validator::make($request->all(), [
             'plan_code' => 'required|string|exists:plans,code',
@@ -138,8 +141,8 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return Resp::error([$e->getMessage()]);
         }
-    
         $response = [
+            'order_id' => $order->id,
             'client_secret' => $paymentIntent->client_secret,
             'dpmCheckerLink' => "https://dashboard.stripe.com/settings/payment_methods/review?transaction_id={$paymentIntent->id}",
         ];
@@ -167,8 +170,31 @@ if (!$media || $media->id != $request->input('image_id')) {
     
         return Resp::success($response);
     }
-    
-    
+
+
+
+    function updateOrder(Request $request){
+        $user=auth()->user();
+        $order_id=$request->input('order_id');
+        $validator=Validator::make($request->all(),[
+            'order_id'=>'required|string|exists:orders,id',
+        ]);
+        if($validator->fails()){
+            return Resp::error([$validator->errors()]);
+        }
+        $order=Orders::find($order_id);
+        if(!$order){
+            return Resp::error(['Order not found']);
+        }
+        $updated_order=Orders::where('id',$order_id)->update([
+            'image_id'=>$request->input('image_id'),
+            
+        ]);
+        if(!$updated_order){
+            return Resp::error(['Failed to update order']);
+        }
+        return Resp::success(['Order updated successfully']);
+    }
     function webhook_payment_status_update(Request $request){
         
         $order_id=$request->input('order_id');
