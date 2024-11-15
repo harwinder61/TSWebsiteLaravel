@@ -26,21 +26,88 @@ class AuthController extends Controller
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['register', 'login', 'verifyEmail', 'verificationEmailToken']);
+        $this->middleware(AuthMiddleware::class)->except(['register', 'login', 'verifyEmail', 'verificationEmailToken', 'recoverPassword','resetPassword']);
     }
 
-    public function verificationEmailToken($token,Request $request){
-        if (!$token) {
-            return Resp::error(['error' => 'No token provided'], 401);
+    public function resetOldEmail(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'old_email' => 'required|string|email',
+            'new_email' => 'required|string|email|max:255|unique:users,email',
+            'confirm_email' => 'required|same:new_email',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }  
+    
+        $user = auth()->user();  
+        
+        if ($request->old_email !== $user->email) {
+            return Resp::error(['message' => 'Old email is incorrect']);
         }
-        // Fix typo in column name from 'verfiication_token' to 'verification_token'
+    
+        $user->email = $request->new_email;
+        $user->save();
+        
+        return Resp::success(['message' => 'Email changed successfully']);
+    }
+
+public function changePassword(Request $request) {
+    $validator = Validator::make($request->all(), [
+        'old_password' => 'required|string',
+        'new_password' => 'required|string|min:8',
+        'confirm_password' => 'required|same:new_password',
+    ]);
+
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+
+    $user = auth()->user();
+    
+    // Check if old password matches
+    if (!Hash::check($request->old_password, $user->password)) {
+        return Resp::error(['message' => 'Old password is incorrect']);
+    }
+
+    $user->password = Hash::make($request->new_password);
+    $user->save();
+    
+    return Resp::success(['message' => 'Password changed successfully']);
+}
+
+    public function resetEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email|max:255|unique:users,email',
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $user = auth()->user();
+        $user->email = $request->email;
+        $user->save();
+        return Resp::success(['message' => 'Email reset successfully']);
+    }
+
+    public function verificationEmailToken(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required|string'
+        ]);
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $token = $request->token;
+        
         $user = AuthUser::where('verification_token', $token)->first();
         if (!$user) {
-            return Resp::error(['error' => 'Token is invalid'], 401);
+            return Resp::error(['message' => 'Email verification failed.'], 401);
         }
         $user->email_verified = true;
         $user->save();
-        return Resp::success(["current user" => $user], 201);
+        return Resp::success(["current user" => $user], "email verified successfully");
     }
 
 
@@ -49,7 +116,6 @@ class AuthController extends Controller
         if (!$user) {
             return Resp::error(['message' => 'User not found'],);
         }
-        
         return Resp::success([
             'verification_token' => $user->verification_token
         ]);
@@ -98,6 +164,7 @@ class AuthController extends Controller
     return Resp::success(['message' => 'Password recovery token sent successfully']);
 
    }
+
 
     public function register(Request $request)
 

@@ -11,19 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('media', function (Blueprint $table) {
-            $table->id();
-            $table->string('type');
-            $table->string('path');
-            $table->foreignId('escort_id')->constrained('users');
-            $table->timestamps();
+        Schema::table('orders', function (Blueprint $table) {
+            $table->string('image_id')->nullable();
+            //
         });
     }
 
-    
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('media');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->dropColumn('image_id');
+            //
+        });
     }
-
 };

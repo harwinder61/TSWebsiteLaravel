@@ -114,6 +114,15 @@ class SubscriptionController extends Controller
                     $query->where('county_id', $request->query('county_id'));
                 });
             }
+
+            if (!is_null($request->query('name'))) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('name', 'like', '%' . $request->query('name') . '%');
+                });
+            }
+
+
+            
             $perPage = $request->query('per_page', 10); // Default items per page
             $page = $request->query('page', 1); // Default to first page
             $offset = ($page - 1) * $perPage;
@@ -187,11 +196,5 @@ class SubscriptionController extends Controller
             return Resp::error(['message' => 'Something went wrong'.$e->getMessage()]);
         }
 
-
-        
-
-        // Retrieve subscriptions with related escort and profile
-        //$result = $subscriptions->with('escort', 'escort.profile')->get();
-        //return Resp::success(["list" => $result]);
     }
 }

@@ -1,7 +1,5 @@
 <?php
-
 namespace Modules\Escort\Http\Controllers;
-
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Modules\Escort\app\Models\Profile;
@@ -23,8 +21,7 @@ use App\Models\Location;
 use Modules\Escort\app\Models\Inquiry;
 use App\Enums\InqueryFormSubject;
 use App\Models\Media;
-
-
+use Modules\Escort\app\Models\EscortSubscription;
 
 
 class EscortController extends Controller
@@ -33,7 +30,131 @@ class EscortController extends Controller
     {
         //$this->middleware('jwtauth');
         //$this->middleware(AuthMiddleware::class);
+    } 
+    public function hideProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'is_hidden' => 'required|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $user = auth()->user();
+        if ($request->is_hidden) {
+            $user->is_hidden = true;
+            $user->save();
+            
+            return Resp::success(['message' => 'Profile hidden successfully']);
+        }
+        
+        return Resp::success(['message' => 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully']);
     }
+
+    public function deleteProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'is_delete' => 'required|boolean'
+        ]);
+
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+
+    $user = auth()->user();
+    // Only update if is_delete is true
+    if ($request->is_delete) {
+        $user->delete_on = now();
+        $user->is_delete = true; 
+        $user->save();
+        
+        return Resp::success(['message' => 'Profile deleted successfully']);
+    }
+    
+        return Resp::error(['message' => 'Invalid request']);
+    }
+    
+    public function updateSubscription(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'subscription_id' => 'required|exists:subscriptions,id',
+        'image_id' => 'required|exists:media,id'
+    ]);
+
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+    $user = auth()->user();
+    $subscription = EscortSubscription::find($request->subscription_id);
+    
+    if (!$subscription) {
+        return Resp::error(['message' => 'Subscription not found'], 404);
+    }
+    $subscription->update([
+        'image_id' => $request->image_id
+    ]);
+    return Resp::success([
+        'message' => 'Subscription updated successfully',
+        'subscription' => $subscription
+        ]);
+    }
+
+    
+    public function updateMedia(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'gallery' => 'array',
+            'gallery.*' => 'exists:media,id',
+            'private_gallery' => 'array',
+            'private_gallery.*' => 'exists:media,id',
+            'promo_video' => 'exists:media,id'
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        $user = auth()->user();
+        if ($request->has('gallery')) {
+            Media::where('escort_id', $user->id)
+                ->where('type', 'gallery')
+                ->whereIn('id', $request->input('gallery'))
+                ->update(['is_temp' => false]);
+    
+            Media::where('escort_id', $user->id)
+                ->where('type', 'gallery')
+                ->whereNotIn('id', $request->input('gallery'))
+                ->forceDelete();
+        }
+    
+        if ($request->has('private_gallery')) {
+            Media::where('escort_id', $user->id)
+                ->where('type', 'private_gallery')
+                ->whereIn('id', $request->input('private_gallery'))
+                ->update(['is_temp' => false]);
+    
+            Media::where('escort_id', $user->id)
+                ->where('type', 'private_gallery')
+                ->whereNotIn('id', $request->input('private_gallery'))
+                ->forceDelete();
+        }
+    
+        if ($request->has('promo_video')) {
+            Media::where('escort_id', $user->id)
+                ->where('type', 'promo_video')
+                ->where('id', $request->input('promo_video'))
+                ->update(['is_temp' => false]);
+    
+            Media::where('escort_id', $user->id)
+                ->where('type', 'promo_video')
+                ->whereNotIn('id', [$request->input('promo_video')])
+                ->forceDelete();
+        }
+    
+        return Resp::success(['message' => 'Media updated successfully']);
+    }
+    
+    
 
     public function getEscortProfile($id,Request $request)
     {
@@ -95,10 +216,8 @@ class EscortController extends Controller
     {
 
         $user = auth()->user();
-        // Get the user type
         $userType = $user->user_type;
 
-        // Fetch user data based on user type
         if ($userType == 1) {
             return Resp::error(['Unauthorized user is not an escort']);
         } elseif ($userType == 2) {
@@ -164,12 +283,12 @@ class EscortController extends Controller
                 'city_id' => $request->input('city_id'),
                 'region_id' => $region_id,
                 'county_id' => $county_id,
+                'is_profile' => true,
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
             }
-            // Find the updated escort profile
-            //$data = Profile::where('escort_id', $user->id)->get();
+
             $profile_data = Profile::where('escort_id', $user->id)->first();
 
             $is_incall_enabled = $request->input('is_incall_enabled');
@@ -208,10 +327,7 @@ class EscortController extends Controller
                 }
             }
 
-            // Validate request data
             $validator = Validator::make($request->all(), $baseRules, $customMessages);
-
-
             if ($validator->fails()) {
                 return Resp::fieldErrors(['field_errors' => $validator->errors()]);
             }
@@ -228,7 +344,6 @@ class EscortController extends Controller
                 $profile_rates = ProfileRates::where('escort_id', $user->id)
                     ->where('category', $category)
                     ->first();
-
 
                 if (($category == 'outcall' && $is_outcall_enabled) || ($category == 'incall' && $is_incall_enabled)) {
                     $rate_data = [
@@ -255,7 +370,8 @@ class EscortController extends Controller
         } else {
             return Resp::error(['Invalid user type']);
         }
-
         return Resp::error(['No user type found']);
     }
+
+
 }

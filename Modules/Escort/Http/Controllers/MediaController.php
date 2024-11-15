@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;    
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Illuminate\Support\Facades\Auth;
-use Modules\Auth\app\Models\AuthUser;       
+use Modules\Auth\app\Models\AuthUser;  
+ 
+
 
  
 
@@ -25,6 +27,48 @@ class MediaController extends Controller
     {
         
     }
+
+    public function mediaSingle(Request $request)
+    {
+        $currentUser = auth()->user();
+        if (!$currentUser) {
+            return Resp::error(['error' => 'Unauthorized'], 401);
+        }
+    
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:jpeg,png,jpg,gif,mp4,avi,mkv|max:5000000',
+            'type' => 'required|string|in:gellery,private_gallery,promo_video',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        try {
+            $file = $request->file('file');
+            $fileExtension = $file->getClientOriginalExtension();
+            $fileName = $request->input('type') . '_' . time() . '.' . $fileExtension;
+    
+            $userFolder = 'uploads/media/user_' . $currentUser->id;
+            $directoryPath = public_path($userFolder);
+    
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }
+    
+            $file->move($directoryPath, $fileName);
+            $media = new Media();
+            $media->escort_id = $currentUser->id;
+            $media->type = $request->type;
+            $media->path = $userFolder . '/' . $fileName;
+            $media->save();
+    
+            return Resp::success(['media' => $media]);
+        } catch (\Exception $e) {
+            return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
+        }
+    }
+    
 
     public function getMedia(Request $request)
     {
@@ -64,13 +108,15 @@ public function getGallary(Request $request){
     return Resp::success(['gallary'=>$gallary]);    
 }
 
-public function addGallary(Media $media,Request $request)
+public function addGallary(Media $media, Request $request)
 {
     $currentUser = auth()->user();
     
     $validator = Validator::make($request->all(), [
         'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
         'type' => 'required|string|in:gallary,private_gallery',
+        
+         
     ]);
 
     if ($validator->fails()) {
@@ -81,19 +127,32 @@ public function addGallary(Media $media,Request $request)
     if ($request->hasFile('image')) {
         $image = $request->file('image');
         $imageName = $request->input('type') . '_' . time() . '.' . $image->getClientOriginalExtension();
-        $userFolder = 'uploads/media/user_'  . $userId;
-        if (!File::isDirectory(base_path($userFolder))) {
-            File::makeDirectory(base_path($userFolder), 0755, true);
+        
+        $userFolder = 'uploads/media/user_' . $userId;
+
+        $directoryPath = public_path($userFolder);
+        if (!File::isDirectory($directoryPath)) {
+            File::makeDirectory($directoryPath, 0755, true);
         }
-        $image->move(base_path($userFolder), $imageName);
+        $image->move($directoryPath, $imageName);
         $media->type = $request->input('type');
         $media->path = $userFolder . '/' . $imageName; 
         $media->escort_id = $userId;
         $media->save();
-        return Resp::success(['message' => 'Image uploaded successfully', 'image' => $media]);
+
+        $profile = Profile::where('escort_id', $userId)->first();
+        if ($profile) {
+            $profile->is_media = true;
+            $profile->save();
+        }
+
+        return Resp::success(['message' => 'Image uploaded successfully', 'image' => $media,'profile'=>$profile
+    ]);
     }
     return Resp::error(['message' => 'No image file found'], 400);
 }
+
+
 
 public function addPromoVideo(Media $media, Request $request)
 {
@@ -110,10 +169,11 @@ public function addPromoVideo(Media $media, Request $request)
         $video = $request->file('video');
         $videoName = 'promo_video_' . time() . '.' . $video->getClientOriginalExtension();
         $userFolder = 'uploads/media/user_' . $userId;
-        if (!File::isDirectory(base_path($userFolder))) {
-            File::makeDirectory(base_path($userFolder), 0755, true);
+        if (!File::isDirectory(public_path($userFolder))) {
+            File::makeDirectory(public_path($userFolder), 0755, true);     
         }
-        $video->move(base_path($userFolder), $videoName);
+
+        $video->move(public_path($userFolder), $videoName);
         
         $existingPromoVideo = Media::where('escort_id', $userId)
                                    ->where('type', 'promo_video')
