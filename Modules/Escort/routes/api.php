@@ -29,6 +29,7 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
     Route::post('/hide-profile',[EscortController::class,'hideProfile']);
     Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
+    Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
 });
 });
 
