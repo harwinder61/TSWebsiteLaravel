@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Modules\Escort\app\Models\EscortSubscription;
 use App\Models\BaseSubscription;
 use App\Models\Location;
+use App\Models\BaseReviews;
 
 class SubscriptionController extends Controller
 {
@@ -38,9 +39,10 @@ class SubscriptionController extends Controller
     public function topLocation()
     {
         $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-            ->leftJoin('locations_cities', 'profile.city_id', '=', 'locations_cities.id')
-            ->selectRaw('profile.city_id, COUNT(*) as subscription_count,locations_cities.name as city_name');
-        $result = $result->groupBy('profile.city_id', 'locations_cities.name');
+            ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
+            ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name');
+        
+        $result = $result->groupBy('locations.id', 'locations.name');
         return Resp::success(["list" => $result->get()]);
     }
 
@@ -121,11 +123,62 @@ class SubscriptionController extends Controller
             
     
             // Fetch the results with offset and limit
-            $result = $subscriptions->with('escort', 'escort.profile.county','escort.profile.city','escort.profile.region')
+            $result = $subscriptions->with('escort', 'escort.profile.county','escort.profile.city','escort.profile.region','escort.profile.reviews')
                 ->offset($offset)
                 ->limit($perPage)
                 ->get();
+
+                // Calculate average rating for the specific escort_id
+                //$averageRating = BaseReviews::whereIn('escort_id', $result->pluck('escort_id')->toArray())
+                //    ->selectRaw('AVG(photo_accuracy) as avg_photo_accuracy, AVG(service) as avg_service, AVG(clean_liness) as avg_clean_liness, AVG(location) as avg_location, AVG(value_for_money) as avg_value_for_money')
+                //    ->get();
     
+                // Fetch reviews
+                //$reviews = BaseReviews::whereIn('escort_id', $result->pluck('escort_id')->toArray())->get();
+                
+     
+
+                //$reviews = BaseReviews::whereIn('escort_id',$result->pluck('escort_id')->toArray())->get();
+                foreach ($result as $subscription) {
+                    $escort = $subscription->escort;
+                    $reviews = $escort->profile->reviews;
+                
+                    // Initialize variables to accumulate the sum of all fields
+                    $totalPhotoAccuracy = 0;
+                    $totalService = 0;
+                    $totalCleanliness = 0;
+                    $totalLocation = 0;
+                    $totalValueForMoney = 0;
+                    $totalReviews = count($reviews);
+                
+                    // If there are reviews, calculate the sum for each field
+                    if ($totalReviews > 0) {
+                        foreach ($reviews as $review) {
+                            $totalPhotoAccuracy += $review->photo_accuracy;
+                            $totalService += $review->service;
+                            $totalCleanliness += $review->clean_liness;
+                            $totalLocation += $review->location;
+                            $totalValueForMoney += $review->value_for_money;
+                        }
+                
+                        // Now, calculate the average of all fields
+                        $averageRating = (
+                            $totalPhotoAccuracy + 
+                            $totalService + 
+                            $totalCleanliness + 
+                            $totalLocation + 
+                            $totalValueForMoney
+                        ) / (5 * $totalReviews); // Divide by 5 (fields) and number of reviews
+                
+                        // Optionally, store the calculated average rating to the profile
+                        $escort->profile->avg_rating = round($averageRating, 2); // Round to 2 decimal places
+                
+                        // Save the average rating to the database (if needed)
+                        // $escort->profile->save();
+                    }
+                }
+
+            
                 return Resp::success(["list" => $result,'pagination'=>['total_results'=>$totalCount,'total_pages'=>ceil($totalCount/$perPage),'page_number'=>$page,'page_size'=>$perPage]]);
 
             // Retrieve subscriptions with related escort and profile
