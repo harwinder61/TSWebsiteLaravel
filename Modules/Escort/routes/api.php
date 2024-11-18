@@ -9,6 +9,7 @@ use Modules\Escort\Http\Controllers\MediaController;
 use Modules\Escort\Http\Controllers\OrderController;
 
 
+
 Route::middleware(['jwt_auth'])->group(function(){
 Route::group(['prefix' => 'escort'],function(){
 
@@ -42,6 +43,7 @@ Route::get('/master-data',[MastersController::class,'getMasterData']);
 Route::get('/plans',[MasterController::class,'plans']);
 Route::post('/inquiry-form',[EscortController::class,'inquiryForm']);
 Route::get('/escort-profile-id/{id}',[EscortController::class,'getEscortProfile']);
+Route::get('/get-all-media',[MediaController::class,'getAllMedia']);
 
 
 

@@ -27,6 +27,10 @@ class MediaController extends Controller
     {
         
     }
+    public function getAllMedia(Request $request){
+        $media = Media::all();
+        return Resp::success(['media'=>$media]);
+    }
 
     public function mediaSingle(Request $request)
     {
