@@ -31,7 +31,6 @@ class EscortController extends Controller
         //$this->middleware('jwtauth');
         //$this->middleware(AuthMiddleware::class);
     } 
-    
    public function profileViews( $id,Request $request)
    {
     $user = auth()->user();
