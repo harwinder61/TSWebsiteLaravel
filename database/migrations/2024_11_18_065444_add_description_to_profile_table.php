@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('profile_rates', function (Blueprint $table) {
-            $table->integer('profile_id')->nullable();
-
+        Schema::table('profile', function (Blueprint $table) {
+            $table->text('description')->nullable();           
         });
     }
 
@@ -21,10 +20,9 @@ return new class extends Migration
      * Reverse the migrations.
      */
     public function down(): void
-    
     {
-        Schema::table('profile_rates', function (Blueprint $table) {
-            $table->dropColumn('profile_id');
+        Schema::table('profile', function (Blueprint $table) {
+            $table->dropColumn('description');
         });
     }
 };
