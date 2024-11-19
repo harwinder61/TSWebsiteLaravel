@@ -40,9 +40,9 @@ class SubscriptionController extends Controller
     {
         $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
             ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
-            ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name');
+            ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.slug as slug');
         
-        $result = $result->groupBy('locations.id', 'locations.name');
+        $result = $result->groupBy('locations.id', 'locations.name','locations.slug');
         return Resp::success(["list" => $result->get()]);
     }
 
@@ -52,6 +52,15 @@ class SubscriptionController extends Controller
         try {
 
             $user = auth()->user();
+            
+            if (!is_null($request->query('city_slug'))) {
+            //request -> city_slug
+            //if city slug 
+            //check it is county , region or city 
+            //base on 
+            //cityid , county id , regino id 
+            }
+
             // $subscriptions = EscortSubscription::where('escort_id', $user->id);
 
             $subscriptions = EscortSubscription::query();
@@ -120,6 +129,13 @@ class SubscriptionController extends Controller
                     $query->where('name', 'like', '%' . $request->query('name') . '%');
                 });
             }
+
+            if (!is_null($request->query('username'))) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('username', 'like', '%' . $request->query('username') . '%');
+                });
+            }
+
 
 
             

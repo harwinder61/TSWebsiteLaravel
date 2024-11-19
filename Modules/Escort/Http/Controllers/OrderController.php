@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Mail;
 use Modules\Escort\app\Mail\OrderPaidNotification;
 use App\Services\EmailService;
 use App\Models\Media;
+use App\Models\Location;
 
 
 
@@ -264,7 +265,17 @@ if (!$media || $media->id != $request->input('image_id')) {
         return Resp::success(["list" => $subscription]);
     }  
 
-    
+    function getLocationAndSubscriptions(Request $request){
+        $location_name=$request->query('location_name');
+        $location = Location::where('name', 'LIKE', '%'.$location_name.'%')->get();
+        $profile_name=$request->query('profile_name');
+        $subscriptions = Subscription::with('escort.profile')->whereHas('escort.profile', function($query) use ($profile_name) {
+            $query->where('name', 'LIKE', '%'.$profile_name.'%');
+        })
+        ->get();
+        
+        return Resp::success(["locations" => $location,"subscriptions" => $subscriptions]);
+    }
 
 }
 

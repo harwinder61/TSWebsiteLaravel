@@ -43,7 +43,8 @@ Route::get('/master-data',[MastersController::class,'getMasterData']);
 Route::get('/plans',[MasterController::class,'plans']);
 Route::post('/inquiry-form',[EscortController::class,'inquiryForm']);
 Route::get('/escort-profile-id/{id}',[EscortController::class,'getEscortProfile']);
-Route::get('/get-all-media',[MediaController::class,'getAllMedia']);
+Route::get('/get-all-media/{escort_id}',[MediaController::class,'getAllMedia']);
+Route::get('/search/header',[OrderController::class,'getLocationAndSubscriptions']);
 
 
 
