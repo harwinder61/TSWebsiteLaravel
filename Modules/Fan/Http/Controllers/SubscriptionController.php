@@ -53,13 +53,7 @@ class SubscriptionController extends Controller
 
             $user = auth()->user();
             
-            if (!is_null($request->query('city_slug'))) {
-            //request -> city_slug
-            //if city slug 
-            //check it is county , region or city 
-            //base on 
-            //cityid , county id , regino id 
-            }
+            
 
             // $subscriptions = EscortSubscription::where('escort_id', $user->id);
 
@@ -69,6 +63,37 @@ class SubscriptionController extends Controller
             ->select('subscriptions.*', 'plans.title as plan_title'); // Add plans.title to the selection
 
 
+
+            if (!is_null($request->query('city_slug'))) {
+                //request -> city_slug
+                //if city slug 
+                //check it is county , region or city 
+                //base on 
+                //cityid , county id , regino id \
+                $citySlug = $request->query('city_slug');
+                $subscriptions->whereHas('escort.profile', function ($query) use ($citySlug) {
+                    $query->whereHas('city', function($q) use ($citySlug) {
+                        $q->where('slug','like','%'.$citySlug.'%');
+                    });
+                });
+                }
+                if (!is_null($request->query('county_slug'))) {
+                    
+                    $countySlug = $request->query('county_slug');
+                    $subscriptions->whereHas('escort.profile', function ($query) use ($countySlug) {
+                        $query->whereHas('county', function($q) use ($countySlug) {
+                            $q->where('slug','like','%'.$countySlug.'%');
+                        });
+                    });
+                    }
+                    if (!is_null($request->query('region_slug'))) {
+                        $regionSlug = $request->query('region_slug');
+                        $subscriptions->whereHas('escort.profile', function ($query) use ($regionSlug) {
+                            $query->whereHas('region', function($q) use ($regionSlug) {
+                                $q->where('slug','like','%'.$regionSlug.'%');
+                            });
+                        });
+                        }
             // Filter by plan_code if provided
             if (!is_null($request->query('plan_code'))) {
                 $subscriptions->where('plan_code', $request->query('plan_code'));
