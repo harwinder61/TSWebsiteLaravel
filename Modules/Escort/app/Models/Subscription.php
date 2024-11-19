@@ -5,9 +5,8 @@ namespace Modules\Escort\app\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\BaseSubscription;
-use Modules\Auth\Entities\User;
-use Modules\Escort\Entities\Plan;
-use Modules\Plans\app\Models\Plans;
+use App\Models\User;
+use App\Models\Plan;
 
 // use Modules\Escort\Database\Factories\OrdersFactory;
 
@@ -29,7 +28,7 @@ class Subscription extends BaseSubscription
      }
 
       function plan() {
-        return $this->belongsTo(Plans::class, 'code', 'plan_code');
+        return $this->belongsTo(Plan::class, 'code', 'plan_code');
      }
 
     

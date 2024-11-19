@@ -293,6 +293,7 @@ class EscortController extends Controller
                 'region_id' => $region_id,
                 'county_id' => $county_id,
                 'is_profile' => true,
+                'description' => $request->input('description'),
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
