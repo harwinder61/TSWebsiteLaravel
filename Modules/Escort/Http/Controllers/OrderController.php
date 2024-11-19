@@ -266,11 +266,15 @@ if (!$media || $media->id != $request->input('image_id')) {
     }  
 
     function getLocationAndSubscriptions(Request $request){
-        $location_name=$request->query('location_name');
-        $location = Location::where('name', 'LIKE', '%'.$location_name.'%')->get();
-        $profile_name=$request->query('profile_name');
-        $subscriptions = Subscription::with('escort.profile')->whereHas('escort.profile', function($query) use ($profile_name) {
-            $query->where('name', 'LIKE', '%'.$profile_name.'%');
+        if(!$request->query('s')){
+            return Resp::success(["locations" => [],"subscriptions" => []]);
+
+        }
+        $search=$request->query('s');
+        $location = Location::where('name', 'LIKE', '%'.$search.'%')->get();
+        
+        $subscriptions = Subscription::with('escort.profile')->whereHas('escort.profile', function($query) use ($search) {
+            $query->where('name', 'LIKE', '%'.$search.'%');
         })
         ->get();
         

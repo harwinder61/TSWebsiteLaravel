@@ -11,6 +11,7 @@ use Modules\Escort\app\Models\EscortSubscription;
 use App\Models\BaseSubscription;
 use App\Models\Location;
 use App\Models\BaseReviews;
+use PhpParser\Node\Stmt\Switch_;
 
 class SubscriptionController extends Controller
 {
@@ -64,18 +65,25 @@ class SubscriptionController extends Controller
 
 
 
-            if (!is_null($request->query('city_slug'))) {
-                //request -> city_slug
-                //if city slug 
-                //check it is county , region or city 
-                //base on 
-                //cityid , county id , regino id \
-                $citySlug = $request->query('city_slug');
-                $subscriptions->whereHas('escort.profile', function ($query) use ($citySlug) {
-                    $query->whereHas('city', function($q) use ($citySlug) {
-                        $q->where('slug','like','%'.$citySlug.'%');
-                    });
-                });
+            if ($request->query('slug')) {
+
+                $slug = $request->query('slug');
+
+                $location=Location::where('slug','like','%'.$slug.'%')->first();
+                $type=$location->type;
+                Log::info($type);
+                switch($type){
+                    case 'city':
+                        $request->merge(['city_id' => $location->id]);
+                        break;
+                    case 'county':
+                        $request->merge(['county_id' => $location->id]);
+                        break;
+                    case 'region':
+                        $request->merge(['region_id' => $location->id]);
+                        break;
+
+                }
                 }
                 if (!is_null($request->query('county_slug'))) {
                     
