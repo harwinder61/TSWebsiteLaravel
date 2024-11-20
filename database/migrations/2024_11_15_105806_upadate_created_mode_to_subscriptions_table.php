@@ -11,20 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('profile_rates', function (Blueprint $table) {
-            $table->integer('profile_id')->nullable();
-
+        Schema::table('subscriptions', function (Blueprint $table) {
+            $table->string('created_mode')->nullable()->change();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+
     public function down(): void
-    
     {
-        Schema::table('profile_rates', function (Blueprint $table) {
-            $table->dropColumn('profile_id');
+        Schema::table('subscriptions', function (Blueprint $table) {
+            $table->string('created_mode')->change();
         });
     }
 };

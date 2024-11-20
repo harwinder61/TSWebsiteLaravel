@@ -66,6 +66,7 @@ class BaseProfile extends Model
         'country_code',
         'is_profile',
         'is_media',
+        'description',
     ];
 
     protected $casts = [
@@ -114,6 +115,7 @@ class BaseProfile extends Model
         'is_outcall_enabled' => 'required|boolean',
         'extra_services' => 'required|array',
         'extra_services.*.key'=>'in:'.implode(',',ExtraServices::getKeys()),
+        'description' => 'nullable|string',
         'city_id' => [
             'required',
             'integer',

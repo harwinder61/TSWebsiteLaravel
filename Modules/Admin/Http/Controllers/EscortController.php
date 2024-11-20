@@ -10,6 +10,7 @@ use Modules\Escort\app\Models\Profile;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Models\AuthUser;
 
+
 class EscortController extends Controller
 {
     public function getEscorts(Request $request){

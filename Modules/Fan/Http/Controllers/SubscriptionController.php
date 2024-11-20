@@ -11,12 +11,13 @@ use Modules\Escort\app\Models\EscortSubscription;
 use App\Models\BaseSubscription;
 use App\Models\Location;
 use App\Models\BaseReviews;
+use PhpParser\Node\Stmt\Switch_;
 
 class SubscriptionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except('topLocation', 'getSubscriptions', 'locations')->except('topLocation','getSubscriptions');
+        $this->middleware(AuthMiddleware::class)->except('topLocation', 'getSubscriptions', 'locations')->except('topLocation','getSubscriptions','locations');
     }
     public function locations(Request $request)
     {
@@ -40,9 +41,9 @@ class SubscriptionController extends Controller
     {
         $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
             ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
-            ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name');
+            ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.slug as slug');
         
-        $result = $result->groupBy('locations.id', 'locations.name');
+        $result = $result->groupBy('locations.id', 'locations.name','locations.slug');
         return Resp::success(["list" => $result->get()]);
     }
 
@@ -52,6 +53,9 @@ class SubscriptionController extends Controller
         try {
 
             $user = auth()->user();
+            
+            
+
             // $subscriptions = EscortSubscription::where('escort_id', $user->id);
 
             $subscriptions = EscortSubscription::query();
@@ -60,6 +64,44 @@ class SubscriptionController extends Controller
             ->select('subscriptions.*', 'plans.title as plan_title'); // Add plans.title to the selection
 
 
+
+            if ($request->query('slug')) {
+
+                $slug = $request->query('slug');
+
+                $location=Location::where('slug','like','%'.$slug.'%')->first();
+                $type=$location->type;
+                Log::info($type);
+                switch($type){
+                    case 'city':
+                        $request->merge(['city_id' => $location->id]);
+                        break;
+                    case 'county':
+                        $request->merge(['county_id' => $location->id]);
+                        break;
+                    case 'region':
+                        $request->merge(['region_id' => $location->id]);
+                        break;
+
+                }
+                }
+                if (!is_null($request->query('county_slug'))) {
+                    
+                    $countySlug = $request->query('county_slug');
+                    $subscriptions->whereHas('escort.profile', function ($query) use ($countySlug) {
+                        $query->whereHas('county', function($q) use ($countySlug) {
+                            $q->where('slug','like','%'.$countySlug.'%');
+                        });
+                    });
+                    }
+                    if (!is_null($request->query('region_slug'))) {
+                        $regionSlug = $request->query('region_slug');
+                        $subscriptions->whereHas('escort.profile', function ($query) use ($regionSlug) {
+                            $query->whereHas('region', function($q) use ($regionSlug) {
+                                $q->where('slug','like','%'.$regionSlug.'%');
+                            });
+                        });
+                        }
             // Filter by plan_code if provided
             if (!is_null($request->query('plan_code'))) {
                 $subscriptions->where('plan_code', $request->query('plan_code'));
@@ -120,6 +162,13 @@ class SubscriptionController extends Controller
                     $query->where('name', 'like', '%' . $request->query('name') . '%');
                 });
             }
+
+            if (!is_null($request->query('username'))) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('username', 'like', '%' . $request->query('username') . '%');
+                });
+            }
+
 
 
             

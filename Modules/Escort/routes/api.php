@@ -9,6 +9,7 @@ use Modules\Escort\Http\Controllers\MediaController;
 use Modules\Escort\Http\Controllers\OrderController;
 
 
+
 Route::middleware(['jwt_auth'])->group(function(){
 Route::group(['prefix' => 'escort'],function(){
 
@@ -28,7 +29,8 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/update-subscription',[EscortController::class,'updateSubscription']);
     Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
     Route::post('/hide-profile',[EscortController::class,'hideProfile']);    Route::put('/orders',[OrderController::class,'updateOrder']);
-    Route::post('/delete-profile',[EscortController::class,'deleteProfile']);   
+    Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
+    Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
     Route::put('/orders',[OrderController::class,'updateOrder']);
 });
 });
@@ -41,6 +43,8 @@ Route::get('/master-data',[MastersController::class,'getMasterData']);
 Route::get('/plans',[MasterController::class,'plans']);
 Route::post('/inquiry-form',[EscortController::class,'inquiryForm']);
 Route::get('/escort-profile-id/{id}',[EscortController::class,'getEscortProfile']);
+Route::get('/get-all-media/{escort_id}',[MediaController::class,'getAllMedia']);
+Route::get('/search/header',[OrderController::class,'getLocationAndSubscriptions']);
 
 
 

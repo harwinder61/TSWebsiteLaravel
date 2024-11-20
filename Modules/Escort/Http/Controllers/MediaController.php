@@ -27,6 +27,11 @@ class MediaController extends Controller
     {
         
     }
+    
+    public function getAllMedia($escort_id, Request $request){
+        $media = Media::where('escort_id',$escort_id)->get();
+        return Resp::success(['media'=>$media]);
+    }
 
     public function mediaSingle(Request $request)
     {
