@@ -48,7 +48,7 @@ class OrderController extends Controller
             'only_fans_link' => 'nullable|string',
             'many_vids_link' => 'nullable|string',
             'fan_centro_link' => 'nullable|string',
-            'image_id' => 'required|exists:media,id',
+            'image_id' => 'nullable|exists:media,id',
         ]);
     
         if ($validator->fails()) {
@@ -142,6 +142,7 @@ class OrderController extends Controller
             return Resp::error([$e->getMessage()]);
         }
         $response = [
+            'order_id'=>$order->id,
             'client_secret' => $paymentIntent->client_secret,
             'dpmCheckerLink' => "https://dashboard.stripe.com/settings/payment_methods/review?transaction_id={$paymentIntent->id}",
         ];
@@ -185,9 +186,22 @@ if (!$media || $media->id != $request->input('image_id')) {
         if(!$order){
             return Resp::error(['Order not found']);
         }
+
+        $plan = Plan::where('code', $request->input('plan_code'))->first();
+        if (!$plan) {
+            return Resp::error(['Plan not found']);
+        }
+    
+        $days = $plan->days;
+        $end_date = date('Y-m-d', strtotime($request->input('start_date') . " + $days days"));
+
         $updated_order=Orders::where('id',$order_id)->update([
             'image_id'=>$request->input('image_id'),
-            
+            'start_date'=>$request->input('start_date'),
+            'end_date'=>$end_date,
+            'only_fans_link'=>$request->input('only_fans_link')??'',
+            'many_vids_link'=>$request->input('many_vids_link')??'',
+            'fan_centro_link'=>$request->input('fan_centro_link')??'',
         ]);
         if(!$updated_order){
             return Resp::error(['Failed to update order']);
