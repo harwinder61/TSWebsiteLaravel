@@ -35,13 +35,14 @@ class EscortController extends Controller
     public function getActiveSubscription(Request $request)
     {
         $user = auth()->user();
-        $subscription = EscortSubscription::where('escort_id', $user->id)->where('status', 'active')->first();
+        $subscriptions = EscortSubscription::where('escort_id', $user->id)
+            ->where('status', 'active')
+            ->get(); // Changed from first() to get() to retrieve all active subscriptions
         $profile = Profile::where('escort_id', $user->id)->first();
         $media = Media::where('escort_id', $user->id)->get();
+        
         return Resp::success([
-            'subscription' => $subscription,
-            'profile' => $profile,
-            'media' => $media
+            'subscriptions' => $subscriptions, // Changed key from singular to plural
         ]);
     }
    public function profileViews( $id,Request $request)
