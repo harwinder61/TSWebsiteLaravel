@@ -31,6 +31,19 @@ class EscortController extends Controller
         //$this->middleware('jwtauth');
         //$this->middleware(AuthMiddleware::class);
     } 
+
+    public function getActiveSubscription(Request $request)
+    {
+        $user = auth()->user();
+        $subscription = EscortSubscription::where('escort_id', $user->id)->where('status', 'active')->first();
+        $profile = Profile::where('escort_id', $user->id)->first();
+        $media = Media::where('escort_id', $user->id)->get();
+        return Resp::success([
+            'subscription' => $subscription,
+            'profile' => $profile,
+            'media' => $media
+        ]);
+    }
    public function profileViews( $id,Request $request)
    {
     $user = auth()->user();
