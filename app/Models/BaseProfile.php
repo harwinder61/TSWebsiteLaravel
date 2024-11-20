@@ -132,5 +132,9 @@ class BaseProfile extends Model
     public function reviews(){
         return $this->hasMany(BaseReviews::class,'escort_id','escort_id');
     }
+    public function media(){
+        return $this->hasMany(Media::class,'escort_id','escort_id')
+        ->where('is_temp', 0);
+    }
 }
 

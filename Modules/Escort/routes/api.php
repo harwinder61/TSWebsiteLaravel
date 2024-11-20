@@ -31,7 +31,8 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/hide-profile',[EscortController::class,'hideProfile']);    Route::put('/orders',[OrderController::class,'updateOrder']);
     Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
     Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
-
+    Route::put('/orders',[OrderController::class,'updateOrder']);
+    Route::get('/active-subscription',[EscortController::class,'getActiveSubscription']);
 });
 });
 
@@ -43,7 +44,7 @@ Route::get('/master-data',[MastersController::class,'getMasterData']);
 Route::get('/plans',[MasterController::class,'plans']);
 Route::post('/inquiry-form',[EscortController::class,'inquiryForm']);
 Route::get('/escort-profile-id/{id}',[EscortController::class,'getEscortProfile']);
-Route::get('/get-all-media/{escort_id}',[MediaController::class,'getAllMedia']);
+Route::get('/get-all-media',[MediaController::class,'getAllMedia']);
 Route::get('/search/header',[OrderController::class,'getLocationAndSubscriptions']);
 
 
