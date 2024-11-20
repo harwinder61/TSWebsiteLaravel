@@ -117,16 +117,16 @@ class MediaController extends Controller
         return Resp::success(['gallary' => $gallary]);
     }
 
-    public function addGallary(Media $media, Request $request)
-    {
-        $currentUser = auth()->user();
-
-        $validator = Validator::make($request->all(), [
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
-            'type' => 'required|string|in:gallary,private_gallery',
-
-
-        ]);
+public function addGallary(Media $media, Request $request)
+{
+    $currentUser = auth()->user();
+    
+    $validator = Validator::make($request->all(), [
+        'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
+        'type' => 'required|string|in:gallary,private_gallery,checkout',
+        
+         
+    ]);
 
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);

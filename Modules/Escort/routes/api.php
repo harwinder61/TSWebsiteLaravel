@@ -31,7 +31,7 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/hide-profile',[EscortController::class,'hideProfile']);    Route::put('/orders',[OrderController::class,'updateOrder']);
     Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
     Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
-
+    Route::put('/orders',[OrderController::class,'updateOrder']);
 });
 });
 
