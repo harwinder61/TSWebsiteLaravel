@@ -12,13 +12,41 @@ use App\Models\BaseSubscription;
 use App\Models\Location;
 use App\Models\BaseReviews;
 use PhpParser\Node\Stmt\Switch_;
+use Modules\Fan\app\Models\FanReviews;
 
 class SubscriptionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except( 'getSubscriptions', 'locations')->except('topLocation','getSubscriptions','locations','slugToLocation');
+        $this->middleware(AuthMiddleware::class)->except( 'getSubscriptions', 'locations',)
+        ->except('topLocation','getSubscriptions','locations','slugToLocation',);
     }
+public function listReviews( $id) {
+    $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
+    ->leftJoin('users', 'reviews.user_id', '=', 'users.id')
+    ->select('reviews.*','profile.name as escort_name','users.username as fan_name')
+    ->without('reviews.fan');
+    
+
+        $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
+
+    $reviews = $query->get()->map(function($review) {
+        $averageRating = (
+            $review->photo_accuracy + 
+            $review->service + 
+            $review->clean_liness + 
+            $review->location + 
+            $review->value_for_money
+        ) / 5; 
+        
+        $review->avg_rating = round($averageRating, 2);
+        // $review->fan->avg_rating = $review->avg_rating;
+        
+        return $review;
+    });
+    
+    return Resp::success(['list' => $reviews]);
+}
     public function locations(Request $request)
     {
         try {
@@ -202,20 +230,19 @@ class SubscriptionController extends Controller
                             $totalValueForMoney += $review->value_for_money;
                         }
                 
-                        // Now, calculate the average of all fields
+                      
                         $averageRating = (
                             $totalPhotoAccuracy + 
                             $totalService + 
                             $totalCleanliness + 
                             $totalLocation + 
                             $totalValueForMoney
-                        ) / (5 * $totalReviews); // Divide by 5 (fields) and number of reviews
+                        ) / (5 * $totalReviews); 
                 
-                        // Optionally, store the calculated average rating to the profile
-                        $escort->profile->avg_rating = round($averageRating, 2); // Round to 2 decimal places
+                        
+                        $escort->profile->avg_rating = round($averageRating, 2); 
                 
-                        // Save the average rating to the database (if needed)
-                        // $escort->profile->save();
+              
                     }
                 }
 

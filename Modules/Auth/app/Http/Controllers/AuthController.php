@@ -21,13 +21,16 @@ use App\Services\EmailService as Mailer;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 
+
 class AuthController extends Controller
 {
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['register', 'login', 'verifyEmail', 'verificationEmailToken', 'recoverPassword','resetPassword']);
+        $this->middleware(AuthMiddleware::class)->except(['register',  'login', 'verifyEmail', 'verificationEmailToken', 'recoverPassword','resetPassword']);
     }
+
+
 
     public function resetOldEmail(Request $request) {
         $validator = Validator::make($request->all(), [
