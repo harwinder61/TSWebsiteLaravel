@@ -20,6 +20,7 @@ Route::get('/subscriptions',[SubscriptionController::class,'getSubscriptions']);
 Route::get('/topLocation',[SubscriptionController::class,'topLocation']);
 Route::get('/locations',[SubscriptionController::class,'locations']);
 Route::post('/like-profile',[FanController::class,'likeProfile']);
+Route::post('/slug-to-location',[SubscriptionController::class,'slugToLocation']);
 
 
 

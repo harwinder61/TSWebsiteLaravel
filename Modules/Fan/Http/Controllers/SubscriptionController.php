@@ -17,7 +17,7 @@ class SubscriptionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except( 'getSubscriptions', 'locations')->except('topLocation','getSubscriptions','locations');
+        $this->middleware(AuthMiddleware::class)->except( 'getSubscriptions', 'locations')->except('topLocation','getSubscriptions','locations','slugToLocation');
     }
     public function locations(Request $request)
     {
@@ -41,9 +41,9 @@ class SubscriptionController extends Controller
     {
         $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
             ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
-            ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.slug as slug');
+            ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.type as location_type,locations.slug as slug');
         
-        $result = $result->groupBy('locations.id', 'locations.name','locations.slug');
+        $result = $result->groupBy('locations.id', 'locations.name','locations.slug','locations.type');
         return Resp::success(["list" => $result->get()]);
     }
 
@@ -54,7 +54,7 @@ class SubscriptionController extends Controller
 
             $user = auth()->user();
             
-            
+            $locationType="";
 
             // $subscriptions = EscortSubscription::where('escort_id', $user->id);
 
@@ -71,15 +71,17 @@ class SubscriptionController extends Controller
 
                 $location=Location::where('slug','like','%'.$slug.'%')->first();
                 $type=$location->type;
-                Log::info($type);
                 switch($type){
                     case 'city':
+                        $locationType='city';
                         $request->merge(['city_id' => $location->id]);
                         break;
                     case 'county':
+                        $locationType='county';
                         $request->merge(['county_id' => $location->id]);
                         break;
                     case 'region':
+                        $locationType='region';
                         $request->merge(['region_id' => $location->id]);
                         break;
 
@@ -237,7 +239,7 @@ class SubscriptionController extends Controller
                 }
 
             
-                return Resp::success(["list" => $result,'pagination'=>['total_results'=>$totalCount,'total_pages'=>ceil($totalCount/$perPage),'page_number'=>$page,'page_size'=>$perPage]]);
+                return Resp::success(["list" => $result,'location_type'=>$locationType,'pagination'=>['total_results'=>$totalCount,'total_pages'=>ceil($totalCount/$perPage),'page_number'=>$page,'page_size'=>$perPage]]);
 
             // Retrieve subscriptions with related escort and profile
         } catch (\Exception $e) {
@@ -245,5 +247,75 @@ class SubscriptionController extends Controller
             return Resp::error(['message' => 'Something went wrong'.$e->getMessage()]);
         }
 
+    }
+
+    public function slugToLocation(Request $request){
+        $slug=$request->input('slug');
+        $location = Location::where('slug', $slug)->first();
+        
+        if ($location) {
+            if ($location->type == 'city') {
+                $county = Location::where('id', $location->parent_id)->first();
+                $region = Location::where('id', $county->parent_id)->first();
+                $city_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
+                ->where('profile.city_id',$location->id)
+                ->selectRaw('COUNT(*) as subscription_count,locations.name as location_name')
+                ->groupBy('profile.city_id','locations.name')
+                ->first();
+
+                $city_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.city_id',$location->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+
+
+                $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.county_id',$county->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+
+
+                $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.region_id',$region->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+
+                $location['subscription_count']=$city_data->subscription_count;
+                $county['subscription_count']=$county_data->subscription_count;
+                $region['subscription_count']=$region_data->subscription_count;
+                return Resp::success(['city'=>$city_data ,'county'=> $county_data,'location_type'=>$location->type,'data'=>['county'=>$county,'region'=>$region,'city'=>$location]]);
+            } elseif ($location->type == 'county') {
+                $region = Location::where('id', $location->parent_id)->first();
+
+                $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.county_id',$location->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+
+
+                $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.region_id',$region->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+
+                $location['subscription_count']=$county_data->subscription_count;
+                $region['subscription_count']=$region_data->subscription_count;
+
+                return Resp::success(['location_type'=>$location->type,'data'=>['county'=>$location,'region'=>$region]]);
+                
+            } else {
+                $region = $location;
+            }
+        }
+
+
+        $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.region_id',$location->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+        $region['subscription_count']=$region_data->subscription_count;
+
+        return Resp::success(['location_type'=>$location->type, 'region'=>$region]);
     }
 }
