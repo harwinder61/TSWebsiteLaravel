@@ -19,7 +19,7 @@ class SubscriptionController extends Controller
     public function __construct()
     {
         $this->middleware(AuthMiddleware::class)->except( 'getSubscriptions', 'locations',)
-        ->except('topLocation','getSubscriptions','locations','slugToLocation', 'listReviews');
+        ->except('topLocation','getSubscriptions','locations','slugToLocation', );
     }
 public function listReviews($id) {
     $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
@@ -59,7 +59,6 @@ public function listReviews($id) {
         return $review;
     });
      
-    echo $sum_of_single_review_avg;
     $total_reviews = count($reviews);
     $total_overall_average = $sum_of_single_review_avg / ($total_reviews);
 

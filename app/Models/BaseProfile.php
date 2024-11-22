@@ -139,6 +139,5 @@ class BaseProfile extends Model
     
     }
 
-
 }
 

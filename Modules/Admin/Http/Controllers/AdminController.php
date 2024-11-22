@@ -25,14 +25,30 @@ use App\Models\Media;
 use Illuminate\Support\Facades\File;
 use Stripe\Service\SubscriptionService;
 use App\Models\User;
+use Modules\Admin\app\Models\Blog;
 
 class AdminController extends Controller    
 {
     
+ 
     
     public function recentPurchases(Request $request){
         $purchases=Subscription::orderBy('created_at','desc')->get();
         return Resp::success(['list'=>$purchases]);
+    }
+
+    public function blog(Request $request){
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string',
+            'description' => 'required|string',
+            'media_id' => 'required|exists:media,id',
+            'date' => 'required|date',
+        ]);
+        if ($validator->fails()) {
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        $blog=Blog::create($request->all());
+        return Resp::success(['message'=>'Blog created successfully']);
     }
 
     public function spotlightMedia(Request $request)
