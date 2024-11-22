@@ -12,13 +12,66 @@ use App\Models\BaseSubscription;
 use App\Models\Location;
 use App\Models\BaseReviews;
 use PhpParser\Node\Stmt\Switch_;
+use Modules\Fan\app\Models\FanReviews;
 
 class SubscriptionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except( 'getSubscriptions', 'locations')->except('topLocation','getSubscriptions','locations');
+        $this->middleware(AuthMiddleware::class)->except( 'getSubscriptions', 'locations',)
+        ->except('topLocation','getSubscriptions','locations','slugToLocation',);
     }
+public function listReviews($id) {
+    $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
+    ->leftJoin('users', 'reviews.user_id', '=', 'users.id')
+    ->select('reviews.*', 'profile.name as escort_name','users.username as fan_name')
+    ->without('reviews.fan');
+    
+
+        $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
+
+    $total_overall_average = 0;
+    $sum_of_single_review_avg = $total_overall_average = 0 ;
+
+    $sum_of_single_photo_accuracy = $total_overall_photo_accuracy =  0;
+    $sum_of_single_service = $total_overall_service = 0;
+    $sum_of_single_cleanliness = $total_overall_cleanliness = 0;
+    $sum_of_single_location = $total_overall_location = 0;
+    $sum_of_single_value_for_money = $total_overall_value_for_money = 0;
+
+    $reviews = $query->get()->map(function($review) use (&$sum_of_single_review_avg,&$sum_of_single_photo_accuracy,&$sum_of_single_service,&$sum_of_single_cleanliness,&$sum_of_single_location,&$sum_of_single_value_for_money) {
+        $averageRating = (
+            $review->photo_accuracy + 
+            $review->service + 
+            $review->clean_liness + 
+            $review->location + 
+            $review->value_for_money
+        ) / 5; 
+        $sum_of_single_photo_accuracy += $review->photo_accuracy;
+        $sum_of_single_service += $review->service;
+        $sum_of_single_cleanliness += $review->clean_liness ;
+        $sum_of_single_location += $review->location;
+        $sum_of_single_value_for_money +=  $review->value_for_money;
+        
+        $review->avg_rating = round($averageRating, 2);
+        $sum_of_single_review_avg = $sum_of_single_review_avg + round($averageRating, 2);
+        return $review;
+    });
+     
+    echo $sum_of_single_review_avg;
+    $total_reviews = count($reviews);
+    $total_overall_average = $sum_of_single_review_avg / ($total_reviews);
+
+    $total_overall_photo_accuracy = $sum_of_single_photo_accuracy / ($total_reviews);
+    $total_overall_service = $sum_of_single_service / ($total_reviews);
+    $total_overall_cleanliness = $sum_of_single_cleanliness / ($total_reviews);
+    $total_overall_location = $sum_of_single_location / ($total_reviews);
+    $total_overall_value_for_money = $sum_of_single_value_for_money / ($total_reviews);
+    
+    return Resp::success(['list' => $reviews ,'total' => $total_reviews , 'sum_of_single_review_avg' => $total_overall_average , 'total_overall_photo_accuracy'=>$total_overall_photo_accuracy,'total_overall_service'=>$total_overall_service,'total_overall_cleanliness'=>$total_overall_cleanliness,'total_overall_location'=>$total_overall_location,'total_overall_value_for_money'=>$total_overall_value_for_money]);
+}
+
+
     public function locations(Request $request)
     {
         try {
@@ -41,9 +94,9 @@ class SubscriptionController extends Controller
     {
         $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
             ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
-            ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.slug as slug');
+            ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.type as location_type,locations.slug as slug');
         
-        $result = $result->groupBy('locations.id', 'locations.name','locations.slug');
+        $result = $result->groupBy('locations.id', 'locations.name','locations.slug','locations.type');
         return Resp::success(["list" => $result->get()]);
     }
 
@@ -52,6 +105,9 @@ class SubscriptionController extends Controller
         try {
             $user = auth()->user();
             
+            $locationType="";
+
+
             $subscriptions = EscortSubscription::query();
             
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
@@ -59,17 +115,20 @@ class SubscriptionController extends Controller
 
             if ($request->query('slug')) {
                 $slug = $request->query('slug');
-                $location = Location::where('slug','like','%'.$slug.'%')->first();
-                $type = $location->type;
-                Log::info($type);
+
+                $location=Location::where('slug','like','%'.$slug.'%')->first();
+                $type=$location->type;
                 switch($type){
                     case 'city':
+                        $locationType='city';
                         $request->merge(['city_id' => $location->id]);
                         break;
                     case 'county':
+                        $locationType='county';
                         $request->merge(['county_id' => $location->id]);
                         break;
                     case 'region':
+                        $locationType='region';
                         $request->merge(['region_id' => $location->id]);
                         break;
                 }
@@ -185,38 +244,109 @@ class SubscriptionController extends Controller
                 $totalValueForMoney = 0;
                 $totalReviews = count($reviews);
                 
-                if ($totalReviews > 0) {
-                    foreach ($reviews as $review) {
-                        $totalPhotoAccuracy += $review->photo_accuracy;
-                        $totalService += $review->service;
-                        $totalCleanliness += $review->clean_liness;
-                        $totalLocation += $review->location;
-                        $totalValueForMoney += $review->value_for_money;
+                    // If there are reviews, calculate the sum for each field
+                    if ($totalReviews > 0) {
+                        foreach ($reviews as $review) {
+                            $totalPhotoAccuracy += $review->photo_accuracy;
+                            $totalService += $review->service;
+                            $totalCleanliness += $review->clean_liness;
+                            $totalLocation += $review->location;
+                            $totalValueForMoney += $review->value_for_money;
+                        }
+                
+                      
+                        $averageRating = (
+                            $totalPhotoAccuracy + 
+                            $totalService + 
+                            $totalCleanliness + 
+                            $totalLocation + 
+                            $totalValueForMoney
+                        ) / (5 * $totalReviews); 
+                
+                        
+                        $escort->profile->avg_rating = round($averageRating, 2); 
+                
+              
                     }
-                    $averageRating = (
-                        $totalPhotoAccuracy + 
-                        $totalService + 
-                        $totalCleanliness + 
-                        $totalLocation + 
-                        $totalValueForMoney
-                    ) / (5 * $totalReviews); 
-            
-                    $escort->profile->avg_rating = round($averageRating, 2); 
                 }
-            }
-            
-            return Resp::success([
-                "list" => $result,
-                'pagination' => [
-                    'total_results' => $totalCount,
-                    'total_pages' => ceil($totalCount/$perPage),
-                    'page_number' => $page,
-                    'page_size' => $perPage
-                ]
-            ]);
 
+            
+                return Resp::success(["list" => $result,'location_type'=>$locationType,'pagination'=>['total_results'=>$totalCount,'total_pages'=>ceil($totalCount/$perPage),'page_number'=>$page,'page_size'=>$perPage]]);
+
+            // Retrieve subscriptions with related escort and profile
         } catch (\Exception $e) {
             return Resp::error(['message' => 'Something went wrong'.$e->getMessage()]);
         }
     }
+
+    public function slugToLocation(Request $request){
+        $slug=$request->input('slug');
+        $location = Location::where('slug', $slug)->first();
+        
+        if ($location) {
+            if ($location->type == 'city') {
+                $county = Location::where('id', $location->parent_id)->first();
+                $region = Location::where('id', $county->parent_id)->first();
+                $city_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
+                ->where('profile.city_id',$location->id)
+                ->selectRaw('COUNT(*) as subscription_count,locations.name as location_name')
+                ->groupBy('profile.city_id','locations.name')
+                ->first();
+
+                $city_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.city_id',$location->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+
+
+                $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.county_id',$county->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+
+
+                $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.region_id',$region->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+
+                $location['subscription_count']=$city_data->subscription_count;
+                $county['subscription_count']=$county_data->subscription_count;
+                $region['subscription_count']=$region_data->subscription_count;
+                return Resp::success(['city'=>$city_data ,'county'=> $county_data,'location_type'=>$location->type,'data'=>['county'=>$county,'region'=>$region,'city'=>$location]]);
+            } elseif ($location->type == 'county') {
+                $region = Location::where('id', $location->parent_id)->first();
+
+                $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.county_id',$location->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+
+
+                $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.region_id',$region->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+
+                $location['subscription_count']=$county_data->subscription_count;
+                $region['subscription_count']=$region_data->subscription_count;
+
+                return Resp::success(['location_type'=>$location->type,'data'=>['county'=>$location,'region'=>$region]]);
+                
+            } else {
+                $region = $location;
+            }
+        }
+
+
+        $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('profile.region_id',$location->id)
+                ->selectRaw('COUNT(*) as subscription_count')
+                ->first();
+        $region['subscription_count']=$region_data->subscription_count;
+
+        return Resp::success(['location_type'=>$location->type, 'region'=>$region]);
+    }
+
 }

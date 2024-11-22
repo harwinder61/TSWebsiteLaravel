@@ -14,6 +14,9 @@ class FanReviews extends BaseReviews
         
         return $this->belongsTo(AuthUser::class,'escort_id','id');
     }
-
+    
+    // public function fan(){
+    //     return $this->belongsTo(AuthUser::class,'user_id','id');
+    // }   
 
 }

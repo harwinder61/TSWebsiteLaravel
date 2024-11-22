@@ -19,8 +19,6 @@ use Modules\Auth\app\Models\AuthUser;
 
 
 
-
-
 class MediaController extends Controller
 {
     public function __construct() {}

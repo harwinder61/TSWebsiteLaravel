@@ -284,9 +284,9 @@ if (!$media || $media->id != $request->input('image_id')) {
 
         }
         $search=$request->query('s');
-        $location = Location::where('name', 'LIKE', '%'.$search.'%')->get();
+        $location = Location::with('county')->where('name', 'LIKE', '%'.$search.'%')->get();
         
-        $subscriptions = Subscription::with('escort.profile')->whereHas('escort.profile', function($query) use ($search) {
+        $subscriptions = Subscription::with('escort.profile','media','escort.profile.city','escort.profile.region','escort.profile.county')->whereHas('escort.profile', function($query) use ($search) {
             $query->where('name', 'LIKE', '%'.$search.'%');
         })
         ->get();

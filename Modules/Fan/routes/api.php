@@ -13,6 +13,7 @@ Route::group(['prefix' => 'fan'],function(){
     Route::post('/reviews',[FanController::class,'create']);
     Route::get('/reviews',[FanController::class,'find']);
     Route::get('/escort-review/{id}',[FanController::class,'find_escort_reviews']);
+    Route::post('/change-username',[FanController::class,'changeUsername']);
 
 });
 });
@@ -20,6 +21,8 @@ Route::get('/subscriptions',[SubscriptionController::class,'getSubscriptions']);
 Route::get('/topLocation',[SubscriptionController::class,'topLocation']);
 Route::get('/locations',[SubscriptionController::class,'locations']);
 Route::post('/like-profile',[FanController::class,'likeProfile']);
+Route::post('/slug-to-location',[SubscriptionController::class,'slugToLocation']);
+Route::get('/list-reviews/{id?}',[SubscriptionController::class,'listReviews']);
 
 
 

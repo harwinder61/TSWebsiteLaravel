@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\BaseSubscription;
 use App\Models\User;
 use App\Models\Plan;
+use App\Models\Media;
 
 // use Modules\Escort\Database\Factories\OrdersFactory;
 
@@ -29,6 +30,10 @@ class Subscription extends BaseSubscription
 
       function plan() {
         return $this->belongsTo(Plan::class, 'code', 'plan_code');
+     }
+
+     function media(){
+      return $this->hasMany(Media::class,'id','image_id');
      }
 
     

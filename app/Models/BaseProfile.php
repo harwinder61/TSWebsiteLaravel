@@ -18,6 +18,7 @@ use App\MasterData\OfferServicesTo;
 use App\MasterData\ExtraServices;
 use Modules\Auth\app\Models\AuthUser;
 use Illuminate\Validation\Rule;
+use Modules\Escort\app\Models\EscortSubscription;
 class BaseProfile extends Model
 {
 
@@ -135,6 +136,9 @@ class BaseProfile extends Model
     public function media(){
         return $this->hasMany(Media::class,'escort_id','escort_id')
         ->where('is_temp', 0);
+    
     }
+
+
 }
 

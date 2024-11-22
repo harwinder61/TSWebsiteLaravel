@@ -12,4 +12,7 @@ class Location extends Model
     protected $table='locations';
     
    
+    public function county(){
+        return $this->hasOne(Location::class,'id','parent_id');
+    }
 }
