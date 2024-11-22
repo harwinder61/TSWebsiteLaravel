@@ -21,16 +21,25 @@ class SubscriptionController extends Controller
         $this->middleware(AuthMiddleware::class)->except( 'getSubscriptions', 'locations',)
         ->except('topLocation','getSubscriptions','locations','slugToLocation',);
     }
-public function listReviews( $id) {
+public function listReviews($id) {
     $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
     ->leftJoin('users', 'reviews.user_id', '=', 'users.id')
-    ->select('reviews.*','profile.name as escort_name','users.username as fan_name')
+    ->select('reviews.*', 'profile.name as escort_name','users.username as fan_name')
     ->without('reviews.fan');
     
 
         $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
 
-    $reviews = $query->get()->map(function($review) {
+    $total_overall_average = 0;
+    $sum_of_single_review_avg = $total_overall_average = 0 ;
+
+    $sum_of_single_photo_accuracy = $total_overall_photo_accuracy =  0;
+    $sum_of_single_service = $total_overall_service = 0;
+    $sum_of_single_cleanliness = $total_overall_cleanliness = 0;
+    $sum_of_single_location = $total_overall_location = 0;
+    $sum_of_single_value_for_money = $total_overall_value_for_money = 0;
+
+    $reviews = $query->get()->map(function($review) use (&$sum_of_single_review_avg,&$sum_of_single_photo_accuracy,&$sum_of_single_service,&$sum_of_single_cleanliness,&$sum_of_single_location,&$sum_of_single_value_for_money) {
         $averageRating = (
             $review->photo_accuracy + 
             $review->service + 
@@ -38,15 +47,31 @@ public function listReviews( $id) {
             $review->location + 
             $review->value_for_money
         ) / 5; 
+        $sum_of_single_photo_accuracy += $review->photo_accuracy;
+        $sum_of_single_service += $review->service;
+        $sum_of_single_cleanliness += $review->clean_liness ;
+        $sum_of_single_location += $review->location;
+        $sum_of_single_value_for_money +=  $review->value_for_money;
         
         $review->avg_rating = round($averageRating, 2);
-        // $review->fan->avg_rating = $review->avg_rating;
-        
+        $sum_of_single_review_avg = $sum_of_single_review_avg + round($averageRating, 2);
         return $review;
     });
+     
+    echo $sum_of_single_review_avg;
+    $total_reviews = count($reviews);
+    $total_overall_average = $sum_of_single_review_avg / ($total_reviews);
+
+    $total_overall_photo_accuracy = $sum_of_single_photo_accuracy / ($total_reviews);
+    $total_overall_service = $sum_of_single_service / ($total_reviews);
+    $total_overall_cleanliness = $sum_of_single_cleanliness / ($total_reviews);
+    $total_overall_location = $sum_of_single_location / ($total_reviews);
+    $total_overall_value_for_money = $sum_of_single_value_for_money / ($total_reviews);
     
-    return Resp::success(['list' => $reviews]);
+    return Resp::success(['list' => $reviews ,'total' => $total_reviews , 'sum_of_single_review_avg' => $total_overall_average , 'total_overall_photo_accuracy'=>$total_overall_photo_accuracy,'total_overall_service'=>$total_overall_service,'total_overall_cleanliness'=>$total_overall_cleanliness,'total_overall_location'=>$total_overall_location,'total_overall_value_for_money'=>$total_overall_value_for_money]);
 }
+
+
     public function locations(Request $request)
     {
         try {
@@ -82,7 +107,6 @@ public function listReviews( $id) {
             
             $locationType="";
 
-            // $subscriptions = EscortSubscription::where('escort_id', $user->id);
 
             $subscriptions = EscortSubscription::query();
             

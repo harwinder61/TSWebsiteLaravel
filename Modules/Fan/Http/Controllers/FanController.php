@@ -13,7 +13,7 @@ use Modules\Auth\app\Models\AuthUser;
 use Illuminate\Support\Facades\Validator;
 use Modules\Escort\app\Models\EscortSubscription;
 use Modules\Fan\app\Models\ProfileLike;
-
+use Illuminate\Support\Facades\Hash;
 class FanController extends Controller
 {
 
@@ -21,7 +21,26 @@ class FanController extends Controller
     {
         $this->middleware(AuthMiddleware::class);
     }
-     
+
+    public function changeUsername(Request $request)
+    {
+        $request->validate([
+            'old_username' => 'required|string',
+            'new_username' => 'required|string|unique:users,username,' . auth()->user()->id,
+            'new_password' => 'required'
+        ]);
+    
+        $user = auth()->user();
+        if ($user->username != $request->old_username) {
+            return Resp::error(['Invalid old username']);
+        }
+        
+        $user->username = $request->new_username;
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+        
+        return Resp::success(['message' => 'Username and password updated successfully']);
+    }
     public function likeProfile(Request $request)
      {
         $user = auth()->user();

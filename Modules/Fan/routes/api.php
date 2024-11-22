@@ -13,6 +13,7 @@ Route::group(['prefix' => 'fan'],function(){
     Route::post('/reviews',[FanController::class,'create']);
     Route::get('/reviews',[FanController::class,'find']);
     Route::get('/escort-review/{id}',[FanController::class,'find_escort_reviews']);
+    Route::post('/change-username',[FanController::class,'changeUsername']);
 
 });
 });
