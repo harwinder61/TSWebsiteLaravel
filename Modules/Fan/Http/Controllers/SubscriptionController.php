@@ -19,7 +19,7 @@ class SubscriptionController extends Controller
     public function __construct()
     {
         $this->middleware(AuthMiddleware::class)->except( 'getSubscriptions', 'locations',)
-        ->except('topLocation','getSubscriptions','locations','slugToLocation',);
+        ->except('topLocation','getSubscriptions','locations','slugToLocation', 'listReviews');
     }
 public function listReviews($id) {
     $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
