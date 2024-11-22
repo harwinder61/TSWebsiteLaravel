@@ -347,7 +347,7 @@ public function listReviews($id) {
                 ->first();
         $region['subscription_count']=$region_data->subscription_count;
 
-        return Resp::success(['location_type'=>$location->type, 'region'=>$region]);
+        return Resp::success(['location_type'=>$location->type, 'data'=>['region'=>$region]]);
     }
 
 }
