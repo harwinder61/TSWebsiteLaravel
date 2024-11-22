@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Validator;
 use Modules\Escort\app\Models\EscortSubscription;
 use Modules\Fan\app\Models\ProfileLike;
 use Illuminate\Support\Facades\Hash;
+use Modules\Admin\app\Models\Blog;
 class FanController extends Controller
 {
 
@@ -21,6 +22,11 @@ class FanController extends Controller
     {
         $this->middleware(AuthMiddleware::class);
     }
+
+   public function blog(Request $request){
+    $blogs=Blog::orderBy('created_at','desc')->get();
+    return Resp::success(['list'=>$blogs]);
+   }
 
     public function changeUsername(Request $request)
     {
