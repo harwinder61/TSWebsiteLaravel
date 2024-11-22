@@ -31,7 +31,8 @@ public function listReviews($id) {
         $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
 
     $total_overall_average = 0;
-    $sum_of_single_review_avg = $total_overall_average = 0 ;
+    $sum_of_single_review_avg = $total_overall_average = 0;
+
 
     $sum_of_single_photo_accuracy = $total_overall_photo_accuracy =  0;
     $sum_of_single_service = $total_overall_service = 0;
