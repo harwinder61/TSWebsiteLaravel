@@ -44,7 +44,7 @@ class MediaController extends Controller
 
         $validator = Validator::make($request->all(), [
             'file' => 'required|mimes:jpeg,png,jpg,gif,mp4,avi,mkv|max:5000000',
-            'type' => 'required|string|in:gellery,private_gallery,promo_video',
+            'type' => 'required|string|in:gallery,private_gallery,promo_video',
         ]);
 
         if ($validator->fails()) {

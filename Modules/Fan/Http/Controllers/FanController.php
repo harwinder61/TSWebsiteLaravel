@@ -20,7 +20,7 @@ class FanController extends Controller
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class);
+        $this->middleware(AuthMiddleware::class)->except('blog');
     }
 
    public function blog(Request $request){
