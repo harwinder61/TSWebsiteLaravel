@@ -49,12 +49,29 @@ class AuthController extends Controller
             return Resp::error(['message' => 'Old email is incorrect']);
         }
     
+        // Generate verification token
+        $verification_token = Str::random(30);
+        
+        // Update user with new email and verification status
         $user->email = $request->new_email;
+        $user->email_verified = false;
+        $user->verification_token = $verification_token;
         $user->save();
         
-        return Resp::success(['message' => 'Email changed successfully']);
+        // Send verification email
+        $email = new Mailer();
+        $email->to($user->email);
+        $email->subject('Verify Your New Email');
+        $email->setBodyByTemplate('verify-email', [
+            'verification_token' => $verification_token,
+            'user' => $user
+        ]);
+        $email->send();
+        
+        return Resp::success([
+            'message' => 'Email changed successfully. Please verify your new email address.'
+        ]);
     }
-
 public function changePassword(Request $request) {
     $validator = Validator::make($request->all(), [
         'old_password' => 'required|string',
