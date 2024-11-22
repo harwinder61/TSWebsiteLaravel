@@ -27,19 +27,21 @@ class FanController extends Controller
         $request->validate([
             'old_username' => 'required|string',
             'new_username' => 'required|string|unique:users,username,' . auth()->user()->id,
-            'new_password' => 'required'
+            'confirm_username' => 'required|string'
         ]);
     
         $user = auth()->user();
         if ($user->username != $request->old_username) {
             return Resp::error(['Invalid old username']);
         }
+        if ($request->new_username != $request->confirm_username) {
+            return Resp::error(['New username and confirm username do not match']);
+        }
         
         $user->username = $request->new_username;
-        $user->password = Hash::make($request->new_password);
         $user->save();
         
-        return Resp::success(['message' => 'Username and password updated successfully']);
+        return Resp::success(['message' => 'Username updated successfully']);
     }
     public function likeProfile(Request $request)
      {

@@ -19,7 +19,7 @@ class SubscriptionController extends Controller
     public function __construct()
     {
         $this->middleware(AuthMiddleware::class)->except( 'getSubscriptions', 'locations',)
-        ->except('topLocation','getSubscriptions','locations','slugToLocation',);
+        ->except('topLocation','getSubscriptions','locations','slugToLocation', 'listReviews');
     }
 public function listReviews($id) {
     $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
@@ -31,7 +31,8 @@ public function listReviews($id) {
         $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
 
     $total_overall_average = 0;
-    $sum_of_single_review_avg = $total_overall_average = 0 ;
+    $sum_of_single_review_avg = $total_overall_average = 0;
+
 
     $sum_of_single_photo_accuracy = $total_overall_photo_accuracy =  0;
     $sum_of_single_service = $total_overall_service = 0;
@@ -346,7 +347,7 @@ public function listReviews($id) {
                 ->first();
         $region['subscription_count']=$region_data->subscription_count;
 
-        return Resp::success(['location_type'=>$location->type, 'region'=>$region]);
+        return Resp::success(['location_type'=>$location->type, 'data'=>['region'=>$region]]);
     }
 
 }
