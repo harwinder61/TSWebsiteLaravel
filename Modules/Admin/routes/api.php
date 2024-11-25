@@ -23,7 +23,6 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/escorts',[EscortController::class,'getEscorts']);
         Route::get('/users',[AdminController::class,'getUsers']);
         Route::get('/profile/{id}',[AdminController::class,'getProfile']);
-        
         Route::get('/inquiries',[AdminController::class,'inquiryFormList']);
         Route::get('/recent-signups',[AdminController::class,'recentSignups']);
         Route::get('/permissions',[AdminController::class,'getPermissions']);
@@ -34,6 +33,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/recent-inquiries',[AdminController::class,'inquiriesList']);
         Route::get('/recent-purchases',[AdminController::class,'recentPurchases']);
         Route::get('/spotlight-media',[AdminController::class,'spotlightMedia']);
+        Route::post('/blog',[AdminController::class,'blog']);
+        
         
     });
 });

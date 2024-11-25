@@ -14,32 +14,40 @@ use Illuminate\Support\Facades\Validator;
 use Modules\Escort\app\Models\EscortSubscription;
 use Modules\Fan\app\Models\ProfileLike;
 use Illuminate\Support\Facades\Hash;
+use Modules\Admin\app\Models\Blog;
 class FanController extends Controller
 {
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class);
+        $this->middleware(AuthMiddleware::class)->except('blog');
     }
+
+   public function blog(Request $request){
+    $blogs=Blog::orderBy('created_at','desc')->get();
+    return Resp::success(['list'=>$blogs]);
+   }
 
     public function changeUsername(Request $request)
     {
         $request->validate([
             'old_username' => 'required|string',
             'new_username' => 'required|string|unique:users,username,' . auth()->user()->id,
-            'new_password' => 'required'
+            'confirm_username' => 'required|string'
         ]);
     
         $user = auth()->user();
         if ($user->username != $request->old_username) {
             return Resp::error(['Invalid old username']);
         }
+        if ($request->new_username != $request->confirm_username) {
+            return Resp::error(['New username and confirm username do not match']);
+        }
         
         $user->username = $request->new_username;
-        $user->password = Hash::make($request->new_password);
         $user->save();
         
-        return Resp::success(['message' => 'Username and password updated successfully']);
+        return Resp::success(['message' => 'Username updated successfully']);
     }
     public function likeProfile(Request $request)
      {
