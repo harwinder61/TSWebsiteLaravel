@@ -27,8 +27,7 @@ class EscortController extends Controller
 {
     public function __construct()
     {
-        //$this->middleware('jwtauth');
-        //$this->middleware(AuthMiddleware::class);
+        $this->middleware(AuthMiddleware::class)->except(['profileViews']);
     } 
 
     public function getActiveSubscription(Request $request)
@@ -64,13 +63,13 @@ class EscortController extends Controller
         }
         $user = auth()->user();
         if ($request->is_hidden) {
-            $user->is_hidden = true;
+            $user->is_hidden = $request->is_hidden;
             $user->save();
             
             return Resp::success(['message' => 'Profile hidden successfully']);
         }
         
-        return Resp::success(['message' => 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully']);
+        return Resp::success(['user'=>$user],'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
     }
 
     public function deleteProfile(Request $request)
@@ -87,10 +86,10 @@ class EscortController extends Controller
     // Only update if is_delete is true
     if ($request->is_delete) {
         $user->delete_on = now();
-        $user->is_delete = true; 
+        $user->is_delete = $request->is_delete; 
         $user->save();
         
-        return Resp::success(['message' => 'Profile deleted successfully']);
+        return Resp::success(['user'=>$user],'Profile deleted successfully');
     }
     
         return Resp::error(['message' => 'Invalid request']);
