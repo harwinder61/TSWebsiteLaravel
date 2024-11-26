@@ -60,6 +60,7 @@ class AdminController extends Controller
             'subscribers' => $subs_data
         ]);
     }
+    
     public function updatePlanDetails($plan_code, Request $request)
     {
 
