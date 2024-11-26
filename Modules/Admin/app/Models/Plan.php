@@ -22,8 +22,5 @@ class Plan extends Model
         'allowed_user_account'=>'integer'
     ];
 
-    // protected static function newFactory(): PlanFactory
-    // {
-    //     // return PlanFactory::new();
-    // }
+ 
 }
