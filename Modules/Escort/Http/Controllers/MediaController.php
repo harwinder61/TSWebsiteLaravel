@@ -86,7 +86,7 @@ class MediaController extends Controller
         }
 
         $gallery = Media::where('escort_id', $currentUser->id)
-            ->where('type', 'gallary')
+            ->where('type', 'gallery')
             ->get();
 
         $privateGallery = Media::where('escort_id', $currentUser->id)
@@ -104,25 +104,25 @@ class MediaController extends Controller
         ]]);
     }
 
-    public function getGallary(Request $request)
+    public function getGallery(Request $request)
     {
         $currentUser = auth()->user();
         if (!$currentUser) {
             return Resp::error(['error' => 'Unauthorized'], 401);
         }
-        $gallary = Media::where('escort_id', $currentUser->id)
-            ->where('type', 'gallary')
+        $gallery = Media::where('escort_id', $currentUser->id)
+            ->where('type', 'gallery')
             ->get();
-        return Resp::success(['gallary' => $gallary]);
+        return Resp::success(['gallery' => $gallery]);
     }
 
-public function addGallary(Media $media, Request $request)
+public function addGallery(Media $media, Request $request)
 {
     $currentUser = auth()->user();
     
     $validator = Validator::make($request->all(), [
         'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
-        'type' => 'required|string|in:gallary,private_gallery,checkout',
+        'type' => 'required|string|in:gallery,private_gallery,checkout',
         
          
     ]);
