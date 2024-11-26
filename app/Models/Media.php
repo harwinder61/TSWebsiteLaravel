@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Media extends Model
 {
     protected $table = 'media';
-    protected $fillable = ['type','path'];
+    protected $fillable = ['type','path','is_temp'];
 
    
 }

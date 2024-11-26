@@ -49,7 +49,7 @@ class OrderController extends Controller
             'only_fans_link' => 'nullable|string',
             'many_vids_link' => 'nullable|string',
             'fan_centro_link' => 'nullable|string',
-            'image_id' => 'nullable|exists:media,id',
+            'image_id' => 'required|exists:media,id',
         ]);
     
         if ($validator->fails()) {

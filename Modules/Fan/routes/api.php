@@ -24,8 +24,3 @@ Route::post('/like-profile',[FanController::class,'likeProfile']);
 Route::post('/slug-to-location',[SubscriptionController::class,'slugToLocation']);
 Route::get('/list-reviews/{id?}',[SubscriptionController::class,'listReviews']);
 Route::get('/blog',[FanController::class,'blog']);
-
-
-
-
-

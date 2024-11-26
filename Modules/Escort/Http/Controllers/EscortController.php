@@ -11,7 +11,6 @@ use App\Models\Region;
 use App\Models\Cities;
 use App\Models\Countries;
 use App\Models\Nationality;
-use App\Models\AddGallary;
 use App\Services\Resp;
 use Illuminate\Support\Facades\Log;
 use Modules\Auth\app\Models\AuthUser;
@@ -124,59 +123,60 @@ class EscortController extends Controller
 
     
     public function updateMedia(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'gallery' => 'array',
-            'gallery.*' => 'exists:media,id',
-            'private_gallery' => 'array',
-            'private_gallery.*' => 'exists:media,id',
-            'promo_video' => 'exists:media,id'
-        ]);
-    
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-    
-        $user = auth()->user();
-        if ($request->has('gallery')) {
-            Media::where('escort_id', $user->id)
-                ->where('type', 'gallery')
-                ->whereIn('id', $request->input('gallery'))
-                ->update(['is_temp' => false]);
-    
-            Media::where('escort_id', $user->id)
-                ->where('type', 'gallery')
-                ->whereNotIn('id', $request->input('gallery'))
-                ->forceDelete();
-        }
-    
-        if ($request->has('private_gallery')) {
-            Media::where('escort_id', $user->id)
-                ->where('type', 'private_gallery')
-                ->whereIn('id', $request->input('private_gallery'))
-                ->update(['is_temp' => false]);
-    
-            Media::where('escort_id', $user->id)
-                ->where('type', 'private_gallery')
-                ->whereNotIn('id', $request->input('private_gallery'))
-                ->forceDelete();
-        }
-    
-        if ($request->has('promo_video')) {
-            Media::where('escort_id', $user->id)
-                ->where('type', 'promo_video')
-                ->where('id', $request->input('promo_video'))
-                ->update(['is_temp' => false]);
-    
-            Media::where('escort_id', $user->id)
-                ->where('type', 'promo_video')
-                ->whereNotIn('id', [$request->input('promo_video')])
-                ->forceDelete();
-        }
-    
-        return Resp::success(['message' => 'Media updated successfully']);
+{
+    $validator = Validator::make($request->all(), [
+        'gallery' => 'array',                   
+        'gallery.*' => 'exists:media,id',      
+        'private_gallery' => 'array',            // Private gallery should be an array
+        'private_gallery.*' => 'exists:media,id', // Each private gallery item should exist in media table
+        'promo_video' => 'exists:media,id'       // Promo video should exist in media table
+    ]);
+
+    // Return validation errors if any
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
-    
+
+    $user = auth()->user();
+    if ($request->has('gallery')) {
+        Media::where('escort_id', $user->id)
+            ->where('type', 'gallery')
+            ->whereIn('id', $request->input('gallery'))
+            ->update(['is_temp' => false]);
+
+        Media::where('escort_id', $user->id)
+            ->where('type', 'gallery')
+            ->whereNotIn('id', $request->input('gallery'))
+            ->forceDelete();
+    }
+
+    if ($request->has('private_gallery')) {
+        Media::where('escort_id', $user->id)
+            ->where('type', 'private_gallery')
+            ->whereIn('id', $request->input('private_gallery'))
+            ->update(['is_temp' => false]);
+
+
+        Media::where('escort_id', $user->id)
+            ->where('type', 'private_gallery')
+            ->whereNotIn('id', $request->input('private_gallery'))
+            ->forceDelete();
+    }
+
+    if ($request->has('promo_video')) {
+        Media::where('escort_id', $user->id)
+            ->where('type', 'promo_video')
+            ->where('id', $request->input('promo_video'))
+            ->update(['is_temp' => false]);
+
+        Media::where('escort_id', $user->id)
+            ->where('type', 'promo_video')
+            ->whereNotIn('id', [$request->input('promo_video')])
+            ->forceDelete();
+    }
+
+    return Resp::success(['message' => 'Media updated successfully']);
+}
     
 
     public function getEscortProfile($id,Request $request)
