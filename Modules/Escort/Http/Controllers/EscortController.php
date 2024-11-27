@@ -308,6 +308,15 @@ class EscortController extends Controller
                 'county_id' => $county_id,
                 'is_profile' => true,
                 'description' => $request->input('description'),
+                'has_onlyfans' => $request->input('has_onlyfans'),
+                'has_manyvids' => $request->input('has_manyvids'),
+                'has_fancentro' => $request->input('has_fancentro'),
+                'onlyfans_handle' => $request->input('onlyfans_handle'),
+                'manyvids_handle' => $request->input('manyvids_handle'),
+                'fancentro_handle' => $request->input('fancentro_handle'),
+                'allow_whatsapp' => $request->input('allow_whatsapp'),
+                'country_code' => $request->input('country_code'),
+                'whatsapp_number' => $request->input('whatsapp_number'),
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
