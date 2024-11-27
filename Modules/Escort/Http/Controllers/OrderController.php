@@ -250,7 +250,16 @@ if (!$media || $media->id != $request->input('image_id')) {
             if($subscription_exists){
                 return Resp::error(['Subscription already exists']);
             }
-            
+            Log::info("Number of days from plans table : ".$days);
+            // Ensure the start_date is in the correct format
+            // Ensure the start_date is in the correct format
+            $start_date = Carbon::parse($order->start_date);
+            $end_date = $start_date->addDays($days)->subDay()->format('Y-m-d'); // Subtract one day from the calculated end date
+            //old end_date calculation
+            //$end_date = $start_date->addDays($days)->format('Y-m-d'); // Correctly calculate end date
+           
+            Log::info("End date : ".$end_date);
+            Log::info("Start date : ".$order->start_date);
             $subscription=Subscription::create([
                 'escort_id'=>$order->escort_id,
                 'order_id'=>$order->id,
@@ -258,7 +267,7 @@ if (!$media || $media->id != $request->input('image_id')) {
                 'start_date'=>$order->start_date,
                 'image_id'=>$order->image_id,
                 'status'=>'ACTIVE',
-                'end_date'=>date('Y-m-d',strtotime($order->start_date." + $days days")),
+                'end_date'=>$end_date,
             ]);
             if(!$subscription){
                 return Resp::error(['Failed to create subscription']);
