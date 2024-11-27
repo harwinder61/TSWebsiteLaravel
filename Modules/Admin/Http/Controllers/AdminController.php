@@ -60,6 +60,7 @@ class AdminController extends Controller
             'subscribers' => $subs_data
         ]);
     }
+    
     public function updatePlanDetails($plan_code, Request $request)
     {
 
@@ -76,6 +77,8 @@ class AdminController extends Controller
             'checkout_text' => 'nullable|string',
             'desktop_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
             'mobile_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000'
+            
+            
         ]);
     
         if ($validator->fails()) {

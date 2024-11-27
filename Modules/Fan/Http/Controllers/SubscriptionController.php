@@ -229,7 +229,7 @@ public function listReviews($id) {
                 });
             }
             
-            $perPage = $request->query('per_page', 10); 
+            $perPage = $request->query('per_page',50); 
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
     
