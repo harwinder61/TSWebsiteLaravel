@@ -30,8 +30,9 @@ public function listReviews($id) {
     $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
     ->leftJoin('users', 'reviews.user_id', '=', 'users.id')
     ->select('reviews.*', 'profile.name as escort_name','users.username as fan_name')
-    ->without('reviews.fan');
-    
+    ->without('reviews.fan')
+    ->with(['escort.profile.media']);
+
 
         $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
 
@@ -74,7 +75,7 @@ public function listReviews($id) {
     return Resp::success(['list' => $reviews ,'total' => $total_reviews , 'sum_of_single_review_avg' => $total_overall_average , 'total_overall_photo_accuracy'=>$total_overall_photo_accuracy,'total_overall_service'=>$total_overall_service,'total_overall_cleanliness'=>$total_overall_cleanliness,'total_overall_location'=>$total_overall_location,'total_overall_value_for_money'=>$total_overall_value_for_money]);
 }
 
-
+   
     public function locations(Request $request)
     {
         try {
