@@ -14,6 +14,7 @@ use App\Models\BaseReviews;
 use PhpParser\Node\Stmt\Switch_;
 use Modules\Fan\app\Models\FanReviews;
 
+
 class SubscriptionController extends Controller
 {
     public function __construct()
@@ -32,10 +33,8 @@ public function listReviews($id) {
     ->select('reviews.*', 'profile.name as escort_name','users.username as fan_name')
     ->without('reviews.fan')
     ->with(['escort.profile.media']);
-
-
-        $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
-
+    
+    $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
     $total_overall_average = 0;
     $sum_of_single_review_avg = $total_overall_average = 0;
     $sum_of_single_photo_accuracy = $total_overall_photo_accuracy =  0;
@@ -84,6 +83,8 @@ public function listReviews($id) {
     
     return Resp::success(['list' => $reviews ,'total' => $total_reviews , 'sum_of_single_review_avg' => $total_overall_average , 'total_overall_photo_accuracy'=>$total_overall_photo_accuracy,'total_overall_service'=>$total_overall_service,'total_overall_cleanliness'=>$total_overall_cleanliness,'total_overall_location'=>$total_overall_location,'total_overall_value_for_money'=>$total_overall_value_for_money]);
 }
+
+
 
    
     public function locations(Request $request)

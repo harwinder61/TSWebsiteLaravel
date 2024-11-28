@@ -36,7 +36,7 @@ class AuthMiddleware
                 return Resp::error(['Unauthorized']);
             }
         } catch (JWTException $e) {
-            return Resp::error(['Token is invalid']);
+            return Resp::error(['Token is invalid'],"Token is invalid",401);
         }
    
         // Attach user to request
