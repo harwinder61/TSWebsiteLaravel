@@ -8,7 +8,7 @@ class Resp extends Response
     {
         return response()->json(['status' => true, 'message' => $message, 'data' => $data], $code);
     }
-    public static function error(array $data = [], string $message = 'Error', $code = 400)
+    public static function error(array $data = [], string $message = 'Error', $code = 401)
     {
         return response()->json(['status' => false, 'message' => $message, 'data' => $data], $code);
     }

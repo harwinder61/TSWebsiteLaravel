@@ -32,48 +32,101 @@ class EscortController extends Controller
         $this->middleware(AuthMiddleware::class)->except(['profileViews']);
     } 
   
+    // public function verify(Request $request)
+    // {
+    //     $user = auth()->user();
+    //     $validator = Validator::make($request->all(), [
+    //         'passport_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
+    //         'selfie_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
+    //     ]);
+    
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    //     $userId = $user->id;
+    
+    //     if ($request->hasFile('passport_image') && $request->hasFile('selfie_image')) {
+    //         $passportImage = $request->file('passport_image');
+    //         $selfieImage = $request->file('selfie_image');
+            
+    //         $passportImageName = 'passport_image_' . time() . '.' . $passportImage->getClientOriginalExtension();
+    //         $selfieImageName = 'selfie_image_' . time() . '.' . $selfieImage->getClientOriginalExtension();
+            
+    //         $userFolder = 'uploads/media/user_' . $userId;
+    //         $directoryPath = public_path($userFolder);
+            
+    //         if (!File::isDirectory($directoryPath)) {
+    //             File::makeDirectory($directoryPath, 0755, true);
+    //         }            
+    
+    //         $passportImage->move($directoryPath, $passportImageName);
+    //         $selfieImage->move($directoryPath, $selfieImageName);
+    //         $verify = new Verify();
+    //         $verify->passport_image = $userFolder . '/' . $passportImageName;
+    //         $verify->selfie_image = $userFolder . '/' . $selfieImageName;
+    //         $verify->escort_id = $userId;
+    //         $verify->save();
+    
+    //         return Resp::success(['message' => 'Verify details saved successfully']);
+    //     }
+    
+    //     return Resp::error(['message' => 'Required image files not found'], 400);
+    // }
+    
+
     public function verify(Request $request)
-    {
+{
+    try {
         $user = auth()->user();
+        
+        // Validation
         $validator = Validator::make($request->all(), [
             'passport_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
             'selfie_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
         ]);
-    
+
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-        $userId = $user->id;
-    
-        if ($request->hasFile('passport_image') && $request->hasFile('selfie_image')) {
-            $passportImage = $request->file('passport_image');
-            $selfieImage = $request->file('selfie_image');
-            
-            $passportImageName = 'passport_image_' . time() . '.' . $passportImage->getClientOriginalExtension();
-            $selfieImageName = 'selfie_image_' . time() . '.' . $selfieImage->getClientOriginalExtension();
-            
-            $userFolder = 'uploads/media/user_' . $userId;
-            $directoryPath = public_path($userFolder);
-            
-            if (!File::isDirectory($directoryPath)) {
-                File::makeDirectory($directoryPath, 0755, true);
-            }            
-    
-            $passportImage->move($directoryPath, $passportImageName);
-            $selfieImage->move($directoryPath, $selfieImageName);
-    
-            $verify = new Verify();
-            $verify->passport_image = $userFolder . '/' . $passportImageName;
-            $verify->selfie_image = $userFolder . '/' . $selfieImageName;
-            $verify->escort_id = $userId;
-            $verify->save();
-    
-            return Resp::success(['message' => 'Verify details saved successfully']);
+
+        if (!$request->hasFile('passport_image') || !$request->hasFile('selfie_image')) {
+            return Resp::error(['message' => 'Required image files not found'], 400);
         }
-    
-        return Resp::error(['message' => 'Required image files not found'], 400);
+
+        // Process Images
+        $userId = $user->id;
+        $userFolder = 'uploads/media/user_' . $userId;
+        $directoryPath = storage_path('app/public/' . $userFolder);
+
+        // Ensure directory exists
+        if (!File::exists($directoryPath)) {
+            File::makeDirectory($directoryPath, 0755, true);
+        }
+
+        // Save Passport Image
+        $passportImage = $request->file('passport_image');
+        $passportImageName = 'passport_' . time() . '_' . uniqid() . '.' . $passportImage->getClientOriginalExtension();
+        $passportImage->storeAs('public/' . $userFolder, $passportImageName);
+
+        // Save Selfie Image
+        $selfieImage = $request->file('selfie_image');
+        $selfieImageName = 'selfie_' . time() . '_' . uniqid() . '.' . $selfieImage->getClientOriginalExtension();
+        $selfieImage->storeAs('public/' . $userFolder, $selfieImageName);
+
+        // Save to Database
+        $verify = new Verify();
+        $verify->passport_image = $userFolder . '/' . $passportImageName;
+        $verify->selfie_image = $userFolder . '/' . $selfieImageName;
+        $verify->escort_id = $userId;
+        $verify->save();
+
+        return Resp::success(['message' => 'Verify details saved successfully']);
+
+    } catch (\Exception $e) {
+        \Log::error('Verification Error: ' . $e->getMessage());
+        return Resp::error(['message' => 'An error occurred while processing your request'], 500);
     }
-    
+}
 
     public function getActiveSubscription(Request $request)
     {
@@ -365,15 +418,6 @@ public function updateMedia(Request $request)
                 'county_id' => $county_id,
                 'is_profile' => true,
                 'description' => $request->input('description'),
-                'has_onlyfans' => $request->input('has_onlyfans'),
-                'has_manyvids' => $request->input('has_manyvids'),
-                'has_fancentro' => $request->input('has_fancentro'),
-                'onlyfans_handle' => $request->input('onlyfans_handle'),
-                'manyvids_handle' => $request->input('manyvids_handle'),
-                'fancentro_handle' => $request->input('fancentro_handle'),
-                'allow_whatsapp' => $request->input('allow_whatsapp'),
-                'country_code' => $request->input('country_code'),
-                'whatsapp_number' => $request->input('whatsapp_number'),
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
