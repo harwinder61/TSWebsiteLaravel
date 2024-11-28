@@ -242,7 +242,8 @@ public function listReviews($id) {
                 'escort.profile.city',
                 'escort.profile.region',
                 'escort.profile.reviews',
-                'escort.profile.media'  
+                'escort.profile.media' ,
+                'escort.profile.rates',
             ])
                 ->offset($offset)
                 ->limit($perPage)
