@@ -12,7 +12,6 @@ use Modules\Escort\Http\Controllers\OrderController;
 
 Route::middleware(['jwt_auth'])->group(function(){
 Route::group(['prefix' => 'escort'],function(){
-
     Route::get('/profile',[EscortController::class,'find']);
     Route::put('/profile',[EscortController::class,'update']);  
     Route::post('/media/gallery',[MediaController::class,'addGallery']);
@@ -32,6 +31,9 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
     Route::put('/orders',[OrderController::class,'updateOrder']);
     Route::get('/active-subscription',[EscortController::class,'getActiveSubscription']);
+    Route::post('/verify',[EscortController::class,'verify']);
+
+
 });
 });
 

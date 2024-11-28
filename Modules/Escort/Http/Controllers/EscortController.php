@@ -21,6 +21,8 @@ use Modules\Escort\app\Models\Inquiry;
 use App\Enums\InqueryFormSubject;
 use App\Models\Media;
 use Modules\Escort\app\Models\EscortSubscription;
+use Modules\Escort\app\Models\Verify;
+use Illuminate\Support\Facades\File;
 
 
 class EscortController extends Controller
@@ -29,6 +31,49 @@ class EscortController extends Controller
     {
         $this->middleware(AuthMiddleware::class)->except(['profileViews']);
     } 
+  
+    public function verify(Request $request)
+    {
+        $user = auth()->user();
+        $validator = Validator::make($request->all(), [
+            'passport_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
+            'selfie_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $userId = $user->id;
+    
+        if ($request->hasFile('passport_image') && $request->hasFile('selfie_image')) {
+            $passportImage = $request->file('passport_image');
+            $selfieImage = $request->file('selfie_image');
+            
+            $passportImageName = 'passport_image_' . time() . '.' . $passportImage->getClientOriginalExtension();
+            $selfieImageName = 'selfie_image_' . time() . '.' . $selfieImage->getClientOriginalExtension();
+            
+            $userFolder = 'uploads/media/user_' . $userId;
+            $directoryPath = public_path($userFolder);
+            
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }            
+    
+            $passportImage->move($directoryPath, $passportImageName);
+            $selfieImage->move($directoryPath, $selfieImageName);
+    
+            $verify = new Verify();
+            $verify->passport_image = $userFolder . '/' . $passportImageName;
+            $verify->selfie_image = $userFolder . '/' . $selfieImageName;
+            $verify->escort_id = $userId;
+            $verify->save();
+    
+            return Resp::success(['message' => 'Verify details saved successfully']);
+        }
+    
+        return Resp::error(['message' => 'Required image files not found'], 400);
+    }
+    
 
     public function getActiveSubscription(Request $request)
     {
@@ -121,68 +166,7 @@ class EscortController extends Controller
     }
 
     
-//     public function updateMedia(Request $request)
-// {
-//     $validator = Validator::make($request->all(), [
-//         'gallery' => 'array',                   
-//         'gallery.*' => 'exists:media,id',      
-//         'private_gallery' => 'array',            
-//         'private_gallery.*' => 'exists:media,id', 
-//         'promo_video' => 'exists:media,id',
-//         'description' => 'nullable|string',
-//     ]);
 
-//     // Return validation errors if any
-//     if ($validator->fails()) {
-//         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-//     }
-
-//     $user = auth()->user();
-//     if ($request->has('gallery')) {
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'gallery')
-//             ->whereIn('id', $request->input('gallery'))
-//             ->update(['is_temp' => false]);
-
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'gallery')
-//             ->whereNotIn('id', $request->input('gallery'))
-//             ->forceDelete();
-//     }
-
-//     if ($request->has('private_gallery')) {
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'private_gallery')
-//             ->whereIn('id', $request->input('private_gallery'))
-//             ->update(['is_temp' => false]);
-
-
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'private_gallery')
-//             ->whereNotIn('id', $request->input('private_gallery'))
-//             ->forceDelete();
-//     }
-
-//     if ($request->has('promo_video')) {
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'promo_video')
-//             ->where('id', $request->input('promo_video'))
-//             ->update(['is_temp' => false]);
-
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'promo_video')
-//             ->whereNotIn('id', [$request->input('promo_video')])
-//             ->forceDelete();
-//     }
-
-//      if($request->has('description')){
-//       $profile = Profile::where('escort_id', $user->id)->first();
-//       $profile->description = $request->input('description');
-//       $profile->save();
-//       }
-
-//     return Resp::success(['message' => 'Media updated successfully']);
-// }
     
 public function updateMedia(Request $request)
 {
