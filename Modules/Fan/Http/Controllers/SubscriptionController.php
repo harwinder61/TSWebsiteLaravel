@@ -64,13 +64,23 @@ public function listReviews($id) {
     });
      
     $total_reviews = count($reviews);
-    $total_overall_average = $sum_of_single_review_avg / ($total_reviews);
-
-    $total_overall_photo_accuracy = $sum_of_single_photo_accuracy / ($total_reviews);
-    $total_overall_service = $sum_of_single_service / ($total_reviews);
-    $total_overall_cleanliness = $sum_of_single_cleanliness / ($total_reviews);
-    $total_overall_location = $sum_of_single_location / ($total_reviews);
-    $total_overall_value_for_money = $sum_of_single_value_for_money / ($total_reviews);
+    // Check if there are any reviews to avoid division by zero
+    if ($total_reviews > 0) {
+        $total_overall_average = $sum_of_single_review_avg / $total_reviews;
+        $total_overall_photo_accuracy = $sum_of_single_photo_accuracy / $total_reviews;
+        $total_overall_service = $sum_of_single_service / $total_reviews;
+        $total_overall_cleanliness = $sum_of_single_cleanliness / $total_reviews;
+        $total_overall_location = $sum_of_single_location / $total_reviews;
+        $total_overall_value_for_money = $sum_of_single_value_for_money / $total_reviews;
+    } else {
+        // Handle the case where there are no reviews
+        $total_overall_average = 0;
+        $total_overall_photo_accuracy = 0;
+        $total_overall_service = 0;
+        $total_overall_cleanliness = 0;
+        $total_overall_location = 0;
+        $total_overall_value_for_money = 0;
+    }
     
     return Resp::success(['list' => $reviews ,'total' => $total_reviews , 'sum_of_single_review_avg' => $total_overall_average , 'total_overall_photo_accuracy'=>$total_overall_photo_accuracy,'total_overall_service'=>$total_overall_service,'total_overall_cleanliness'=>$total_overall_cleanliness,'total_overall_location'=>$total_overall_location,'total_overall_value_for_money'=>$total_overall_value_for_money]);
 }
