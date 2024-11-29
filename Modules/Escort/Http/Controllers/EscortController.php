@@ -45,7 +45,7 @@ class EscortController extends Controller
     try {
         $user = auth()->user();
         
-        
+
         $validator = Validator::make($request->all(), [
             'passport_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
             'selfie_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
@@ -197,6 +197,7 @@ public function profileViews($id, Request $request)
     return Resp::success([
         'message' => 'Subscription updated successfully',
         'subscription' => $subscription
+        
         ]);
     }
 
