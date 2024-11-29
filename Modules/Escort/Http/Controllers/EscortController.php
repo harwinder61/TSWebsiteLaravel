@@ -45,7 +45,7 @@ class EscortController extends Controller
     try {
         $user = auth()->user();
         
-        // Validation
+        
         $validator = Validator::make($request->all(), [
             'passport_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
             'selfie_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
@@ -62,9 +62,11 @@ class EscortController extends Controller
         // Process Images
         $userId = $user->id;
         $userFolder = 'uploads/media/user_' . $userId;
+
+
         $directoryPath = storage_path('app/public/' . $userFolder);
 
-        // Ensure directory exists
+    
         if (!File::exists($directoryPath)) {
             File::makeDirectory($directoryPath, 0755, true);
         }
@@ -89,7 +91,7 @@ class EscortController extends Controller
         return Resp::success(['message' => 'Verify details saved successfully']);
 
     } catch (\Exception $e) {
-        \Log::error('Verification Error: ' . $e->getMessage());
+        Log::error('Verification Error: ' . $e->getMessage());
         return Resp::error(['message' => 'An error occurred while processing your request'], 500);
     }
 }
@@ -99,12 +101,12 @@ class EscortController extends Controller
         $user = auth()->user();
         $subscriptions = EscortSubscription::where('escort_id', $user->id)
             ->where('status', 'active')
-            ->get(); // Changed from first() to get() to retrieve all active subscriptions
+            ->get(); 
         $profile = Profile::where('escort_id', $user->id)->first();
         $media = Media::where('escort_id', $user->id)->get();
         
         return Resp::success([
-            'subscriptions' => $subscriptions, // Changed key from singular to plural
+            'subscriptions' => $subscriptions, 
         ]);
     }
 
@@ -112,7 +114,7 @@ public function profileViews($id, Request $request)
 {
     $user = auth()->user();
     
-    if ($user->user_type != 1) {
+    if ($user->user_type != 1) {    
         return Resp::error(['message' => 'Unauthorized user not a fan']);
     }
 

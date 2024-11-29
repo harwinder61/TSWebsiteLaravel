@@ -19,6 +19,7 @@ use App\MasterData\ExtraServices;
 use Modules\Auth\app\Models\AuthUser;
 use Illuminate\Validation\Rule;
 use Modules\Escort\app\Models\EscortSubscription;
+use Modules\Escort\app\Models\Profile;
 class BaseProfile extends Model
 {
 
@@ -138,6 +139,7 @@ class BaseProfile extends Model
         ->where('is_temp', 0);
     
     }
+
 
 }
 

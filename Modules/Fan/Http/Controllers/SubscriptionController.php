@@ -13,8 +13,9 @@ use App\Models\Location;
 use App\Models\BaseReviews;
 use PhpParser\Node\Stmt\Switch_;
 use Modules\Fan\app\Models\FanReviews;
+use App\Models\Reviews;
 
-
+    
 class SubscriptionController extends Controller
 {
     public function __construct()
@@ -29,66 +30,155 @@ class SubscriptionController extends Controller
     }
 
     
-public function listReviews($id) {
-    $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
-    ->leftJoin('users', 'reviews.user_id', '=', 'users.id')
-    ->select('reviews.*', 'profile.name as escort_name','users.username as fan_name')
-    ->without('reviews.fan')
-    ->with(['escort.profile.media']);
-    
-    $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
-    $total_overall_average = 0;
-    $sum_of_single_review_avg = $total_overall_average = 0;
-    $sum_of_single_photo_accuracy = $total_overall_photo_accuracy =  0;
-    $sum_of_single_service = $total_overall_service = 0;
-    $sum_of_single_cleanliness = $total_overall_cleanliness = 0;
-    $sum_of_single_location = $total_overall_location = 0;
-    $sum_of_single_value_for_money = $total_overall_value_for_money = 0;
 
-    $reviews = $query->get()->map(function($review) use (&$sum_of_single_review_avg,&$sum_of_single_photo_accuracy,&$sum_of_single_service,&$sum_of_single_cleanliness,&$sum_of_single_location,&$sum_of_single_value_for_money) {
-        $averageRating = (
-            $review->photo_accuracy + 
-            $review->service + 
-            $review->clean_liness + 
-            $review->location + 
-            $review->value_for_money
-        ) / 5; 
-        $sum_of_single_photo_accuracy += $review->photo_accuracy;
-        $sum_of_single_service += $review->service;
-        $sum_of_single_cleanliness += $review->clean_liness ;
-        $sum_of_single_location += $review->location;
-        $sum_of_single_value_for_money +=  $review->value_for_money;
-        
-        $review->avg_rating = round($averageRating, 2);
-        $sum_of_single_review_avg = $sum_of_single_review_avg + round($averageRating, 2);
+
+public function getAllListReviews(Request $request){
+    $reviews = BaseReviews::all();
+    $reviews = $reviews->map(function ($review) {
+        $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
         return $review;
     });
-     
-    $total_reviews = count($reviews);
-    // Check if there are any reviews to avoid division by zero
-    if ($total_reviews > 0) {
-        $total_overall_average = $sum_of_single_review_avg / $total_reviews;
-        $total_overall_photo_accuracy = $sum_of_single_photo_accuracy / $total_reviews;
-        $total_overall_service = $sum_of_single_service / $total_reviews;
-        $total_overall_cleanliness = $sum_of_single_cleanliness / $total_reviews;
-        $total_overall_location = $sum_of_single_location / $total_reviews;
-        $total_overall_value_for_money = $sum_of_single_value_for_money / $total_reviews;
-    } else {
-        // Handle the case where there are no reviews
-        $total_overall_average = 0;
-        $total_overall_photo_accuracy = 0;
-        $total_overall_service = 0;
-        $total_overall_cleanliness = 0;
-        $total_overall_location = 0;
-        $total_overall_value_for_money = 0;
-    }
-    
-    return Resp::success(['list' => $reviews ,'total' => $total_reviews , 'sum_of_single_review_avg' => $total_overall_average , 'total_overall_photo_accuracy'=>$total_overall_photo_accuracy,'total_overall_service'=>$total_overall_service,'total_overall_cleanliness'=>$total_overall_cleanliness,'total_overall_location'=>$total_overall_location,'total_overall_value_for_money'=>$total_overall_value_for_money]);
+    $pagination = ['total_results'=>$reviews->count(),'total_pages'=>1,'page_number'=>1,'page_size'=>10];
+    return Resp::success(['reviews' => $reviews,'pagination'=>$pagination]);
+
 }
 
 
+// public function listReviews($id) {
+//     $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
+//         ->leftJoin('users', 'reviews.user_id', '=', 'users.id')
+//         ->select('reviews.*', 'profile.name as escort_name', 'users.username as fan_name')
+//         ->without('reviews.fan')
+//         ->with(['escort.profile.media']);
 
-   
+//     $query->where(function ($query) use ($id) {
+//         $query->where('reviews.escort_id', $id)
+//             ->orWhere('reviews.user_id', $id);
+//     });
+
+//     $reviews = $query->get()->map(function ($review) use (&$sum_of_single_review_avg, &$sum_of_single_photo_accuracy, &$sum_of_single_service, &$sum_of_single_cleanliness, &$sum_of_single_location, &$sum_of_single_value_for_money) {
+//         $averageRating = (
+//             $review->photo_accuracy +
+//             $review->service +
+//             $review->clean_liness +
+//             $review->location +
+//             $review->value_for_money
+//         ) / 5;
+//         $sum_of_single_photo_accuracy += $review->photo_accuracy;
+//         $sum_of_single_service += $review->service;
+//         $sum_of_single_cleanliness += $review->clean_liness;
+//         $sum_of_single_location += $review->location;
+//         $sum_of_single_value_for_money += $review->value_for_money;
+
+//         $review->avg_rating = round($averageRating, 2);
+//         $sum_of_single_review_avg = $sum_of_single_review_avg + round($averageRating, 2);
+//         return $review;
+//     });
+
+//     $total_reviews = count($reviews);
+
+//     if ($total_reviews > 0) {
+//         $total_overall_average = $sum_of_single_review_avg / $total_reviews;
+//         $total_overall_photo_accuracy = $sum_of_single_photo_accuracy / $total_reviews;
+//         $total_overall_service = $sum_of_single_service / $total_reviews;
+//         $total_overall_cleanliness = $sum_of_single_cleanliness / $total_reviews;
+//         $total_overall_location = $sum_of_single_location / $total_reviews;
+//         $total_overall_value_for_money = $sum_of_single_value_for_money / $total_reviews;
+//     } else {
+//         $total_overall_average = 0;
+//         $total_overall_photo_accuracy = 0;
+//         $total_overall_service = 0;
+//         $total_overall_cleanliness = 0;
+//         $total_overall_location = 0;
+//         $total_overall_value_for_money = 0;
+//     }
+
+//     return Resp::success([
+//         'list' => $reviews,
+//         'total' => $total_reviews,
+//         'sum_of_single_review_avg' => $total_overall_average,
+//         'total_overall_photo_accuracy' => $total_overall_photo_accuracy,
+//         'total_overall_service' => $total_overall_service,
+//         'total_overall_cleanliness' => $total_overall_cleanliness,
+//         'total_overall_location' => $total_overall_location,
+//         'total_overall_value_for_money' => $total_overall_value_for_money
+//     ]);
+// }
+
+public function listReviews($id, Request $request)
+{
+    $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
+        ->leftJoin('users', 'reviews.user_id', '=', 'users.id')
+        ->select('reviews.*', 'profile.name as escort_name', 'users.username as fan_name')
+        ->without('reviews.fan')
+        ->with(['escort.profile.media']);
+
+    $query->where(function ($query) use ($id) {
+        $query->where('reviews.escort_id', $id)
+            ->orWhere('reviews.user_id', $id);
+    });
+
+    $reviews = $query->paginate($request->input('page_size', 4));
+
+    $total_reviews = $reviews->total();
+    $total_overall_average = 0;
+    $total_overall_photo_accuracy = 0;
+    $total_overall_service = 0;
+    $total_overall_cleanliness = 0;
+    $total_overall_location = 0;
+    $total_overall_value_for_money = 0;
+    $sum_of_single_review_avg = 0;
+    $sum_of_single_photo_accuracy = 0;
+    $sum_of_single_service = 0;
+    $sum_of_single_cleanliness = 0;
+    $sum_of_single_location = 0;
+    $sum_of_single_value_for_money = 0;
+
+    foreach ($reviews as $review) {
+        $averageRating = (
+            $review->photo_accuracy +
+            $review->service +
+            $review->clean_liness +
+            $review->location +
+            $review->value_for_money
+        ) / 5;
+        $sum_of_single_photo_accuracy += $review->photo_accuracy;
+        $sum_of_single_service += $review->service;
+        $sum_of_single_cleanliness += $review->clean_liness;
+        $sum_of_single_location += $review->location;
+        $sum_of_single_value_for_money += $review->value_for_money;
+
+        $review->avg_rating = round($averageRating, 2);
+        $sum_of_single_review_avg = $sum_of_single_review_avg + round($averageRating, 2);
+        $total_overall_average += $averageRating;
+        $total_overall_photo_accuracy += $review->photo_accuracy;
+        $total_overall_service += $review->service;
+        $total_overall_cleanliness += $review->clean_liness;
+        $total_overall_location += $review->location;
+        $total_overall_value_for_money += $review->value_for_money;
+    }
+
+    if ($total_reviews > 0) {
+        $total_overall_average = $total_overall_average / $total_reviews;
+        $total_overall_photo_accuracy = $total_overall_photo_accuracy / $total_reviews;
+        $total_overall_service = $total_overall_service / $total_reviews;
+        $total_overall_cleanliness = $total_overall_cleanliness / $total_reviews;
+        $total_overall_location = $total_overall_location / $total_reviews;
+        $total_overall_value_for_money = $total_overall_value_for_money / $total_reviews;
+    }
+
+    return Resp::success([
+        'list' => $reviews,
+        'total' => $total_reviews,
+        'sum_of_single_review_avg' => $total_overall_average,
+        'total_overall_photo_accuracy' => $total_overall_photo_accuracy,
+        'total_overall_service' => $total_overall_service,
+        'total_overall_cleanliness' => $total_overall_cleanliness,
+        'total_overall_location' => $total_overall_location,
+        'total_overall_value_for_money' => $total_overall_value_for_money
+    ]);
+}   
+
     public function locations(Request $request)
     {
         try {

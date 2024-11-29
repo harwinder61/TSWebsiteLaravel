@@ -26,7 +26,8 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/update-media',[EscortController::class,'updateMedia']);
     Route::post('/update-subscription',[EscortController::class,'updateSubscription']);
     Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
-    Route::post('/hide-profile',[EscortController::class,'hideProfile']);    Route::put('/orders',[OrderController::class,'updateOrder']);
+    Route::post('/hide-profile',[EscortController::class,'hideProfile']);   
+     Route::put('/orders',[OrderController::class,'updateOrder']);
     Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
     Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
     Route::put('/orders',[OrderController::class,'updateOrder']);
