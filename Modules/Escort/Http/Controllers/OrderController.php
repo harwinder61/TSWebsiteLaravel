@@ -272,10 +272,11 @@ if (!$media || $media->id != $request->input('image_id')) {
             if(!$subscription){
                 return Resp::error(['Failed to create subscription']);
             }
+            return Resp::success(['subscription'=>$subscription,'order'=>$order]);
         }else{
           return Resp::error(['Order already paid']);
         }
-        return Resp::success([$order]);
+        return Resp::success(['order'=>$order]);
     }
 
     function getSubscription() {
