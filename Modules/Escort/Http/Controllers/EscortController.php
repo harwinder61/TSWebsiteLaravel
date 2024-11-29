@@ -23,7 +23,7 @@ use App\Models\Media;
 use Modules\Escort\app\Models\EscortSubscription;
 use Modules\Escort\app\Models\Verify;
 use Illuminate\Support\Facades\File;
-
+use App\Models\Plan;
 
 class EscortController extends Controller
 {
@@ -32,6 +32,13 @@ class EscortController extends Controller
         $this->middleware(AuthMiddleware::class)->except(['profileViews']);
     } 
  
+
+
+    public function featuredTsGirl(Request $request)
+    {
+        $plans = Plan::where('id', 5)->get();
+        return Resp::success(['plans' => $plans]);
+    }
 
     public function verify(Request $request)
 {
