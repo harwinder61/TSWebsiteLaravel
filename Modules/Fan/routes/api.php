@@ -15,6 +15,7 @@ Route::middleware(['jwt_auth:fan'])->group(function(){
     Route::get('/escort-review/{id}',[FanController::class,'find_escort_reviews']);
     Route::post('/change-username',[FanController::class,'changeUsername']);
     Route::post('/add-view-count',[FanController::class,'addViewCount']);
+    Route::post('/profile-views/{id}',[fanController::class,'profileViews']);
 
 });
 });

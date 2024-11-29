@@ -31,48 +31,7 @@ class EscortController extends Controller
     {
         $this->middleware(AuthMiddleware::class)->except(['profileViews']);
     } 
-  
-    // public function verify(Request $request)
-    // {
-    //     $user = auth()->user();
-    //     $validator = Validator::make($request->all(), [
-    //         'passport_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
-    //         'selfie_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
-    //     ]);
-    
-    //     if ($validator->fails()) {
-    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    //     }
-    //     $userId = $user->id;
-    
-    //     if ($request->hasFile('passport_image') && $request->hasFile('selfie_image')) {
-    //         $passportImage = $request->file('passport_image');
-    //         $selfieImage = $request->file('selfie_image');
-            
-    //         $passportImageName = 'passport_image_' . time() . '.' . $passportImage->getClientOriginalExtension();
-    //         $selfieImageName = 'selfie_image_' . time() . '.' . $selfieImage->getClientOriginalExtension();
-            
-    //         $userFolder = 'uploads/media/user_' . $userId;
-    //         $directoryPath = public_path($userFolder);
-            
-    //         if (!File::isDirectory($directoryPath)) {
-    //             File::makeDirectory($directoryPath, 0755, true);
-    //         }            
-    
-    //         $passportImage->move($directoryPath, $passportImageName);
-    //         $selfieImage->move($directoryPath, $selfieImageName);
-    //         $verify = new Verify();
-    //         $verify->passport_image = $userFolder . '/' . $passportImageName;
-    //         $verify->selfie_image = $userFolder . '/' . $selfieImageName;
-    //         $verify->escort_id = $userId;
-    //         $verify->save();
-    
-    //         return Resp::success(['message' => 'Verify details saved successfully']);
-    //     }
-    
-    //     return Resp::error(['message' => 'Required image files not found'], 400);
-    // }
-    
+ 
 
     public function verify(Request $request)
 {
@@ -141,14 +100,28 @@ class EscortController extends Controller
             'subscriptions' => $subscriptions, // Changed key from singular to plural
         ]);
     }
-   public function profileViews( $id,Request $request)
-   {
+
+public function profileViews($id, Request $request)
+{
     $user = auth()->user();
-    $profile = Profile::where('escort_id', $user->id)->first();
-    $profile->profile_views++;
-    $profile->save();
+    
+    if ($user->user_type != 1) {
+        return Resp::error(['message' => 'Unauthorized user not a fan']);
+    }
+
+    $profile = AuthUser::where('id', $id)
+                       ->where('user_type', 2)
+                       ->with('profile')
+                       ->first();
+
+    if (!$profile || !$profile->profile) {
+        return Resp::error(['message' => 'User is not an escort or profile not found']);
+    }
+
+    $profile->profile->increment('profile_views');
+
     return Resp::success(['message' => 'Profile views updated successfully']);
-   }
+}
 
     public function hideProfile(Request $request)
     {

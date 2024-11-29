@@ -27,6 +27,8 @@ class SubscriptionController extends Controller
             'listReviews'
         ]);
     }
+
+    
 public function listReviews($id) {
     $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
     ->leftJoin('users', 'reviews.user_id', '=', 'users.id')

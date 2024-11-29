@@ -30,7 +30,7 @@ class FanController extends Controller
 //        $request->validate([
 //            'id'=>'required|numeric',
 //        ]);
-//        $fan=Fan::find($request->id);
+//        $fan=Fan::find($request->id);e
 //        $fan->view_count=$fan->view_count+1;
 //        $fan->save();
 //        return Resp::success();
