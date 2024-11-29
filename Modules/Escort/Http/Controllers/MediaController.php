@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\File;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 use Illuminate\Support\Facades\Auth;
 use Modules\Auth\app\Models\AuthUser;
-
+use Illuminate\Support\Facades\Log;
 
 
 
@@ -37,6 +37,55 @@ class MediaController extends Controller
 
     public function mediaSingle(Request $request)
     {
+        $slug=$request->query('upload_type');
+        if($slug=='advert'){
+            Log::info('advert slug passed');
+            Log::info($request->all());
+            $escort_id=$request->input('escort_id');
+          Log::info('escort id is =========== '.$escort_id);
+            //  $currentUser = auth()->user();
+        //if (!$currentUser) {
+        //    return Resp::error(['error' => 'Unauthorized'], 401);
+        //}
+
+        //$validator = Validator::make($request->all(), [
+        //    'file' => 'required|mimes:jpeg,png,jpg,gif,mp4,avi,mkv|max:5000000',
+        //    'type' => 'required|string|in:gallery,private_gallery,promo_video',
+        //]);
+
+        //if ($validator->fails()) {
+        //    return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        //}
+
+        try {
+            $file = $request->file('file');
+            $fileExtension = $file->getClientOriginalExtension();
+            $fileName = $request->input('type') . '_' . time() . '.' . $fileExtension;
+
+            $userFolder = 'uploads/media/user_' . $escort_id;
+            $directoryPath = public_path($userFolder);
+
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }
+
+            $file->move($directoryPath, $fileName);
+            $media = new Media();
+            $media->escort_id = (int)$escort_id;
+            $media->type = $request->type;
+            $media->path = $userFolder . '/' . $fileName;
+            $media->save();
+            Log::info('media saved in advert ');
+            Log::info('escort id is =========== '.$escort_id);
+
+            return Resp::success(['media' => $media,'slug'=>$slug]);
+        } catch (\Exception $e) {
+            return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
+        }
+        
+
+        }else{
+            
         $currentUser = auth()->user();
         if (!$currentUser) {
             return Resp::error(['error' => 'Unauthorized'], 401);
@@ -73,6 +122,7 @@ class MediaController extends Controller
             return Resp::success(['media' => $media]);
         } catch (\Exception $e) {
             return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
+        }
         }
     }
 

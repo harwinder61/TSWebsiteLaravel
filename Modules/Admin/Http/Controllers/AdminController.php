@@ -510,6 +510,11 @@ public function assignPermissions($id,Request $request){
             ->get();
         return Resp::success(['list'=>$result,'total_count'=>$totalCount,'page'=>$page,'per_page'=>$perPage]);
     }
+
+    public function getLiveAdvertsUsers(Request $request){
+        $users=AuthUser::with('profile')->get();
+        return Resp::success(['list'=>$users]);
+    }
 }
 
 
