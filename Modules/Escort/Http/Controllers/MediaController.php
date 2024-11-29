@@ -90,7 +90,6 @@ class MediaController extends Controller
         if (!$currentUser) {
             return Resp::error(['error' => 'Unauthorized'], 401);
         }
-
         $validator = Validator::make($request->all(), [
             'file' => 'required|mimes:jpeg,png,jpg,gif,mp4,avi,mkv|max:5000000',
             'type' => 'required|string|in:gallery,private_gallery,promo_video',
@@ -99,7 +98,6 @@ class MediaController extends Controller
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-
         try {
             $file = $request->file('file');
             $fileExtension = $file->getClientOriginalExtension();
@@ -111,14 +109,12 @@ class MediaController extends Controller
             if (!File::isDirectory($directoryPath)) {
                 File::makeDirectory($directoryPath, 0755, true);
             }
-
             $file->move($directoryPath, $fileName);
             $media = new Media();
             $media->escort_id = $currentUser->id;
             $media->type = $request->type;
             $media->path = $userFolder . '/' . $fileName;
             $media->save();
-
             return Resp::success(['media' => $media]);
         } catch (\Exception $e) {
             return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
@@ -235,7 +231,6 @@ public function addGallery(Media $media, Request $request)
             }
 
             $video->move(public_path($userFolder), $videoName);
-
             $existingPromoVideo = Media::where('escort_id', $userId)
                 ->where('type', 'promo_video')
                 ->first();

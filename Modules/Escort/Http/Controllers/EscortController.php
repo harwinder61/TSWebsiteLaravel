@@ -21,7 +21,9 @@ use Modules\Escort\app\Models\Inquiry;
 use App\Enums\InqueryFormSubject;
 use App\Models\Media;
 use Modules\Escort\app\Models\EscortSubscription;
-
+use Modules\Escort\app\Models\Verify;
+use Illuminate\Support\Facades\File;
+use App\Models\Plan;
 
 class EscortController extends Controller
 {
@@ -29,6 +31,68 @@ class EscortController extends Controller
     {
         $this->middleware(AuthMiddleware::class)->except(['profileViews']);
     } 
+ 
+
+
+    public function featuredTsGirl(Request $request)
+    {
+        $plans = Plan::where('id', 5)->get();
+        return Resp::success(['plans' => $plans]);
+    }
+
+    public function verify(Request $request)
+{
+    try {
+        $user = auth()->user();
+        
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'passport_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
+            'selfie_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+
+        if (!$request->hasFile('passport_image') || !$request->hasFile('selfie_image')) {
+            return Resp::error(['message' => 'Required image files not found'], 400);
+        }
+
+        // Process Images
+        $userId = $user->id;
+        $userFolder = 'uploads/media/user_' . $userId;
+        $directoryPath = storage_path('app/public/' . $userFolder);
+
+        // Ensure directory exists
+        if (!File::exists($directoryPath)) {
+            File::makeDirectory($directoryPath, 0755, true);
+        }
+
+        // Save Passport Image
+        $passportImage = $request->file('passport_image');
+        $passportImageName = 'passport_' . time() . '_' . uniqid() . '.' . $passportImage->getClientOriginalExtension();
+        $passportImage->storeAs('public/' . $userFolder, $passportImageName);
+
+        // Save Selfie Image
+        $selfieImage = $request->file('selfie_image');
+        $selfieImageName = 'selfie_' . time() . '_' . uniqid() . '.' . $selfieImage->getClientOriginalExtension();
+        $selfieImage->storeAs('public/' . $userFolder, $selfieImageName);
+
+        // Save to Database
+        $verify = new Verify();
+        $verify->passport_image = $userFolder . '/' . $passportImageName;
+        $verify->selfie_image = $userFolder . '/' . $selfieImageName;
+        $verify->escort_id = $userId;
+        $verify->save();
+
+        return Resp::success(['message' => 'Verify details saved successfully']);
+
+    } catch (\Exception $e) {
+        \Log::error('Verification Error: ' . $e->getMessage());
+        return Resp::error(['message' => 'An error occurred while processing your request'], 500);
+    }
+}
 
     public function getActiveSubscription(Request $request)
     {
@@ -43,14 +107,28 @@ class EscortController extends Controller
             'subscriptions' => $subscriptions, // Changed key from singular to plural
         ]);
     }
-   public function profileViews( $id,Request $request)
-   {
+
+public function profileViews($id, Request $request)
+{
     $user = auth()->user();
-    $profile = Profile::where('escort_id', $user->id)->first();
-    $profile->profile_views++;
-    $profile->save();
+    
+    if ($user->user_type != 1) {
+        return Resp::error(['message' => 'Unauthorized user not a fan']);
+    }
+
+    $profile = AuthUser::where('id', $id)
+                       ->where('user_type', 2)
+                       ->with('profile')
+                       ->first();
+
+    if (!$profile || !$profile->profile) {
+        return Resp::error(['message' => 'User is not an escort or profile not found']);
+    }
+
+    $profile->profile->increment('profile_views');
+
     return Resp::success(['message' => 'Profile views updated successfully']);
-   }
+}
 
     public function hideProfile(Request $request)
     {
@@ -121,68 +199,7 @@ class EscortController extends Controller
     }
 
     
-//     public function updateMedia(Request $request)
-// {
-//     $validator = Validator::make($request->all(), [
-//         'gallery' => 'array',                   
-//         'gallery.*' => 'exists:media,id',      
-//         'private_gallery' => 'array',            
-//         'private_gallery.*' => 'exists:media,id', 
-//         'promo_video' => 'exists:media,id',
-//         'description' => 'nullable|string',
-//     ]);
 
-//     // Return validation errors if any
-//     if ($validator->fails()) {
-//         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-//     }
-
-//     $user = auth()->user();
-//     if ($request->has('gallery')) {
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'gallery')
-//             ->whereIn('id', $request->input('gallery'))
-//             ->update(['is_temp' => false]);
-
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'gallery')
-//             ->whereNotIn('id', $request->input('gallery'))
-//             ->forceDelete();
-//     }
-
-//     if ($request->has('private_gallery')) {
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'private_gallery')
-//             ->whereIn('id', $request->input('private_gallery'))
-//             ->update(['is_temp' => false]);
-
-
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'private_gallery')
-//             ->whereNotIn('id', $request->input('private_gallery'))
-//             ->forceDelete();
-//     }
-
-//     if ($request->has('promo_video')) {
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'promo_video')
-//             ->where('id', $request->input('promo_video'))
-//             ->update(['is_temp' => false]);
-
-//         Media::where('escort_id', $user->id)
-//             ->where('type', 'promo_video')
-//             ->whereNotIn('id', [$request->input('promo_video')])
-//             ->forceDelete();
-//     }
-
-//      if($request->has('description')){
-//       $profile = Profile::where('escort_id', $user->id)->first();
-//       $profile->description = $request->input('description');
-//       $profile->save();
-//       }
-
-//     return Resp::success(['message' => 'Media updated successfully']);
-// }
     
 public function updateMedia(Request $request)
 {
@@ -381,15 +398,6 @@ public function updateMedia(Request $request)
                 'county_id' => $county_id,
                 'is_profile' => true,
                 'description' => $request->input('description'),
-                'has_onlyfans' => $request->input('has_onlyfans'),
-                'has_manyvids' => $request->input('has_manyvids'),
-                'has_fancentro' => $request->input('has_fancentro'),
-                'onlyfans_handle' => $request->input('onlyfans_handle'),
-                'manyvids_handle' => $request->input('manyvids_handle'),
-                'fancentro_handle' => $request->input('fancentro_handle'),
-                'allow_whatsapp' => $request->input('allow_whatsapp'),
-                'country_code' => $request->input('country_code'),
-                'whatsapp_number' => $request->input('whatsapp_number'),
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);

@@ -481,6 +481,8 @@ public function assignPermissions($id,Request $request){
            $profile_data->rates;
             return Resp::success(['details'=>$profile_data]);
     }
+
+    
     public function getProfile($id){
         $profile=AuthUser::with('profile')->find($id);
         if(!$profile){
@@ -492,19 +494,14 @@ public function assignPermissions($id,Request $request){
 
     
     public function getUsers(Request $request){
+        $user_type=$request->query('user_type');
         $users=AuthUser::query();
-        $users=$users->whereIn('user_type', [1, 2]);
+        $users=$users->whereIn('user_type', [$user_type, 0]);
         $users=$users->leftJoin('subscriptions','subscriptions.escort_id','=','users.id');
-        //$users=$users->where('user_type', 1);
-        // Pagination parameters
-        $perPage = $request->query('per_page', 10); // Default items per page
-        $page = $request->query('page', 1); // Default to first page
+        $perPage = $request->query('per_page', 10); 
+        $page = $request->query('page', 1); 
         $offset = ($page - 1) * $perPage;
-
-        // Get total count for pagination info
         $totalCount = $users->count();
-
-        // Fetch the results with offset and limit
         $result = $users->offset($offset)
             ->limit($perPage)
             ->get();

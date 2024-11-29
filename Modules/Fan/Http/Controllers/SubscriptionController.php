@@ -14,6 +14,7 @@ use App\Models\BaseReviews;
 use PhpParser\Node\Stmt\Switch_;
 use Modules\Fan\app\Models\FanReviews;
 
+
 class SubscriptionController extends Controller
 {
     public function __construct()
@@ -26,15 +27,16 @@ class SubscriptionController extends Controller
             'listReviews'
         ]);
     }
+
+    
 public function listReviews($id) {
     $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
     ->leftJoin('users', 'reviews.user_id', '=', 'users.id')
     ->select('reviews.*', 'profile.name as escort_name','users.username as fan_name')
-    ->without('reviews.fan');
+    ->without('reviews.fan')
+    ->with(['escort.profile.media']);
     
-
-        $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
-
+    $query->where('reviews.escort_id', $id)->orWhere('reviews.user_id', $id);
     $total_overall_average = 0;
     $sum_of_single_review_avg = $total_overall_average = 0;
     $sum_of_single_photo_accuracy = $total_overall_photo_accuracy =  0;
@@ -85,6 +87,8 @@ public function listReviews($id) {
 }
 
 
+
+   
     public function locations(Request $request)
     {
         try {
@@ -241,7 +245,8 @@ public function listReviews($id) {
                 'escort.profile.city',
                 'escort.profile.region',
                 'escort.profile.reviews',
-                'escort.profile.media'  
+                'escort.profile.media' ,
+                'escort.profile.rates',
             ])
                 ->offset($offset)
                 ->limit($perPage)

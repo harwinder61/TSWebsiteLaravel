@@ -15,6 +15,9 @@ use Modules\Escort\app\Models\EscortSubscription;
 use Modules\Fan\app\Models\ProfileLike;
 use Illuminate\Support\Facades\Hash;
 use Modules\Admin\app\Models\Blog;
+use Modules\Fan\app\Models\Fan;
+
+
 class FanController extends Controller
 {
 
@@ -23,10 +26,21 @@ class FanController extends Controller
         $this->middleware(AuthMiddleware::class)->except('blog');
     }
 
+//    public function addViewCount(Request $request){;
+//        $request->validate([
+//            'id'=>'required|numeric',
+//        ]);
+//        $fan=Fan::find($request->id);e
+//        $fan->view_count=$fan->view_count+1;
+//        $fan->save();
+//        return Resp::success();
+//    }
+
    public function blog(Request $request){
     $blogs=Blog::orderBy('created_at','desc')->get();
     return Resp::success(['list'=>$blogs]);
    }
+   
 
     public function changeUsername(Request $request)
     {
