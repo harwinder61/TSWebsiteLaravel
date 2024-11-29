@@ -337,6 +337,7 @@ public function listReviews($id, Request $request)
                 'escort.profile.reviews',
                 'escort.profile.media' ,
                 'escort.profile.rates',
+                'orders'
             ])
                 ->offset($offset)
                 ->limit($perPage)
@@ -377,6 +378,7 @@ public function listReviews($id, Request $request)
               
                     }
                 }
+
 
             
                 return Resp::success(["list" => $result,'location_type'=>$locationType,'pagination'=>['total_results'=>$totalCount,'total_pages'=>ceil($totalCount/$perPage),'page_number'=>$page,'page_size'=>$perPage]]);
