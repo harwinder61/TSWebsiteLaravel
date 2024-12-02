@@ -200,7 +200,8 @@ class AdminController extends Controller
 public function assignPermissions($id,Request $request){
         $validator = Validator::make($request->all(), [
             'permission_ids' => 'required|array',
-            'permission_ids.*' => 'required|integer|min:1|max:100'        
+            'permission_ids.*' => 'required|integer|min:1|max:100',
+            'permission_ids.*'=>'exists:permissions,id'        
         ]);
         if ($validator->fails()) {
             return Resp::error([$validator->errors()]);
@@ -210,6 +211,7 @@ public function assignPermissions($id,Request $request){
             return Resp::error(['Invalid user or user type']);
         }
          
+
         $user->permission_ids = $request->permission_ids;
         $user->save();
         return Resp::success(['message' => 'Permissions assigned successfully']);
@@ -218,7 +220,9 @@ public function assignPermissions($id,Request $request){
 
     public function getPermissions(Request $request){
         $permissions=Permissions::get();
-        return Resp::success(['list'=>$permissions]);
+        $user=auth()->user();
+        
+        return Resp::success(['list'=>$permissions,'user'=>$user]);
     }
 
 
@@ -510,6 +514,11 @@ public function assignPermissions($id,Request $request){
 
     public function getLiveAdvertsUsers(Request $request){
         $users=AuthUser::with('profile')->get();
+        return Resp::success(['list'=>$users]);
+    }
+
+    public function getAdminUsers(Request $request){
+        $users=AuthUser::where('user_type',3)->get();
         return Resp::success(['list'=>$users]);
     }
 }

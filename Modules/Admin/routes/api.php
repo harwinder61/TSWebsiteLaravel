@@ -26,7 +26,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/spotlight-media',[AdminController::class,'spotlightMedia']);
         Route::post('/blog',[AdminController::class,'blog']);
         Route::get('/live-adverts-users',[AdminController::class,'getLiveAdvertsUsers']);
-        
+        Route::get('/admin-users',[AdminController::class,'getAdminUsers']);
     });
 });
 
