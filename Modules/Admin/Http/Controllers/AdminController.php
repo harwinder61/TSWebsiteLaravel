@@ -209,7 +209,7 @@ public function assignPermissions($id,Request $request){
         if (!$user || $user->user_type != 3) {
             return Resp::error(['Invalid user or user type']);
         }
-        
+         
         $user->permission_ids = $request->permission_ids;
         $user->save();
         return Resp::success(['message' => 'Permissions assigned successfully']);
