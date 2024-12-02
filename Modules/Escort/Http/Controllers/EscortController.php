@@ -45,7 +45,7 @@ class EscortController extends Controller
     try {
         $user = auth()->user();
         
-        
+
         $validator = Validator::make($request->all(), [
             'passport_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
             'selfie_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
@@ -70,7 +70,6 @@ class EscortController extends Controller
         if (!File::exists($directoryPath)) {
             File::makeDirectory($directoryPath, 0755, true);
         }
-
         // Save Passport Image
         $passportImage = $request->file('passport_image');
         $passportImageName = 'passport_' . time() . '_' . uniqid() . '.' . $passportImage->getClientOriginalExtension();
@@ -113,7 +112,6 @@ class EscortController extends Controller
 public function profileViews($id, Request $request)
 {
     $user = auth()->user();
-    
     if ($user->user_type != 1) {    
         return Resp::error(['message' => 'Unauthorized user not a fan']);
     }
@@ -132,6 +130,28 @@ public function profileViews($id, Request $request)
     return Resp::success(['message' => 'Profile views updated successfully']);
 }
 
+
+// public function profileViews($id, Request $request)
+// {
+//     $user = auth()->user();
+    
+//     if ($user->user_type != 1) {    
+//         return Resp::error(['message' => 'Unauthorized user not a fan']);
+//     }
+
+//     $profile = AuthUser::where('id', $id)
+//                        ->where('user_type', 2)
+//                        ->with('profile')
+//                        ->first();
+
+//     if (!$profile || !$profile->profile) {
+//         return Resp::error(['message' => 'User is not an escort or profile not found']);
+//     }
+
+//     $profile->profile->increment('profile_views');
+
+//     return Resp::success(['message' => 'Profile views updated successfully']);
+// }
     public function hideProfile(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -197,6 +217,7 @@ public function profileViews($id, Request $request)
     return Resp::success([
         'message' => 'Subscription updated successfully',
         'subscription' => $subscription
+        
         ]);
     }
 
