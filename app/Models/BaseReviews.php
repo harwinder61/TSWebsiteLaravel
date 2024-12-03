@@ -2,7 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\BaseProfile;
 class BaseReviews extends Model
 {
     protected $table = 'reviews';
@@ -16,6 +16,10 @@ class BaseReviews extends Model
         'comment',
         'escort_id'
     ];
+
+    public function profile(){
+        return $this->belongsTo(BaseProfile::class,'escort_id','id');
+    }
 }
 
 

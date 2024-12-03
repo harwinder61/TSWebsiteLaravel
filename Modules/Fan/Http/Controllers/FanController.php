@@ -2,6 +2,7 @@
 
 namespace Modules\Fan\Http\Controllers;
 
+use App\Models\Media as ModelsMedia;
 use App\Services\Resp;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ use Modules\Fan\app\Models\ProfileLike;
 use Illuminate\Support\Facades\Hash;
 use Modules\Admin\app\Models\Blog;
 use Modules\Fan\app\Models\Fan;
-
+use App\Models\Media;
 
 class FanController extends Controller
 {
@@ -79,23 +80,44 @@ class FanController extends Controller
     
 
 
-    public function find(Request $request)
-    {
-        $user = auth()->user();
-        $reviews = FanReviews::where('user_id', $user->id)->get();
-        $reviews->load('escort');
-        $totalRating = 0;
-        foreach ($reviews as $review) {
-            $totalRating += $review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money;
-        }
+    // public function find(Request $request)
+    // {
+    //     $user = auth()->user();
+    //     $reviews = FanReviews::where('user_id', $user->id)->get();
+    //     $reviews->load('escort');
+    //     $media=Media::where('id',$reviews->media_id)->first();
+    //     $totalRating = 0;
+    //     foreach ($reviews as $review) {
+    //         $totalRating += $review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money;
+    //     }
         
-        $averageRating = $reviews->count() > 0 ? $totalRating / (5 * $reviews->count()) : 0;
+    //     $averageRating = $reviews->count() > 0 ? $totalRating / (5 * $reviews->count()) : 0;
 
-        return Resp::success([
-            'list' => $reviews,
-            'average_rating' => round($averageRating, 2)
-        ]);
+    //     return Resp::success([
+    //         'list' => $reviews,
+    //         'average_rating' => round($averageRating, 2)
+    //     ]);
+    // }
+
+    public function find(Request $request)
+{
+    $user = auth()->user();
+    $reviews = FanReviews::where('user_id', $user->id)
+        ->with('profile') // eager load the media associated with each review
+        ->get();
+    $reviews->load('profile.media');
+
+    $totalRating = 0;
+    foreach ($reviews as $review) {
+        $totalRating += $review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money;
     }
+
+    $averageRating = $reviews->count() > 0 ? $totalRating / (5 * $reviews->count()) : 0;
+    return Resp::success([
+        'list' => $reviews,
+        'average_rating' => round($averageRating, 2)
+    ]);
+}
 
     public function find_escort_reviews($id){
         $user=auth()->user();
