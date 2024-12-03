@@ -580,7 +580,7 @@ public function assignPermissions($id,Request $request){
     public function getUsers(Request $request){
         $user_type=$request->query('user_type');
         $users=AuthUser::query();
-        $users=$users->whereIn('user_type', [$user_type, 0]);
+        //$users=$users->whereIn('user_type', [$user_type, 0]);
         $users=$users->leftJoin('subscriptions','subscriptions.escort_id','=','users.id');
         $perPage = $request->query('per_page', 10); 
         $page = $request->query('page', 1); 
