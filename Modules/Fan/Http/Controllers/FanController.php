@@ -2,6 +2,7 @@
 
 namespace Modules\Fan\Http\Controllers;
 
+use App\Models\Media as ModelsMedia;
 use App\Services\Resp;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ use Modules\Fan\app\Models\ProfileLike;
 use Illuminate\Support\Facades\Hash;
 use Modules\Admin\app\Models\Blog;
 use Modules\Fan\app\Models\Fan;
-
+use App\Models\Media;
 
 class FanController extends Controller
 {
@@ -26,15 +27,6 @@ class FanController extends Controller
         $this->middleware(AuthMiddleware::class)->except('blog');
     }
 
-//    public function addViewCount(Request $request){;
-//        $request->validate([
-//            'id'=>'required|numeric',
-//        ]);
-//        $fan=Fan::find($request->id);e
-//        $fan->view_count=$fan->view_count+1;
-//        $fan->save();
-//        return Resp::success();
-//    }
 
    public function blog(Request $request){
     $blogs=Blog::orderBy('created_at','desc')->get();
@@ -78,25 +70,22 @@ class FanController extends Controller
     }
     
 
-
     public function find(Request $request)
     {
         $user = auth()->user();
-        $reviews = FanReviews::where('user_id', $user->id)->get();
-        $reviews->load('escort');
-        $totalRating = 0;
+        $reviews = FanReviews::where('user_id', $user->id)
+            ->with('profile') // eager load the media associated with each review
+            ->get();
+        $reviews->load('profile.media');
+    
         foreach ($reviews as $review) {
-            $totalRating += $review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money;
+            $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
         }
-        
-        $averageRating = $reviews->count() > 0 ? $totalRating / (5 * $reviews->count()) : 0;
-
+    
         return Resp::success([
             'list' => $reviews,
-            'average_rating' => round($averageRating, 2)
         ]);
     }
-
     public function find_escort_reviews($id){
         $user=auth()->user();
         $escort_id=$id;
