@@ -28,7 +28,7 @@ class FanController extends Controller
     }
 
 
-   public function blog(Request $request){
+   public function allBlogList(Request $request){
     $blogs=Blog::orderBy('created_at','desc')->get();
     return Resp::success(['list'=>$blogs]);
    }
@@ -69,23 +69,44 @@ class FanController extends Controller
         return Resp::success(['message' => $is_like ? 'Profile liked ' : 'Profile unliked']);
     }
     
-
     public function find(Request $request)
     {
         $user = auth()->user();
+        
+        // Get pagination parameters
+        $perPage = $request->query('per_page', 20); 
+        $page = $request->query('page', 1);
+        $offset = ($page - 1) * $perPage;
+        
+        // Retrieve paginated reviews
         $reviews = FanReviews::where('user_id', $user->id)
-            ->with('profile') // eager load the media associated with each review
+            ->with('profile.media') // eager load the media associated with each review
+            ->skip($offset) // offset
+            ->take($perPage) // limit the number of records per page
             ->get();
-        $reviews->load('profile.media');
-    
+        
+        // Calculate average rating for each review
         foreach ($reviews as $review) {
             $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
         }
     
+        // Get total number of reviews for pagination
+        $total_results = FanReviews::where('user_id', $user->id)->count();
+        $total_pages = ceil($total_results / $perPage);
+        $pagination = [
+            'total_results' => $total_results,
+            'total_pages' => $total_pages,
+            'page_number' => $page,
+            'page_size' => $perPage
+        ];
+    
         return Resp::success([
             'list' => $reviews,
+            'pagination' => $pagination
         ]);
     }
+    
+
     public function find_escort_reviews($id){
         $user=auth()->user();
         $escort_id=$id;
