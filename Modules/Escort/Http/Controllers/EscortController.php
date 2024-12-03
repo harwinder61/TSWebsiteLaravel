@@ -248,6 +248,7 @@ public function updateMedia(Request $request)
             ->where('type', 'gallery')
             ->whereIn('id', $galleryIds)
             ->update(['is_temp' => false]);
+            
 
         Media::where('escort_id', $user->id)
             ->where('type', 'gallery')

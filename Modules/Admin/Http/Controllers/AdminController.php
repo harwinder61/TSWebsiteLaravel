@@ -30,9 +30,84 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller    
 {
+
+    public function deleteBlog($id,Request $request){
+        $admin=auth()->user();
+        if($admin->user_type!=3){
+            return Resp::error(['Unauthorized user is not an admin']);
+        }
+        $blog=Blog::find($id);
+        if(!$blog){
+            return Resp::error(['Blog not found']);
+        }
+        $blog->delete();
+        return Resp::success(['message'=>'Blog deleted successfully']);
+    }
     
- 
+   public function editBlog($id,Request $request){
+    $admin=auth()->user();
+    $validator=Validator::make($request->all(),[
+        'title'=>'required|string',
+        'description'=>'required|string',
+        'media_id'=>'required|exists:media,id',
+        'date'=>'required|date',
+    ]);
+    if($admin->user_type!=3){
+        return Resp::error(['Unauthorized user is not an admin']);
+    }
+    $blog=Blog::find($id);
+    if(!$blog){
+        return Resp::error(['Blog not found']);
+    }
+    $blog->update($request->all());
+    return Resp::success(['message'=>'Blog updated successfully']);
+   }
+
+    public function deleteReview($id,Request $request){
+        $admin=auth()->user();
+        if($admin->user_type!=3){
+            return Resp::error(['Unauthorized user is not an admin']);
+        }
+        $review=BaseReviews::find($id);
+        if(!$review){
+            return Resp::error(['Review not found']);
+        }
+        $review->delete();
+        return Resp::success(['message'=>'Review deleted successfully']);
+    }
+
+
+    public function disapproveReview($id,Request $request){
+        $admin=auth()->user();
+        if($admin->user_type!=3){
+            return Resp::error(['Unauthorized user is not an admin']);
+        }
+        $review=BaseReviews::find($id);
+        if(!$review){
+            return Resp::error(['Review not found']);
+        }
+        $review->is_approved=false;
+        $review->save();
+        return Resp::success(['message'=>'Review disapproved successfully']);
+    }
     
+   public function approveReview($id,Request $request){
+    $admin=auth()->user();
+    if($admin->user_type!=3){
+        return Resp::error(['Unauthorized user is not an admin']);
+    }
+    $review=BaseReviews::find($id);
+    if(!$review){
+        return Resp::error(['Review not found']);
+    }
+    $review->is_approved=true;
+    $review->save();
+    return Resp::success(['message'=>'Review approved successfully']);
+   }
+
+
+
+
     public function recentPurchases(Request $request){
         $purchases=Subscription::orderBy('created_at','desc')->get();
         return Resp::success(['list'=>$purchases]);

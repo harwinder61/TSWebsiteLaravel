@@ -28,6 +28,12 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/live-adverts-users',[AdminController::class,'getLiveAdvertsUsers']);
         Route::get('/admin-users',[AdminController::class,'getAdminUsers']);
         Route::get('/user-permissions/{id}',[AdminController::class,'getUserPermissions']);
+        Route::post('/approve-review/{id}',[AdminController::class,'approveReview']);
+        Route::post('/disapprove-review/{id}',[AdminController::class,'disapproveReview']);
+        Route::post('/delete-review/{id}',[AdminController::class,'deleteReview']);
+        Route::post('/edit-blog/{id}',[AdminController::class,'editBlog']);
+        Route::post('/delete-blog/{id}',[AdminController::class,'deleteBlog']);
+
     });
 });
 

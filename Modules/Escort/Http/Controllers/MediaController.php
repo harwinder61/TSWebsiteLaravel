@@ -23,6 +23,7 @@ class MediaController extends Controller
 {
     public function __construct() {}
 
+
     public function getAllMedia(Request $request)
     {
         $escort_id=$request->query('escort_id');
@@ -43,20 +44,6 @@ class MediaController extends Controller
             Log::info($request->all());
             $escort_id=$request->input('escort_id');
           Log::info('escort id is =========== '.$escort_id);
-            //  $currentUser = auth()->user();
-        //if (!$currentUser) {
-        //    return Resp::error(['error' => 'Unauthorized'], 401);
-        //}
-
-        //$validator = Validator::make($request->all(), [
-        //    'file' => 'required|mimes:jpeg,png,jpg,gif,mp4,avi,mkv|max:5000000',
-        //    'type' => 'required|string|in:gallery,private_gallery,promo_video',
-        //]);
-
-        //if ($validator->fails()) {
-        //    return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        //}
-
         try {
             $file = $request->file('file');
             $fileExtension = $file->getClientOriginalExtension();
