@@ -27,9 +27,10 @@ use Stripe\Service\SubscriptionService;
 use App\Models\User;
 use Modules\Admin\app\Models\Blog;
 use Illuminate\Support\Facades\Hash;
-
+use Illuminate\Support\Str;
 class AdminController extends Controller    
 {
+
 
     public function deleteBlog($id,Request $request){
         $admin=auth()->user();
@@ -43,7 +44,19 @@ class AdminController extends Controller
         $blog->delete();
         return Resp::success(['message'=>'Blog deleted successfully']);
     }
-    
+    public function getBlog($id,){
+        $blog=Blog::find($id);
+        return Resp::success(['blog'=>$blog]);
+    }
+
+    public function getBlogBySlug($slug)
+    {
+        $blog = Blog::where('slug', $slug)->first();
+        if (!$blog) {
+            return Resp::error(['Blog not found']);
+        }
+        return Resp::success(['blssog' => $blog,'slug' => $slug]);
+    }
    public function editBlog($id,Request $request){
     $admin=auth()->user();
     $validator=Validator::make($request->all(),[
@@ -113,19 +126,54 @@ class AdminController extends Controller
         return Resp::success(['list'=>$purchases]);
     }
 
-    public function blog(Request $request){
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string',
-            'description' => 'required|string',
-            'media_id' => 'required|exists:media,id',
-            'date' => 'required|date',
-        ]);
-        if ($validator->fails()) {
-            return Resp::error(['message' => $validator->errors()]);
-        }
-        $blog=Blog::create($request->all());
-        return Resp::success(['message'=>'Blog created successfully']);
+    public function blog(Request $request)
+{
+    // Validate input data
+    $validator = Validator::make($request->all(), [
+        'title' => 'required|string',
+        'description' => 'required|string',
+        'media_id' => 'required|exists:media,id',
+        'date' => 'required|date',
+    ]);
+
+    if ($validator->fails()) {
+        return Resp::error(['message' => $validator->errors()]);
     }
+
+    // Generate the initial slug
+    $slug = Str::slug($request->input('title'));
+
+    // Ensure the slug is unique
+    $slug = $this->generateUniqueSlug($slug);
+
+    // Create the blog post
+    $blog = Blog::create([
+        'title' => $request->input('title'),
+        'description' => $request->input('description'),
+        'media_id' => $request->input('media_id'),
+        'date' => $request->input('date'),
+        'slug' => $slug, // Add the slug to the data array
+    ]);
+
+    return Resp::success(['message' => 'Blog created successfully']);
+}
+
+// Helper function to generate a unique slug
+private function generateUniqueSlug($slug)
+{
+    $baseSlug = $slug;
+    $counter = 1;
+
+    // Check if slug already exists in the database
+    while (Blog::where('slug', $slug)->exists()) {
+        $slug = $baseSlug . '-' . $counter;
+        $counter++;
+    }
+
+    return $slug;
+}
+
+
 
     public function spotlightMedia(Request $request)
     {
