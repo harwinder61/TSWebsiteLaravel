@@ -31,15 +31,48 @@ class SubscriptionController extends Controller
 
     
 
-public function getAllListReviews(Request $request){
-    $reviews = BaseReviews::all();
+// public function getAllListReviews(Request $request){
+//     $reviews = BaseReviews::all();
+//     $reviews = $reviews->map(function ($review) {
+
+//         $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
+//         return $review;
+//           $perPage = $request->query('per_page',50); 
+//             $page = $request->query('page', 1);
+//             $offset = ($page - 1) * $perPage;
+    
+//     });
+//     $pagination = ['total_results'=>$reviews->count(),'total_pages'=>1,'page_number'=>1,'page_size'=>10];
+//     return Resp::success(['reviews' => $reviews,'pagination'=>$pagination]);
+
+// }
+
+public function getAllListReviews(Request $request)
+{
+    $perPage = $request->query('per_page', 10);
+    $page = $request->query('page', 1);
+    $offset = ($page - 1) * $perPage;
+
+    $reviews = BaseReviews::offset($offset)
+        ->limit($perPage)
+        ->get();
+
     $reviews = $reviews->map(function ($review) {
         $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
         return $review;
     });
-    $pagination = ['total_results'=>$reviews->count(),'total_pages'=>1,'page_number'=>1,'page_size'=>10];
-    return Resp::success(['reviews' => $reviews,'pagination'=>$pagination]);
 
+    $totalResults = $reviews->count();
+    $totalPages = ceil($totalResults / $perPage);
+
+    $pagination = [
+        'total_results' => $totalResults,
+        'total_pages' => $totalPages,
+        'page_number' => $page,
+        'page_size' => $perPage,
+    ];
+
+    return Resp::success(['reviews' => $reviews, 'pagination' => $pagination]);
 }
 
 public function listReviews($id, Request $request)
