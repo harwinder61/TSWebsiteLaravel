@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\File;
 use Stripe\Service\SubscriptionService;
 use App\Models\User;
 use Modules\Admin\app\Models\Blog;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller    
 {
@@ -286,7 +287,13 @@ public function assignPermissions($id,Request $request){
             return Resp::error(['Invalid user or user type']);
         }
          
-
+        $updated_user=$user->update([
+        "firstname"=>$request->first_name,
+        "lastname"=>$request->last_name,
+        "email"=>$request->user_email,
+        "username"=>$request->user_name,    
+        "password"=>Hash::make($request->user_pass)
+        ]);
         $user->permission_ids = $request->permission_ids;
         $user->save();
         return Resp::success(['message' => 'Permissions assigned successfully']);
@@ -295,9 +302,7 @@ public function assignPermissions($id,Request $request){
 
     public function getPermissions(Request $request){
         $permissions=Permissions::get();
-        $user=auth()->user();
-        
-        return Resp::success(['list'=>$permissions,'user'=>$user]);
+        return Resp::success(['list'=>$permissions]);
     }
 
 
@@ -596,6 +601,32 @@ public function assignPermissions($id,Request $request){
         $users=AuthUser::where('user_type',3)->get();
         return Resp::success(['list'=>$users]);
     }
+
+    public function getUserPermissions($id,Request $request){
+        $user = AuthUser::find($id);
+        if(!$user){
+            return Resp::error(['User not found']);
+        }
+        elseif($user->user_type != 3){
+            return Resp::error(['Unauthorized user is not an admin']);
+        }
+
+        // Convert permission_ids to array if it's a string
+        $permission_ids = is_string($user->permission_ids) 
+            ? json_decode($user->permission_ids, true) 
+            : $user->permission_ids;
+
+        // Handle case where permission_ids might be null
+        if (empty($permission_ids)) {
+            return Resp::success(['list' => []]);
+        }
+
+        $permissions = Permissions::whereIn('id', $permission_ids)->get();
+        return Resp::success(['list' => $permissions,'user'=>$user]);
+  
+
+    }
+
 }
 
 
