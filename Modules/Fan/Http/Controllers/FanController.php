@@ -85,7 +85,7 @@ class FanController extends Controller
             ->take($perPage) // limit the number of records per page
             ->get();
         
-        // Calculate average rating for each review
+   
         foreach ($reviews as $review) {
             $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
         }
