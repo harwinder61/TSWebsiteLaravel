@@ -36,9 +36,13 @@ class FanController extends Controller
 //        $fan->save();
 //        return Resp::success();
 //    }
+public function allBlogList(Request $request){
+    $blogs=Blog::orderBy('created_at','desc')->get();
+    return Resp::success(['list'=>$blogs]);
+   }
 
    public function blog(Request $request){
-    $blogs=Blog::orderBy('created_at','asc')->get();
+    $blogs=Blog::orderBy('created_at','desc')->get();
     return Resp::success(['list'=>$blogs]);
    }
    
@@ -78,46 +82,43 @@ class FanController extends Controller
         return Resp::success(['message' => $is_like ? 'Profile liked ' : 'Profile unliked']);
     }
     
-
-
-    // public function find(Request $request)
-    // {
-    //     $user = auth()->user();
-    //     $reviews = FanReviews::where('user_id', $user->id)->get();
-    //     $reviews->load('escort');
-    //     $media=Media::where('id',$reviews->media_id)->first();
-    //     $totalRating = 0;
-    //     foreach ($reviews as $review) {
-    //         $totalRating += $review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money;
-    //     }
-        
-    //     $averageRating = $reviews->count() > 0 ? $totalRating / (5 * $reviews->count()) : 0;
-
-    //     return Resp::success([
-    //         'list' => $reviews,
-    //         'average_rating' => round($averageRating, 2)
-    //     ]);
-    // }
-
     public function find(Request $request)
-{
-    $user = auth()->user();
-    $reviews = FanReviews::where('user_id', $user->id)
-        ->with('profile') // eager load the media associated with each review
-        ->get();
-    $reviews->load('profile.media');
-
-    $totalRating = 0;
-    foreach ($reviews as $review) {
-        $totalRating += $review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money;
+    {
+        $user = auth()->user();
+        
+        // Get pagination parameters
+        $perPage = $request->query('per_page', 20); 
+        $page = $request->query('page', 1);
+        $offset = ($page - 1) * $perPage;
+        
+        // Retrieve paginated reviews
+        $reviews = FanReviews::where('user_id', $user->id)
+            ->with('profile.media') // eager load the media associated with each review
+            ->skip($offset) // offset
+            ->take($perPage) // limit the number of records per page
+            ->get();
+        
+   
+        foreach ($reviews as $review) {
+            $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
+        }
+    
+        // Get total number of reviews for pagination
+        $total_results = FanReviews::where('user_id', $user->id)->count();
+        $total_pages = ceil($total_results / $perPage);
+        $pagination = [
+            'total_results' => $total_results,
+            'total_pages' => $total_pages,
+            'page_number' => $page,
+            'page_size' => $perPage
+        ];
+    
+        return Resp::success([
+            'list' => $reviews,
+            'pagination' => $pagination
+        ]);
     }
-
-    $averageRating = $reviews->count() > 0 ? $totalRating / (5 * $reviews->count()) : 0;
-    return Resp::success([
-        'list' => $reviews,
-        'average_rating' => round($averageRating, 2)
-    ]);
-}
+    
 
     public function find_escort_reviews($id){
         $user=auth()->user();

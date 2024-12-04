@@ -25,5 +25,5 @@ Route::get('/locations',[SubscriptionController::class,'locations']);
 Route::post('/like-profile',[FanController::class,'likeProfile']);
 Route::post('/slug-to-location',[SubscriptionController::class,'slugToLocation']);
 Route::get('/list-reviews/{id?}',[SubscriptionController::class,'listReviews']);
-Route::get('/blog',[FanController::class,'blog']);
+Route::get('/all-blog-list',[FanController::class,'allBlogList']);
 Route::get('all-list-reviews',[SubscriptionController::class,'getAllListReviews']);

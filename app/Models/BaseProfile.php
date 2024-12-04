@@ -85,7 +85,6 @@ class BaseProfile extends Model
         'name' => 'required|string|max:255',
         'phone_number' => 'required|integer',
         'allow_whatsapp' => 'boolean',
-        'whatsapp_number' => 'integer|required_if:allow_whatsapp,1',
         'country_code' => 'integer|required_if:allow_whatsapp,1',
         'gender' => 'required|in:'.implode(',',Gender::getValues()),
         'date_of_birth' => 'required|string',
