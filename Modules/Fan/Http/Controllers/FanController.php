@@ -168,10 +168,9 @@ public function allBlogList(Request $request){
         return response()->json(['users' => $users], 200);
     }
     public function create(Request $request)
-
     {
-        $user=auth()->user();
-
+        $user = auth()->user();
+    
         Validator::make($request->all(), [
             'photo_accuracy' => 'nullable|integer',
             'service' => 'nullable|integer',
@@ -181,9 +180,9 @@ public function allBlogList(Request $request){
             'comment' => 'required|string',
             'escort_id' => 'required|integer',
         ]);
-
+    
         if (EscortReviews::where('user_id', $user->id)->where('escort_id', $request->escort_id)->exists()) {
-            return Resp::error(['You have already submitted a review']);
+            return Resp::success(['Error' => 'You have already submitted a review for this escort']);
         }
         $escort_exists = AuthUser::find($request->escort_id);
         if (!$escort_exists) {
@@ -192,8 +191,7 @@ public function allBlogList(Request $request){
         if ($escort_exists->user_type != 2) {
             return Resp::error(["This user is not an escort"]);
         }
-
-
+    
         $review = EscortReviews::create([
             'user_id' => $user->id,
             'photo_accuracy' => $request->photo_accuracy,
@@ -204,7 +202,7 @@ public function allBlogList(Request $request){
             'comment' => $request->comment,
             'escort_id' => $request->escort_id,
         ]);
-
-        return Resp::success([$review]);
+    
+        return Resp::success(['message' => 'Review created successfully', 'review' => $review]);
     }
 }
