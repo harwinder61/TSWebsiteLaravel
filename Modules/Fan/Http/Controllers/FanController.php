@@ -37,9 +37,10 @@ class FanController extends Controller
 //        return Resp::success();
 //    }
 public function allBlogList(Request $request){
-    $blogs=Blog::with('media')->orderBy('created_at','asc')->get();
-    return Resp::success(['list'=>$blogs]);
-   }
+    $blogs = Blog::with('media')->orderBy('created_at','asc')->get();
+    $randomBlogs = $blogs->random(2);
+    return Resp::success(['list'=>$blogs, 'random'=>$randomBlogs]);
+}
 
    public function blog(Request $request){
     $blogs=Blog::with('media')->orderBy('created_at','asc')->get();
