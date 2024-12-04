@@ -38,7 +38,7 @@ class FanController extends Controller
 //    }
 
    public function blog(Request $request){
-    $blogs=Blog::orderBy('created_at','desc')->get();
+    $blogs=Blog::orderBy('created_at','asc')->get();
     return Resp::success(['list'=>$blogs]);
    }
    
