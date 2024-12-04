@@ -51,12 +51,16 @@ class AdminController extends Controller
 
     public function getBlogBySlug($slug)
     {
-        $blog = Blog::where('slug', $slug)->first();
+        $blog = Blog::with('media')->where('slug', $slug)->first();
         if (!$blog) {
             return Resp::error(['Blog not found']);
         }
         return Resp::success(['blssog' => $blog,'slug' => $slug]);
     }
+
+
+
+
    public function editBlog($id,Request $request){
     $admin=auth()->user();
     $validator=Validator::make($request->all(),[

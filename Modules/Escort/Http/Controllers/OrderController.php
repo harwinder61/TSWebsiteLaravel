@@ -58,7 +58,7 @@ class OrderController extends Controller
     
         $plan = Plan::where('code', $request->input('plan_code'))->first();
         if (!$plan) {
-            return Resp::error(['Plan not found']);
+            return Resp::success(['error'=> 'Plan not found']);
         }
     
         $days = $plan->days;
@@ -82,7 +82,7 @@ class OrderController extends Controller
         $total_orders_count = $subscription_count + $pending_orders_count;
     
         if ($total_orders_count >= $max_users) {
-            return Resp::error(['Max subscription reached, plan not available']);
+            return Resp::success(['error'=> 'Max subscription reached, plan not available']);
         }
     
         $start_date2 = Carbon::parse($request->input('start_date'));
@@ -103,7 +103,7 @@ class OrderController extends Controller
                 })->get();
     
             if ($weekly_sub_exists->isNotEmpty()) {
-                return Resp::error(['Weekly subscription is already owned by someone']);
+                return Resp::success(['error'=> 'Weekly subscription is already owned by someone']);
             }
         }
     
@@ -120,7 +120,7 @@ class OrderController extends Controller
         ]);
         
         if (!$order) {
-            return Resp::error(['Failed to create order']);
+            return Resp::success(['error'=> 'Failed to create order']);
         }
     
         // Stripe payment logic remains the same
@@ -155,7 +155,7 @@ $media = Media::where('id', $request->input('image_id'))
     ->first();
 
 if (!$media || $media->id != $request->input('image_id')) {
-    return Resp::error(['message' => 'Invalid image id']);
+    return Resp::success(['error'=> 'Invalid image id']);
 }
 
       
