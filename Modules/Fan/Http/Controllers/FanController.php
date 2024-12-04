@@ -38,7 +38,7 @@ class FanController extends Controller
 //    }
 public function allBlogList(Request $request){
     // Get pagination parameters
-    $perPage = $request->query('per_page', 5); 
+    $perPage = $request->query('per_page', 10); 
     $page = $request->query('page', 1);
     $offset = ($page - 1) * $perPage;
     
@@ -56,7 +56,7 @@ public function allBlogList(Request $request){
     $pagination = [
         'total_results' => $total_results,
         'total_pages' => $total_pages,
-        'page_number' => $page,
+        'page' => (int)$page,
         'page_size' => $perPage
     ];
 
