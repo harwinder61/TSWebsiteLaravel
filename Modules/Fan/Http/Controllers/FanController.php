@@ -37,8 +37,33 @@ class FanController extends Controller
 //        return Resp::success();
 //    }
 public function allBlogList(Request $request){
-    $blogs=Blog::with('media')->orderBy('created_at','asc')->get();
-    return Resp::success(['list'=>$blogs]);
+    // Get pagination parameters
+    $perPage = $request->query('per_page', 5); 
+    $page = $request->query('page', 1);
+    $offset = ($page - 1) * $perPage;
+    
+    // Retrieve paginated blogs
+    $blogs = Blog::with('media')
+        ->orderBy('created_at', 'asc')
+        ->skip($offset)
+        ->take($perPage)
+        ->get();
+    
+    // Get total number of blogs for pagination
+    $total_results = Blog::count();
+    $total_pages = ceil($total_results / $perPage);
+    
+    $pagination = [
+        'total_results' => $total_results,
+        'total_pages' => $total_pages,
+        'page_number' => $page,
+        'page_size' => $perPage
+    ];
+
+    return Resp::success([
+        'list' => $blogs,
+        'pagination' => $pagination
+    ]);
    }
 
    public function blog(Request $request){
