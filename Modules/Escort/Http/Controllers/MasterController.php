@@ -42,7 +42,13 @@ public function nationality(Request $request){
 }
 
 public function plans(Request $request){
-    $data=Plan::all();
+    $data=Plan::get();
+    foreach($data as $plan){
+        $plan->active_users_count = $plan->active_users()->count();
+    }
+    foreach($data as $plan){
+        $plan->available_spaces = $plan->allowed_user_account - $plan->active_users_count;
+    }
     return Resp::success(['list'=>$data]);
 
 }
