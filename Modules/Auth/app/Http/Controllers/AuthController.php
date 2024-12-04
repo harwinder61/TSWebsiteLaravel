@@ -123,7 +123,7 @@ public function changePassword(Request $request) {
         
         $user = AuthUser::where('verification_token', $token)->first();
         if (!$user) {
-            return Resp::error(['message' => 'Email verification failed.'], 401);
+            return Resp::error(['message' => 'Email verification failed.']);
         }
         $user->email_verified = true;
         $user->save();
@@ -153,7 +153,7 @@ public function changePassword(Request $request) {
         }
         $user = AuthUser::where('email',$request->email)->where('recovery_token',$request->token)->first();
         if(!$user){
-            return Resp::error(['error' => 'No user found'], 401);
+            return Resp::error(['error' => 'No user found']);
         }
         $user->password = Hash::make($request->password);
         $user->recovery_token = null;
@@ -172,7 +172,7 @@ public function changePassword(Request $request) {
     $token = Str::random(30);
     $user = AuthUser::where('email',$request->email)->first();
     if(!$user){
-        return Resp::error(['error' => 'No user found'], 401);
+        return Resp::error(['error' => 'No user found']);
     }
     $user->recovery_token = $token;
     $user->save();
@@ -251,17 +251,17 @@ public function changePassword(Request $request) {
 
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
-                return Resp::error(['error' => 'Unauthorized'], 401);
+                return Resp::error(['error' => 'Unauthorized']);
             }
         } catch (JWTException $e) {
-            return Resp::error(['error' => 'Could not create token'], 401);
+            return Resp::error(['error' => 'Could not create token']);
         }
         
 
         $user = JWTAuth::user()->load('profile');
         $email_verified=$user->email_verified;
         if(!$email_verified){
-            return Resp::error(['error' => 'Email not verified'], 401);
+            return Resp::error(['error' => 'Email not verified']);
         }
         $profile = [
             'username' => $user->username,
@@ -286,11 +286,11 @@ public function changePassword(Request $request) {
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
 
-                return Resp::error(['error ' => 'Unauthorized'], 401);
+                return Resp::error(['error ' => 'Unauthorized']);
             }
         } catch (JWTException $e) {
 
-            return Resp::error(['error' => 'Could not create token'], 401);
+            return Resp::error(['error' => 'Could not create token']);
         }
         JWTAuth::setToken($token);
 
@@ -303,7 +303,7 @@ public function changePassword(Request $request) {
 
 
         if (!$token) {
-            return Resp::error(['error' => 'No token found!!!'], 401);
+            return Resp::error(['error' => 'No token found!!!']);
         }
         
         try {
