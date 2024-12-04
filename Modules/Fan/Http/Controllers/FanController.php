@@ -24,7 +24,7 @@ class FanController extends Controller
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except('blog');
+        $this->middleware(AuthMiddleware::class)->except('blog','allBlogList');
     }
 
 //    public function addViewCount(Request $request){;
@@ -37,12 +37,12 @@ class FanController extends Controller
 //        return Resp::success();
 //    }
 public function allBlogList(Request $request){
-    $blogs=Blog::orderBy('created_at','desc')->get();
+    $blogs=Blog::with('media')->orderBy('created_at','asc')->get();
     return Resp::success(['list'=>$blogs]);
    }
 
    public function blog(Request $request){
-    $blogs=Blog::orderBy('created_at','desc')->get();
+    $blogs=Blog::with('media')->orderBy('created_at','asc')->get();
     return Resp::success(['list'=>$blogs]);
    }
    

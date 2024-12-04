@@ -45,7 +45,7 @@ class AdminController extends Controller
         return Resp::success(['message'=>'Blog deleted successfully']);
     }
     public function getBlog($id,){
-        $blog=Blog::find($id);
+        $blog=Blog::with('media')->find($id);
         return Resp::success(['blog'=>$blog]);
     }
 
