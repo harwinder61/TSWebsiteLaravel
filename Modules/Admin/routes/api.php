@@ -34,10 +34,12 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/edit-blog/{id}',[AdminController::class,'editBlog']);
         Route::post('/delete-blog/{id}',[AdminController::class,'deleteBlog']);
     });
-    Route::get('/blog/{id?}',[AdminController::class,'getBlog']);
-    Route::get('/blog-slug/{slug?}',[AdminController::class,'getBlogBySlug']);
-
+    
 
 });
+
+Route::get('/blog/{id?}',[AdminController::class,'getBlog']);
+Route::get('/blog-slug/{slug?}',[AdminController::class,'getBlogBySlug']);
+
 
 
