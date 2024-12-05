@@ -123,10 +123,20 @@ class AdminController extends Controller
 
 
 
-    public function recentPurchases(Request $request){
-        $purchases=Subscription::orderBy('created_at','desc')->get();
-        return Resp::success(['list'=>$purchases]);
-    }
+   public function recentPurchases(Request $request){
+    $perPage = $request->query('per_page', 10);
+    $purchases = Subscription::orderBy('created_at', 'desc')->paginate($perPage);
+
+    return Resp::success([
+        'list' => $purchases->items(),
+        'pagination' => [
+            'total_results' => $purchases->total(),
+            'total_pages' => $purchases->lastPage(),
+            'page_number' => $purchases->currentPage(),
+            'page_size' => $purchases->perPage()
+        ]
+    ]);
+}
 
     public function blog(Request $request)
 {
@@ -357,8 +367,18 @@ public function assignPermissions($id,Request $request){
 
 
     public function inquiryFormList(Request $request){
-        $inquiries=Inquiry::orderBy('created_at','desc')->get();
-        return Resp::success(['list'=>$inquiries]);
+        $perPage = $request->query('per_page', 10);
+        $inquiries = Inquiry::orderBy('created_at', 'desc')->paginate($perPage);
+    
+        return Resp::success([
+            'list' => $inquiries->items(),
+            'pagination' => [
+                'total_results' => $inquiries->total(),
+                'total_pages' => $inquiries->lastPage(),
+                'page_number' => $inquiries->currentPage(),
+                'page_size' => $inquiries->perPage()
+            ]
+        ]);
     }
 
     public function recentSignups(Request $request){
@@ -366,23 +386,32 @@ public function assignPermissions($id,Request $request){
             ->when($request->query('user_type'), function($query) use ($request) {
                 $query->where('user_type', $request->query('user_type')); 
             })
-            ->limit(50)
-            ->get(['id', 'username', 'email', 'user_type', 'created_at'])
-            ->map(function($user) {
-                return [
-                    'id' => $user->id,
-                    'username' => $user->username, 
-                    'email' => $user->email,
-                    'user_type' => $user->user_type,
-                    'created_at' => $user->created_at
-                ];
-            });
+            ->paginate($request->query('per_page', 10));
+    
+        $users->map(function($user) {
+            return [
+                'id' => $user->id,
+                'username' => $user->username, 
+                'email' => $user->email,
+                'user_type' => $user->user_type,
+                'created_at' => $user->created_at
+            ];
+        });
     
         return Resp::success([
-            'total_count' => $users->count(),
-            'users' => $users
+            'total_count' => $users->total(),
+            'users' => $users->items(),
+            'pagination' => [
+                'total_results' => $users->total(),
+                'total_pages' => $users->lastPage(),
+                'page_number' => $users->currentPage(),
+                'page_size' => $users->perPage()
+            ]
         ]);
     }
+        // Pagination
+        // $perPage = $request->query('per_page', 10);
+        // $page = $request->query('page', 1);
 
     public function updatePlan($plan_code,Request $request){
         
