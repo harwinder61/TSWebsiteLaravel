@@ -627,7 +627,10 @@ public function assignPermissions($id,Request $request){
         return Resp::success(['details'=>$profile]);
     }
 
-    
+    public function getAllAdvertUsers(Request $request){
+        $users=AuthUser::where('user_type',2)->get();
+        return Resp::success(['list'=>$users]);
+    }
     public function getUsers(Request $request){
         $user_type = $request->query('user_type');
     
@@ -665,7 +668,7 @@ public function assignPermissions($id,Request $request){
     }
 
     public function getLiveAdvertsUsers(Request $request){
-        $users=AuthUser::with('profile')->get();
+        $users=AuthUser::with('profile')->where('user_type',2)->get();
         return Resp::success(['list'=>$users]);
     }
 
