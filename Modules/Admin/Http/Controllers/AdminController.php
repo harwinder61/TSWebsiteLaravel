@@ -475,10 +475,13 @@ public function assignPermissions($id,Request $request){
                 $whatsapp_number=$request->input('whatsapp_number');
                 $country_code=$request->input('country_code');
             }
-
+            $name=$request->input('name');
+            if(empty($name)){
+                $name=$user_exists->username;
+            }
             $languages = $request->input('languages');
             $updated = $profile->update([
-                'name' => $request->input('name'),
+                'name' => $name,
                 'phone_number' => $request->input('phone_number'),
                 'gender' => $request->input('gender'),
                 'date_of_birth' => $request->input('date_of_birth'),
@@ -515,9 +518,7 @@ public function assignPermissions($id,Request $request){
                 'city_id' => $city_id,
                 'region_id' =>$region_id,
                 'county_id' => $county_id,
-                'allow_whatsapp' => $allow_whatsapp,
-                'whatsapp_number' => $whatsapp_number,
-                'country_code' => $country_code,
+                'allow_whatsapp' => $allow_whatsapp
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
@@ -618,28 +619,49 @@ public function assignPermissions($id,Request $request){
 
     
     public function getProfile($id){
-        $profile=AuthUser::with('profile')->find($id);
+        $profile=AuthUser::with(['profile','profile.rates'])->find($id);
         if(!$profile){
             return Resp::error(['Profile not found']);
         }
-        $profile->profile->rates;
+
         return Resp::success(['details'=>$profile]);
     }
 
     
     public function getUsers(Request $request){
-        $user_type=$request->query('user_type');
-        $users=AuthUser::query();
-        //$users=$users->whereIn('user_type', [$user_type, 0]);
-        $users=$users->leftJoin('subscriptions','subscriptions.escort_id','=','users.id');
-        $perPage = $request->query('per_page', 10); 
-        $page = $request->query('page', 1); 
-        $offset = ($page - 1) * $perPage;
+        $user_type = $request->query('user_type');
+    
+        // Start with users query and select specific fields
+        $users = AuthUser::query()
+            ->select('users.*') // Select all fields from users table
+            ->when($user_type, function($query) use ($user_type) {
+                return $query->where('users.user_type', $user_type);
+            })
+            // Left join with subscriptions to preserve all users
+            ->leftJoin('subscriptions', 'users.id', '=', 'subscriptions.escort_id')
+            // Select subscription fields with distinct prefixes
+            ->selectRaw('subscriptions.id as subscription_id, 
+                        subscriptions.status as subscription_status,
+                        subscriptions.plan_code,
+                        subscriptions.start_date,
+                        subscriptions.end_date');
+    
+        // Pagination
+        $perPage = $request->query('per_page', 10);
+        $page = $request->query('page', 1);
+        
         $totalCount = $users->count();
-        $result = $users->offset($offset)
+        
+        $result = $users->offset(($page - 1) * $perPage)
             ->limit($perPage)
             ->get();
-        return Resp::success(['list'=>$result,'total_count'=>$totalCount,'page'=>$page,'per_page'=>$perPage]);
+    
+        return Resp::success([
+            'list' => $result,
+            'total_count' => $totalCount,
+            'page' => (int)$page,
+            'per_page' => (int)$perPage
+        ]);
     }
 
     public function getLiveAdvertsUsers(Request $request){
@@ -648,9 +670,23 @@ public function assignPermissions($id,Request $request){
     }
 
     public function getAdminUsers(Request $request){
-        $users=AuthUser::where('user_type',3)->get();
-        return Resp::success(['list'=>$users]);
-    }
+        $perPage = $request->query('per_page', 10); // Default to 10 items per page
+    $page = $request->query('page', 1); // Default to page 1
+    $offset = ($page - 1) * $perPage;
+
+    $totalCount = AuthUser::where('user_type', 3)->count();
+    $users = AuthUser::where('user_type', 3)
+        ->offset($offset)
+        ->limit($perPage)
+        ->get();
+
+    return Resp::success([
+        'list' => $users,
+        'total_count' => $totalCount,
+        'page' => (int)$page,
+        'per_page' => $perPage
+    ]);
+   }
 
     public function getUserPermissions($id,Request $request){
         $user = AuthUser::find($id);
@@ -661,17 +697,20 @@ public function assignPermissions($id,Request $request){
             return Resp::error(['Unauthorized user is not an admin']);
         }
 
+        $permissions=[];
         // Convert permission_ids to array if it's a string
         $permission_ids = is_string($user->permission_ids) 
             ? json_decode($user->permission_ids, true) 
             : $user->permission_ids;
 
         // Handle case where permission_ids might be null
-        if (empty($permission_ids)) {
-            return Resp::success(['list' => []]);
+        //if (empty($permission_ids)) {
+        //    return Resp::success(['list' => []]);
+        //}
+        if(!empty($permission_ids)){
+            $permissions = Permissions::whereIn('id', $permission_ids)->get();
         }
-
-        $permissions = Permissions::whereIn('id', $permission_ids)->get();
+        
         return Resp::success(['list' => $permissions,'user'=>$user]);
   
 
