@@ -41,6 +41,8 @@ class EscortController extends Controller
         return Resp::success(['has_subscription' => (bool) $subscription]);
     }
 
+    
+
     public function verify(Request $request)
 {
     try {
