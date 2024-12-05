@@ -146,6 +146,7 @@ class AdminController extends Controller
         'description' => 'required|string',
         'media_id' => 'required|exists:media,id',
         'date' => 'required|date',
+        'status'=>'required|integer|in:1,2,3',
     ]);
 
     if ($validator->fails()) {
@@ -165,6 +166,7 @@ class AdminController extends Controller
         'media_id' => $request->input('media_id'),
         'date' => $request->input('date'),
         'slug' => $slug, // Add the slug to the data array
+        'status'=>$request->input('status'),
     ]);
 
     return Resp::success(['message' => 'Blog created successfully']);
@@ -656,10 +658,7 @@ public function assignPermissions($id,Request $request){
         return Resp::success(['details'=>$profile]);
     }
 
-    public function getAllAdvertUsers(Request $request){
-        $users=AuthUser::where('user_type',2)->get();
-        return Resp::success(['list'=>$users]);
-    }
+    
     public function getUsers(Request $request){
         $user_type = $request->query('user_type');
     
@@ -697,7 +696,7 @@ public function assignPermissions($id,Request $request){
     }
 
     public function getLiveAdvertsUsers(Request $request){
-        $users=AuthUser::with('profile')->where('user_type',2)->get();
+        $users=AuthUser::with('profile')->get();
         return Resp::success(['list'=>$users]);
     }
 

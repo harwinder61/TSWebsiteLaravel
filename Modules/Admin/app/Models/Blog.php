@@ -12,7 +12,7 @@ class Blog extends Model
     use HasFactory;
 
     protected $table='blog';
-    protected $fillable=['title','description','media_id','date','slug'];
+    protected $fillable=['title','description','media_id','date','slug','status'];
 
     public function media(){
         return $this->belongsTo(Media::class,'media_id','id');

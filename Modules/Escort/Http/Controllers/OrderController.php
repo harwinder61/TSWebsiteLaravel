@@ -50,6 +50,7 @@ class OrderController extends Controller
             'many_vids_link' => 'nullable|string',
             'fan_centro_link' => 'nullable|string',
             'image_id' => 'required|exists:media,id',
+            'extra_location' => 'nullable|string',
         ]);
     
         if ($validator->fails()) {
@@ -117,6 +118,8 @@ class OrderController extends Controller
             'many_vids_link' => $request->input('many_vids_link'),  
             'fan_centro_link' => $request->input('fan_centro_link'), 
             'image_id' => $request->input('image_id'),
+            'extra_location' => $request->input('extra_location'),
+            
         ]);
         
         if (!$order) {
