@@ -59,8 +59,6 @@ class AdminController extends Controller
     }
 
 
-
-
    public function editBlog($id,Request $request){
     $admin=auth()->user();
     $validator=Validator::make($request->all(),[

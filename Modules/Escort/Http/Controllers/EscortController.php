@@ -24,7 +24,7 @@ use Modules\Escort\app\Models\EscortSubscription;
 use Modules\Escort\app\Models\Verify;
 use Illuminate\Support\Facades\File;
 use App\Models\Plan;
-
+use App\Models\BaseSubscription;
 class EscortController extends Controller
 {
     public function __construct()
@@ -36,8 +36,9 @@ class EscortController extends Controller
 
     public function featuredTsGirl(Request $request)
     {
-        $plans = Plan::where('id', 5)->get();
-        return Resp::success(['plans' => $plans]);
+        $user = auth()->user();
+        $subscription = BaseSubscription::where('escort_id', $user->id)->latest()->first();
+        return Resp::success(['has_subscription' => (bool) $subscription]);
     }
 
     public function verify(Request $request)
