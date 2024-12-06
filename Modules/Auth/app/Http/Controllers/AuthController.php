@@ -150,7 +150,7 @@ public function changePassword(Request $request) {
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-        $user = AuthUser::where('email',$request->email)->where('recovery_token',$request->token)->first();
+        $user = AuthUser::where('recovery_token', $request->token)->first();
         if(!$user){
             return Resp::error(['error' => 'No user found']);
         }

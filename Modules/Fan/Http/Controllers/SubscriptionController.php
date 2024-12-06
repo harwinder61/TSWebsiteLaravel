@@ -212,9 +212,6 @@ public function listReviews($id, Request $request)
                 }
             }
 
-// print_r($request->all());
-            // die('sdfsdafasdf');
-
             if (!is_null($request->query('county_slug'))) {
                 $countySlug = $request->query('county_slug');
                 $subscriptions->whereHas('escort.profile', function ($query) use ($countySlug) {
