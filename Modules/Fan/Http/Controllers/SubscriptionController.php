@@ -185,13 +185,12 @@ public function listReviews($id, Request $request)
     {
         try {
             $user = auth()->user();
-            
             $locationType="";
             $subscriptions = EscortSubscription::query();
             
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
-                ->select('subscriptions.*', 'plans.title as plan_title');
-
+                ->select('subscriptions.*', 'plans.title as plan_title')
+                ->where('subscriptions.end_date','>',now());
             if ($request->query('slug')) {
                 $slug = $request->query('slug');
 
@@ -269,21 +268,42 @@ public function listReviews($id, Request $request)
             }
     
             if (!is_null($request->query('city_id'))) {
-                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
-                    $query->where('city_id', $request->query('city_id'));
+                
+
+                $subscriptions->where(function ($query) use ($request) {
+                    $query->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('city_id', $request->query('city_id'));
+                    })
+                    ->orWhere(function ($query) use ($request) {
+                        // Check if the city_id exists in the extra_location JSON column
+                        $query->whereJsonContains('extra_location', $request->query('city_id'));
+                    });
                 });
+                
+
             }
     
             if (!is_null($request->query('region_id'))) {
+
                 $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
                     $query->where('region_id', $request->query('region_id'));
+                })
+                ->orWhere(function ($query) use ($request) {
+                    // Check if the city_id exists in the extra_location JSON column
+                    $query->whereJsonContains('extra_location', $request->query('region_id'));
                 });
             }
 
             if (!is_null($request->query('county_id'))) {
+
                 $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
                     $query->where('county_id', $request->query('county_id'));
+                })
+                ->orWhere(function ($query) use ($request) {
+                    // Check if the city_id exists in the extra_location JSON column
+                    $query->whereJsonContains('extra_location', $request->query('county_id'));
                 });
+
             }
 
             if (!is_null($request->query('name'))) {
@@ -317,6 +337,7 @@ public function listReviews($id, Request $request)
                 ->offset($offset)
                 ->limit($perPage)
                 ->get();
+
 
             foreach ($result as $subscription) {
                 $escort = $subscription->escort;
