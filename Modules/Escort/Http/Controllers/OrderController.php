@@ -50,7 +50,7 @@ class OrderController extends Controller
             'many_vids_link' => 'nullable|string',
             'fan_centro_link' => 'nullable|string',
             'image_id' => 'required|exists:media,id',
-            'extra_location' => 'nullable|string',
+            'extra_locations' => 'nullable',
         ]);
     
         if ($validator->fails()) {
@@ -118,7 +118,7 @@ class OrderController extends Controller
             'many_vids_link' => $request->input('many_vids_link'),  
             'fan_centro_link' => $request->input('fan_centro_link'), 
             'image_id' => $request->input('image_id'),
-            'extra_location' => $request->input('extra_location'),
+            'extra_location' => $request->input('extra_locations'),
             
         ]);
         
@@ -134,6 +134,8 @@ class OrderController extends Controller
             Stripe::setApiKey(env('STRIPE_SECRET'));
     
             $plan = Plan::where('code', $request->input('plan_code'))->first();
+            $extra_locations_price=0;
+            $price=$plan->price;
             $amount = intval($plan->price) * 100;
             $title = $plan->title;
             
@@ -215,6 +217,7 @@ if (!$media || $media->id != $request->input('image_id')) {
     function webhook_payment_status_update(Request $request){
         
         $order_id=$request->input('order_id');
+        $extra_location=$request->input('extra_locations');
         $validator=Validator::make($request->all(),[
             'order_id'=>'required|string|exists:orders,id',
         ]);
@@ -271,6 +274,7 @@ if (!$media || $media->id != $request->input('image_id')) {
                 'image_id'=>$order->image_id,
                 'status'=>'ACTIVE',
                 'end_date'=>$end_date,
+                'extra_location'=>$extra_location
             ]);
             if(!$subscription){
                 return Resp::error(['Failed to create subscription']);
@@ -306,6 +310,55 @@ if (!$media || $media->id != $request->input('image_id')) {
         
         return Resp::success(["locations" => $location,"subscriptions" => $subscriptions]);
     }
+    public function getEscortPreviousSubscriptions(Request $request){
+        $user=auth()->user();
+        $subscriptions=Subscription::where('escort_id',$user->id)->get();
+        return Resp::success(['subscriptions'=>$subscriptions]);
+    }
+
+    public function getLatestEscortSubscription(Request $request){
+        $user=auth()->user();
+        $subscription=Subscription::with('orders')->where('escort_id',$user->id)->orderBy('id','desc')->first();
+        if(!$subscription){
+            return Resp::error(['Subscription not found']);
+        }
+        return Resp::success(['data'=>$subscription]);
+    }
+
+    public function updateLatestEscortSubscription(Request $request){
+        $user=auth()->user();
+        $subscription=Subscription::with('orders')->where('escort_id',$user->id)->orderBy('id','desc')->first();
+        if(!$subscription){
+            return Resp::error(['Subscription not found']);
+        }
+
+
+    $updateData = [];
+    if ($request->has('extra_locations')) {
+        $updated_locations=$subscription->update(['extra_location'=>$request->input('extra_locations')]);
+        if(!$updated_locations){
+            return Resp::error(['Failed to update extra locations']);
+        }
+    }
+    if ($request->has('onlyfans_link')) {
+        $updateData['only_fans_link'] = $request->input('onlyfans_link');
+    }
+    if ($request->has('manyvids_link')) {
+        $updateData['many_vids_link'] = $request->input('manyvids_link');
+    }
+    if ($request->has('fancentro_link')) {
+        $updateData['fan_centro_link'] = $request->input('fancentro_link');
+    }
+
+    $updated_subscription = $subscription->orders->update($updateData);
+    if(!$updated_subscription){
+        return Resp::error(['Failed to update subscription']);
+    }
+
+
+        return Resp::success(['data'=>$subscription]);
+    }
+
 
 }
 
