@@ -122,21 +122,23 @@ class AdminController extends Controller
 
 
 
-
-   public function recentPurchases(Request $request){
-    $perPage = $request->query('per_page', 10);
-    $purchases = Subscription::orderBy('created_at', 'desc')->paginate($perPage);
-
-    return Resp::success([
-        'list' => $purchases->items(),
-        'pagination' => [
-            'total_results' => $purchases->total(),
-            'total_pages' => $purchases->lastPage(),
-            'page_number' => $purchases->currentPage(),
-            'page_size' => $purchases->perPage()
-        ]
-    ]);
-}
+   public function recentPurchases(Request $request)
+   {
+       $perPage = $request->query('per_page', 10);
+       $purchases = Subscription::with('escort') 
+           ->orderBy('created_at', 'desc')
+           ->paginate($perPage);
+   
+       return Resp::success([
+           'list' => $purchases->items(),
+           'pagination' => [
+               'total_results' => $purchases->total(),
+               'total_pages' => $purchases->lastPage(),
+               'page_number' => $purchases->currentPage(),
+               'page_size' => $purchases->perPage()
+           ]
+       ]);
+   }
 
     public function blog(Request $request)
 {
