@@ -51,6 +51,6 @@ Route::post('/inquiry-form',[EscortController::class,'inquiryForm']);
 Route::get('/escort-profile-id/{id}',[EscortController::class,'getEscortProfile']);
 Route::get('/get-all-media',[MediaController::class,'getAllMedia']);
 Route::get('/search/header',[OrderController::class,'getLocationAndSubscriptions']);
-
+Route::post('/location-id-to-name',[OrderController::class,'locationIdsToLocationNames']);
 
 

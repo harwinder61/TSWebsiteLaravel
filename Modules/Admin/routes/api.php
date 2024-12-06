@@ -34,6 +34,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/edit-blog/{id}',[AdminController::class,'editBlog']);
         Route::post('/delete-blog/{id}',[AdminController::class,'deleteBlog']);
         Route::get('/all-advert-users',[AdminController::class,'getAllAdvertUsers']);
+        Route::post('/new-user',[AdminController::class,'newUser']);
     });
     
 

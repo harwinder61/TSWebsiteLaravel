@@ -17,4 +17,5 @@ class BaseSubscription extends Model
         return $this->belongsTo(BaseOrder::class,'order_id','id');
     }
 
+
 }
