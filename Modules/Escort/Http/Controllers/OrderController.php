@@ -363,6 +363,14 @@ if (!$media || $media->id != $request->input('image_id')) {
     }
 
 
+    public function locationIdsToLocationNames(Request $request){
+        
+        $ids=$request->input("location_ids");
+        $locations=Location::whereIn('id',$ids)->get();
+        return Resp::success(['locations'=>$locations]);
+    }
+
+
 }
 
 
