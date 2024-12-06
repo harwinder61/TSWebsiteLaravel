@@ -144,7 +144,6 @@ public function changePassword(Request $request) {
     public function resetPassword(Request $request){
         $validator = Validator::make($request->all(), [
             'token' => 'required|string',
-            'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:8|confirmed',
             'password_confirmation' => 'required|same:password',
         ]);
@@ -158,8 +157,7 @@ public function changePassword(Request $request) {
         $user->password = Hash::make($request->password);
         $user->recovery_token = null;
         $user->save();
-        return Resp::success(['message' => 'Password reset successfully']);
-        
+        return Resp::success(['message' => 'Password reset successfully']);     
     }
 
    public function recoverPassword(Request $request){
