@@ -33,6 +33,10 @@ Route::group(['prefix' => 'escort'],function(){
     Route::get('/active-subscription',[EscortController::class,'getActiveSubscription']);
     Route::post('/verify',[EscortController::class,'verify']);
     Route::get('/featured-ts-girl',[EscortController::class,'featuredTsGirl']);
+    Route::get('/previous-subscriptions',[OrderController::class,'getEscortPreviousSubscriptions']);
+    Route::get('/latest-subscription',[OrderController::class,'getLatestEscortSubscription']);
+    Route::patch('/update-latest-subscription',[OrderController::class,'updateLatestEscortSubscription']);
+
 });
 });
 
