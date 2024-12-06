@@ -32,6 +32,29 @@ class AdminController extends Controller
 {
 
 
+
+    public function newUser(Request $request){
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string|max:255|unique:users,username',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'user_type' => 'required|integer|in:1,2,3',
+            'password_confirmation' => 'required|same:password',
+
+        ]);
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $user = AuthUser::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'user_type' => $request->user_type,
+        ]);
+        return Resp::success(['message' => 'User created successfully']);
+    }
+
+
     public function deleteBlog($id,Request $request){
         $admin=auth()->user();
         if($admin->user_type!=3){

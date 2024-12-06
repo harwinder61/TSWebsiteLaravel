@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 
 
+
 class AuthController extends Controller
 {
 
@@ -29,7 +30,6 @@ class AuthController extends Controller
     {
         $this->middleware(AuthMiddleware::class)->except(['register',  'login', 'verifyEmail', 'verificationEmailToken', 'recoverPassword','resetPassword']);
     }
-
 
 
     public function resetOldEmail(Request $request) {
