@@ -50,7 +50,8 @@ class OrderController extends Controller
             'many_vids_link' => 'nullable|string',
             'fan_centro_link' => 'nullable|string',
             'image_id' => 'required|exists:media,id',
-            'extra_locations' => 'nullable',
+            'extra_locations' => 'nullable|array',
+            'extra_locations.*' => 'exists:locations,id',
         ]);
     
         if ($validator->fails()) {
@@ -220,6 +221,8 @@ if (!$media || $media->id != $request->input('image_id')) {
         $extra_location=$request->input('extra_locations');
         $validator=Validator::make($request->all(),[
             'order_id'=>'required|string|exists:orders,id',
+            'extra_locations'=>'nullable|array',
+            'extra_locations.*'=>'exists:locations,id'
         ]);
         if($validator->fails()){
             return Resp::error([$validator->errors()]);
