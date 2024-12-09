@@ -62,7 +62,8 @@ class OrderController extends Controller
         if (!$plan) {
             return Resp::success(['error'=> 'Plan not found']);
         }
-    
+
+        $sub_exists=Subscription::where('escort_id',$user->id)->first();
         $days = $plan->days;
         $end_date = date('Y-m-d', strtotime($request->input('start_date') . " + $days days"));
         
@@ -137,6 +138,10 @@ class OrderController extends Controller
             $plan = Plan::where('code', $request->input('plan_code'))->first();
             $extra_locations_price=0;
             $price=$plan->price;
+            if($request->input('plan_code')=="P105" && $sub_exists){
+                $price=0;
+            }
+
             $amount = intval($plan->price) * 100;
             $title = $plan->title;
             
@@ -368,6 +373,79 @@ if (!$media || $media->id != $request->input('image_id')) {
         $ids=$request->input("location_ids");
         $locations=Location::whereIn('id',$ids)->get();
         return Resp::success(['locations'=>$locations]);
+    }
+
+    public function extraLocationsUpdatedOrder(Request $request){
+        try{
+
+            $validator=Validator::make($request->all(),[
+                'extra_locations'=>'required|array',
+                'extra_locations.*'=>'exists:locations,id',
+                'image_id'=>'required|exists:media,id',
+                'subscription_id'=>'required|exists:subscriptions,id',
+                
+            ]);
+            if($validator->fails()){
+                return Resp::error([$validator->errors()]);
+            }
+
+            $subscription_data=Subscription::find($request->input('subscription_id'));
+            if(!$subscription_data){
+                return Resp::error(['Subscription not found']);
+            }
+
+        $order=Orders::create([
+            'escort_id'=>$subscription_data->escort_id,
+            'plan_code'=>$subscription_data->plan_code,
+            'start_date'=>$subscription_data->start_date,
+            'end_date'=>$subscription_data->end_date,
+            'payment_status'=>"PENDING",
+            'image_id'=>$request->input('image_id'),
+            'extra_location'=>$request->input('extra_locations'),
+        ]);
+           if(!$order){
+                return Resp::error(['Failed to create order !']);
+            }
+
+            // Merge and deduplicate location arrays
+        $current_locations = is_array($subscription_data->extra_location) ? $subscription_data->extra_location : [];
+        $new_locations = is_array($request->input('extra_locations')) ? $request->input('extra_locations') : [];
+        $merged_locations = collect(array_merge($current_locations, $new_locations))
+            ->flatten()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $updated_subscription = $subscription_data->update([
+            'extra_location' => $request->input('extra_locations'),
+            'order_id' => $order->id,
+            'image_id'=>$request->input('image_id')
+        ]);
+            if(!$updated_subscription){
+                return Resp::error(['Failed to update subscription']);
+            }
+            return Resp::success(['order'=>$order]);
+        }catch(\Exception $e){
+            return Resp::error([$e->getMessage()]);
+        }
+    }
+
+    public function createFreeSubscription(Request $request){
+        $user=auth()->user();
+        $order=Orders::create([
+            'escort_id'=>$user->id,
+            'plan_code'=>'P101',
+            'start_date'=>date('Y-m-d'),
+            'end_date'=>date('Y-m-d',strtotime('+10 days')),
+            'payment_status'=>'PAID',
+            'image_id'=>$request->input('image_id'),
+            'extra_location'=>$request->input('extra_locations'),
+        ]);
+        $subscription=Subscription::create([
+            'escort_id'=>$user->id,
+            'plan_code'=>'P101',
+            'status'=>'ACTIVE',
+        ]);
     }
 
 
