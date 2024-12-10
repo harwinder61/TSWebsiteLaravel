@@ -28,44 +28,52 @@ use App\Models\User;
 use Modules\Admin\app\Models\Blog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+
 class AdminController extends Controller    
 {
-    // public function createNewProfile(Request $request)
-    // {
-    //     $admin = auth()->user();
-    //     $validator = Validator::make($request->all(), [
-    //         'email' => 'required|email',
-    //         'first_name' => 'required|string|max:255',
-    //         'last_name' => 'required|string|max:255',
-    //         'password' => 'required|string|min:8',
-    //         'user_type' => 'required|integer|in:1,2,3',
-    //         'username' => 'required|string|max:255|',
-    //     ]);
-    
-    //     if ($validator->fails()) {
-    //         return Resp::error(['message' => $validator->errors()]);
-    //     }
-    
-    //     $user = AuthUser::create([
-    //         'username' => $request->input('username'),
-    //         'email' => $request->input('email'),
-    //         'password' => Hash::make($request->input('password')),
-    //         'user_type' => $request->input('user_type'),
-    //     ]);
-    
-    //     $profile = Profile::create([
-    //         'user_id' => $user->id,
-    //         'first_name' => $request->input('first_name'),
-    //         'last_name' => $request->input('last_name'),
-    //         'username'=>$request->input('username'),   
-    //         'email'=>$request->input('email'),
-    //         'password'=>Hash::make($request->input('password')),
-    //         'user_type'=>$request->input('user_type'),
-    //     ]);
-    
-    //     return Resp::success(['message' => 'Profile created successfully', 'profile_id' => $profile->id]);
-    // }
 
+
+    public function editYourProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'password' => 'required|string|min:8',
+            'user_type' => 'required|integer|in:1,2,3', // Only allow 1 (fan) or 2 (escort)
+            'username' => 'required|string|max:255',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::error(['message' => $validator->errors()]);
+        }
+    
+        $admin = auth()->user();
+        $user = AuthUser::where('email', $request->input('email'))->first(); // Assuming you're passing the user ID in the request
+    
+        if (!$user) {
+            return Resp::error(['message' => 'User not found']);
+        }
+    
+        // Check if user_type is the same as the current user's type
+        if ($user->user_type !== $request->input('user_type')) {
+            return Resp::error(['message' => 'User type cannot be changed']);
+        }
+
+         if($user->username==$request->input('username')){
+            return Resp::error(['message' => 'Username cannot be the same as the current username']);
+         }
+        $user->update([
+            'username' => $request->input('username'),
+            'email' => $request->input('email'),
+            'password' => Hash::make($request->input('password')),
+            'firstname' => $request->input('first_name'),
+            'lastname' => $request->input('last_name'),
+        ]);
+    
+        return Resp::success(['message' => 'Profile updated successfully']);
+    }
     public function newUser(Request $request){
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|max:255|unique:users,username',
