@@ -28,11 +28,52 @@ use App\Models\User;
 use Modules\Admin\app\Models\Blog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+
 class AdminController extends Controller    
 {
 
 
+    public function editYourProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'password' => 'required|string|min:8',
+            'user_type' => 'required|integer|in:1,2,3', // Only allow 1 (fan) or 2 (escort)
+            'username' => 'required|string|max:255',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::error(['message' => $validator->errors()]);
+        }
+    
+        $admin = auth()->user();
+        $user = AuthUser::where('email', $request->input('email'))->first(); // Assuming you're passing the user ID in the request
+    
+        if (!$user) {
+            return Resp::error(['message' => 'User not found']);
+        }
+    
+        // Check if user_type is the same as the current user's type
+        if ($user->user_type !== $request->input('user_type')) {
+            return Resp::error(['message' => 'User type cannot be changed']);
+        }
 
+         if($user->username==$request->input('username')){
+            return Resp::error(['message' => 'Username cannot be the same as the current username']);
+         }
+        $user->update([
+            'username' => $request->input('username'),
+            'email' => $request->input('email'),
+            'password' => Hash::make($request->input('password')),
+            'firstname' => $request->input('first_name'),
+            'lastname' => $request->input('last_name'),
+        ]);
+    
+        return Resp::success(['message' => 'Profile updated successfully']);
+    }
     public function newUser(Request $request){
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|max:255|unique:users,username',
@@ -724,25 +765,33 @@ public function assignPermissions($id,Request $request){
         $users=AuthUser::with('profile')->get();
         return Resp::success(['list'=>$users]);
     }
-
+    
     public function getAdminUsers(Request $request){
         $perPage = $request->query('per_page', 10); // Default to 10 items per page
-    $page = $request->query('page', 1); // Default to page 1
-    $offset = ($page - 1) * $perPage;
-
-    $totalCount = AuthUser::where('user_type', 3)->count();
-    $users = AuthUser::where('user_type', 3)
-        ->offset($offset)
-        ->limit($perPage)
-        ->get();
-
-    return Resp::success([
-        'list' => $users,
-        'total_count' => $totalCount,
-        'page' => (int)$page,
-        'per_page' => $perPage
-    ]);
-   }
+        $page = $request->query('page', 1); // Default to page 1
+        $offset = ($page - 1) * $perPage;
+    
+        $users = AuthUser::where('user_type', 3)
+            ->when($request->query('email'), function ($query, $email) {
+                $query->where('email', 'like', '%' . $email . '%');
+            })
+            ->when($request->query('username'), function ($query, $username) {
+                $query->where('username', 'like', '%' . $username . '%');
+            })
+            ->offset($offset)
+            ->limit($perPage)
+            ->get();
+    
+        $totalCount = AuthUser::where('user_type', 3)->count();
+    
+        return Resp::success([
+            'list' => $users,
+            'total_count' => $totalCount,
+            'page' => (int)$page,
+            'per_page' => $perPage
+        ]);
+    }
+    
 
     public function getUserPermissions($id,Request $request){
         $user = AuthUser::find($id);

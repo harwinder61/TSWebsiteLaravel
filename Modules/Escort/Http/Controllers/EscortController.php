@@ -40,7 +40,13 @@ class EscortController extends Controller
         $subscription = BaseSubscription::where('escort_id', $user->id)->latest()->first();
         return Resp::success(['has_subscription' => (bool) $subscription]);
     }
-
+     
+    public function getVerify(Request $request)
+    {
+        $user = auth()->user();
+        $verify = Verify::where('escort_id', $user->id)->first();
+        return Resp::success(['verify' => $verify]);
+    }
     
 
     public function verify(Request $request)
@@ -99,6 +105,9 @@ class EscortController extends Controller
             return Resp::error(['message' => 'An error occurred while processing your request'], 500);
         }
     }
+
+
+
     public function getActiveSubscription(Request $request)
     {
         $user = auth()->user();
@@ -135,27 +144,6 @@ public function profileViews($id, Request $request)
 }
 
 
-// public function profileViews($id, Request $request)
-// {
-//     $user = auth()->user();
-    
-//     if ($user->user_type != 1) {    
-//         return Resp::error(['message' => 'Unauthorized user not a fan']);
-//     }
-
-//     $profile = AuthUser::where('id', $id)
-//                        ->where('user_type', 2)
-//                        ->with('profile')
-//                        ->first();
-
-//     if (!$profile || !$profile->profile) {
-//         return Resp::error(['message' => 'User is not an escort or profile not found']);
-//     }
-
-//     $profile->profile->increment('profile_views');
-
-//     return Resp::success(['message' => 'Profile views updated successfully']);
-// }
     public function hideProfile(Request $request)
     {
         $validator = Validator::make($request->all(), [

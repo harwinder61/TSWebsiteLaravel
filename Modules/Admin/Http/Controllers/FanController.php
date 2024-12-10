@@ -13,9 +13,25 @@ use Modules\Auth\app\Models\AuthUser;
 class FanController extends Controller
 {
     public function getFans(Request $request){
-        
-        $fans=AuthUser::with('profile')->where('user_type',1)->get();
-        return Resp::success(['list'=>$fans]);
+        $perPage = $request->query('per_page', 10);
+        $fans = AuthUser::with('profile')
+            ->where('user_type', 1)
+            ->when($request->query('email'), function ($query, $email) {
+                $query->where('email', 'like', '%' . $email . '%');
+            })
+            ->when($request->query('username'), function ($query, $username) {
+                $query->where('username', 'like', '%' . $username . '%');
+            })
+            ->paginate($perPage);
+        return Resp::success([
+            'list'=>$fans->items(),
+            'pagination'=>[
+                'total_results'=>$fans->total(),
+                'total_pages'=>$fans->lastPage(),
+                'page_number'=>$fans->currentPage(),
+                'page_size'=>$fans->perPage()
+            ]
+        ]);
     }
 
     
