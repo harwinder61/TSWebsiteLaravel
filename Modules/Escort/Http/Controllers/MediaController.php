@@ -39,6 +39,7 @@ class MediaController extends Controller
     public function mediaSingle(Request $request)
     {
         $slug=$request->query('upload_type');
+        $is_temp=$request->input('is_temp');
         if($slug=='advert'){
             Log::info('advert slug passed');
             Log::info($request->all());
@@ -152,7 +153,7 @@ class MediaController extends Controller
 public function addGallery(Media $media, Request $request)
 {
     $currentUser = auth()->user();
-    
+    $is_temp=$request->input('is_temp');
     $validator = Validator::make($request->all(), [
         'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
         'type' => 'required|string|in:gallery,private_gallery,checkout',
@@ -179,6 +180,9 @@ public function addGallery(Media $media, Request $request)
             $media->type = $request->input('type');
             $media->path = $userFolder . '/' . $imageName;
             $media->escort_id = $userId;
+            if($is_temp){
+                $media->is_temp=false;
+            }
             $media->save();
 
             $profile = Profile::where('escort_id', $userId)->first();

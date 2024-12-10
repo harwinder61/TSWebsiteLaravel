@@ -411,7 +411,9 @@ public function updateMedia(Request $request)
             }
 
             $profile_data = Profile::where('escort_id', $user->id)->first();
-
+            if(!$profile_data){
+                return Resp::error(['Profile not found !']);
+            }
             $is_incall_enabled = $request->input('is_incall_enabled');
             $is_outcall_enabled = $request->input('is_outcall_enabled');
             $baseRules = [
