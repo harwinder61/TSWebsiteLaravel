@@ -30,8 +30,41 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 class AdminController extends Controller    
 {
-
-
+    // public function createNewProfile(Request $request)
+    // {
+    //     $admin = auth()->user();
+    //     $validator = Validator::make($request->all(), [
+    //         'email' => 'required|email',
+    //         'first_name' => 'required|string|max:255',
+    //         'last_name' => 'required|string|max:255',
+    //         'password' => 'required|string|min:8',
+    //         'user_type' => 'required|integer|in:1,2,3',
+    //         'username' => 'required|string|max:255|',
+    //     ]);
+    
+    //     if ($validator->fails()) {
+    //         return Resp::error(['message' => $validator->errors()]);
+    //     }
+    
+    //     $user = AuthUser::create([
+    //         'username' => $request->input('username'),
+    //         'email' => $request->input('email'),
+    //         'password' => Hash::make($request->input('password')),
+    //         'user_type' => $request->input('user_type'),
+    //     ]);
+    
+    //     $profile = Profile::create([
+    //         'user_id' => $user->id,
+    //         'first_name' => $request->input('first_name'),
+    //         'last_name' => $request->input('last_name'),
+    //         'username'=>$request->input('username'),   
+    //         'email'=>$request->input('email'),
+    //         'password'=>Hash::make($request->input('password')),
+    //         'user_type'=>$request->input('user_type'),
+    //     ]);
+    
+    //     return Resp::success(['message' => 'Profile created successfully', 'profile_id' => $profile->id]);
+    // }
 
     public function newUser(Request $request){
         $validator = Validator::make($request->all(), [
