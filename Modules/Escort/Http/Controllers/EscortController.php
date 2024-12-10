@@ -40,7 +40,13 @@ class EscortController extends Controller
         $subscription = BaseSubscription::where('escort_id', $user->id)->latest()->first();
         return Resp::success(['has_subscription' => (bool) $subscription]);
     }
-
+     
+    public function getVerify(Request $request)
+    {
+        $user = auth()->user();
+        $verify = Verify::where('escort_id', $user->id)->first();
+        return Resp::success(['verify' => $verify]);
+    }
     
 
     public function verify(Request $request)
@@ -99,6 +105,9 @@ class EscortController extends Controller
             return Resp::error(['message' => 'An error occurred while processing your request'], 500);
         }
     }
+
+
+
     public function getActiveSubscription(Request $request)
     {
         $user = auth()->user();
