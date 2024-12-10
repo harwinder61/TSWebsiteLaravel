@@ -765,25 +765,33 @@ public function assignPermissions($id,Request $request){
         $users=AuthUser::with('profile')->get();
         return Resp::success(['list'=>$users]);
     }
-
+    
     public function getAdminUsers(Request $request){
         $perPage = $request->query('per_page', 10); // Default to 10 items per page
-    $page = $request->query('page', 1); // Default to page 1
-    $offset = ($page - 1) * $perPage;
-
-    $totalCount = AuthUser::where('user_type', 3)->count();
-    $users = AuthUser::where('user_type', 3)
-        ->offset($offset)
-        ->limit($perPage)
-        ->get();
-
-    return Resp::success([
-        'list' => $users,
-        'total_count' => $totalCount,
-        'page' => (int)$page,
-        'per_page' => $perPage
-    ]);
-   }
+        $page = $request->query('page', 1); // Default to page 1
+        $offset = ($page - 1) * $perPage;
+    
+        $users = AuthUser::where('user_type', 3)
+            ->when($request->query('email'), function ($query, $email) {
+                $query->where('email', 'like', '%' . $email . '%');
+            })
+            ->when($request->query('username'), function ($query, $username) {
+                $query->where('username', 'like', '%' . $username . '%');
+            })
+            ->offset($offset)
+            ->limit($perPage)
+            ->get();
+    
+        $totalCount = AuthUser::where('user_type', 3)->count();
+    
+        return Resp::success([
+            'list' => $users,
+            'total_count' => $totalCount,
+            'page' => (int)$page,
+            'per_page' => $perPage
+        ]);
+    }
+    
 
     public function getUserPermissions($id,Request $request){
         $user = AuthUser::find($id);

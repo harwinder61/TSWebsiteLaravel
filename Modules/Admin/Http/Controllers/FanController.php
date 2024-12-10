@@ -14,7 +14,15 @@ class FanController extends Controller
 {
     public function getFans(Request $request){
         $perPage = $request->query('per_page', 10);
-        $fans=AuthUser::with('profile')->where('user_type',1)->paginate($perPage);
+        $fans = AuthUser::with('profile')
+            ->where('user_type', 1)
+            ->when($request->query('email'), function ($query, $email) {
+                $query->where('email', 'like', '%' . $email . '%');
+            })
+            ->when($request->query('username'), function ($query, $username) {
+                $query->where('username', 'like', '%' . $username . '%');
+            })
+            ->paginate($perPage);
         return Resp::success([
             'list'=>$fans->items(),
             'pagination'=>[
