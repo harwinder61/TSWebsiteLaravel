@@ -53,52 +53,50 @@ class EscortController extends Controller
     {
         try {
             $user = auth()->user();
-    
+
             $validator = Validator::make($request->all(), [
                 'passport_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
                 'selfie_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
             ]);
-    
+
             if ($validator->fails()) {
                 return Resp::fieldErrors(['field_errors' => $validator->errors()]);
             }
-    
+
             if (!$request->hasFile('passport_image') || !$request->hasFile('selfie_image')) {
                 return Resp::error(['message' => 'Required image files not found'], 400);
             }
-    
+
             // Process Images
             $userId = $user->id;
             $userFolder = 'uploads/media/user_' . $userId;
-    
+
             $directoryPath = public_path($userFolder);
-    
+
             if (!File::isDirectory($directoryPath)) {
                 File::makeDirectory($directoryPath, 0755, true);
             }
-    
+
             // Save Passport Image
             $passportImage = $request->file('passport_image');
             $passportImageName = 'passport_' . time() . '_' . uniqid() . '.' . $passportImage->getClientOriginalExtension();
             $passportImage->move($directoryPath, $passportImageName);
-    
+
             // Save Selfie Image
             $selfieImage = $request->file('selfie_image');
             $selfieImageName = 'selfie_' . time() . '_' . uniqid() . '.' . $selfieImage->getClientOriginalExtension();
             $selfieImage->move($directoryPath, $selfieImageName);
-    
+
             // Save to Database
             $verify = new Verify();
             $verify->passport_image = $userFolder . '/' . $passportImageName;
             $verify->selfie_image = $userFolder . '/' . $selfieImageName;
             $verify->escort_id = $userId;
             $verify->save();
-    
-            // Update verified_status in profile table
             $profile = $user->profile;
             $profile->verified_status = 2;
             $profile->save();
-    
+
             return Resp::success([
                 'message' => 'Verify details saved successfully',
                 'passport_image_path' => $userFolder . '/' . $passportImageName,
@@ -107,7 +105,6 @@ class EscortController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    // Add any other user data you want to return
                 ],
             ]);
         } catch (\Exception $e) {
@@ -115,7 +112,6 @@ class EscortController extends Controller
             return Resp::error(['message' => 'An error occurred while processing your request'], 500);
         }
     }
-
 
 
     public function getActiveSubscription(Request $request)
