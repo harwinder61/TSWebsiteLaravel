@@ -12,7 +12,7 @@ class Comment extends Model
     use HasFactory;
 
     protected $table='comment';
-    protected $fillable=['comment','forum_id','user_id','parent_id'];
+    protected $fillable=['comment','forum_id','user_id','commentator_id','status','message'];
 
     public function media(){
         return $this->belongsTo(Media::class,'media_id','id');

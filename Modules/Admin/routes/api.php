@@ -38,7 +38,10 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/edit-your-profile',[AdminController::class,'editYourProfile']);
         Route::post('/create-forum',[AdminController::class,'createForum']);
         Route::get('/get-varifiacation-list',[AdminController::class,'getVarifiacationList']);
-        Route::post('/post-comment',[AdminController::class,'postComment']);                                                                                                                                                   
+        Route::post('/post-comment',[AdminController::class,'postComment']);  
+        Route::get('/get-forum',[AdminController::class,'getForum']);
+        Route::get('/get-comments',[AdminController::class,'getComments']);
+                                                                                                                                                         
     });
     
 

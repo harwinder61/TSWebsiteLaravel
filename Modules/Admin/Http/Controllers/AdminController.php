@@ -38,11 +38,28 @@ use Modules\Admin\app\Models\Comment;
 class AdminController extends Controller
 {
 
+    public function getForum(Request $request){
+        $forums = Forum::query();
+        if (!is_null($request->query('category'))) {
+            $forums->where('category', $request->query('category'));
+        }
+        $forums = $forums->get();
+        return Resp::success(['forums' => $forums]);
+    }
+
+    public function getComments(Request $request){
+        $comments = Comment::query();
+        if (!is_null($request->query('forum_id'))) {
+            $comments->where('forum_id', $request->query('forum_id'));
+        }
+        $comments = $comments->get();
+        return Resp::success(['comments' => $comments]);
+    }
+
    public function postComment(Request $request){
     $validator = Validator::make($request->all(), [
         'comment' => 'required|string',
-        'forum_id' => 'required|exists:forums,id',
-        'user_id' => 'required|exists:users,id',
+        'forum_id' => 'required|exists:forum,id',
         'commentator_id' => 'required|exists:users,id',
         'status' => 'required|integer|in:1,2,3',
         'message' => 'required|string',
@@ -50,8 +67,19 @@ class AdminController extends Controller
     if($validator->fails()){
         return Resp::error(['message' => $validator->errors()]);
     }
-    $comment =Comment::create($validator->validated());
-    return Resp::success(['message' => 'Comment posted successfully', 'comment' => $comment]);
+    $comment =Comment::create([
+        'comment' => $request->comment,
+        'forum_id' => $request->forum_id,
+        'commentator_id' => $request->commentator_id,
+        'status' => $request->status,
+        'message' => $request->message,
+    ]);
+    $saved = $comment->save();
+    if($saved){
+        return Resp::success(['message' => 'Comment posted successfully', 'comment' => $comment]);
+    }else{
+        return Resp::error(['message' => 'Comment not posted']);
+    }
    }
 
 
