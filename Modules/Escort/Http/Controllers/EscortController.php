@@ -71,20 +71,21 @@ class EscortController extends Controller
             $userId = $user->id;
             $userFolder = 'uploads/media/user_' . $userId;
     
-            $directoryPath = storage_path('app/public/' . $userFolder);
+            $directoryPath = public_path($userFolder);
     
-            if (!File::exists($directoryPath)) {
+            if (!File::isDirectory($directoryPath)) {
                 File::makeDirectory($directoryPath, 0755, true);
             }
+    
             // Save Passport Image
             $passportImage = $request->file('passport_image');
             $passportImageName = 'passport_' . time() . '_' . uniqid() . '.' . $passportImage->getClientOriginalExtension();
-            $passportImage->storeAs('public/' . $userFolder, $passportImageName);
+            $passportImage->move($directoryPath, $passportImageName);
     
             // Save Selfie Image
             $selfieImage = $request->file('selfie_image');
             $selfieImageName = 'selfie_' . time() . '_' . uniqid() . '.' . $selfieImage->getClientOriginalExtension();
-            $selfieImage->storeAs('public/' . $userFolder, $selfieImageName);
+            $selfieImage->move($directoryPath, $selfieImageName);
     
             // Save to Database
             $verify = new Verify();
@@ -98,7 +99,11 @@ class EscortController extends Controller
             $profile->verified_status = 2;
             $profile->save();
     
-            return Resp::success(['message' => 'Verify details saved successfully']);
+            return Resp::success([
+                'message' => 'Verify details saved successfully',
+                'passport_image_path' => $userFolder . '/' . $passportImageName,
+                'selfie_image_path' => $userFolder . '/' . $selfieImageName,
+            ]);
     
         } catch (\Exception $e) {
             Log::error('Verification Error: ' . $e->getMessage());
