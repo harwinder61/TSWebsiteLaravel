@@ -138,7 +138,7 @@ class OrderController extends Controller
             $plan = Plan::where('code', $request->input('plan_code'))->first();
             $extra_locations_price=0;
             $price=$plan->price;
-            if($request->input('plan_code')=="P105" && $sub_exists){
+            if($request->input('plan_code')=="P105" && !$sub_exists){
                 $price=0;
             }
 
@@ -255,15 +255,15 @@ if (!$media || $media->id != $request->input('image_id')) {
             $days=$plan->days;
             
 
-            $subscription_exists=Subscription::where('escort_id',$order->escort_id)
-                ->where('plan_code',$order->plan_code)
-                ->where('status','ACTIVE')
-                ->first();
+            //$subscription_exists=Subscription::where('escort_id',$order->escort_id)
+            //    ->where('plan_code',$order->plan_code)
+            //    ->where('status','ACTIVE')
+            //    ->first();
                 
 
-            if($subscription_exists){
-                return Resp::error(['Subscription already exists']);
-            }
+            //if($subscription_exists){
+            //    return Resp::error(['Subscription already exists']);
+            //}
             Log::info("Number of days from plans table : ".$days);
             // Ensure the start_date is in the correct format
             // Ensure the start_date is in the correct format
@@ -320,7 +320,11 @@ if (!$media || $media->id != $request->input('image_id')) {
     }
     public function getEscortPreviousSubscriptions(Request $request){
         $user=auth()->user();
-        $subscriptions=Subscription::where('escort_id',$user->id)->get();
+        $subscriptions=Subscription::where('escort_id',$user->id)
+            ->where('status','ACTIVE')
+            ->where('plan_code','P101')
+            ->where('start_date','>',date('Y-m-d'))
+            ->get();
         return Resp::success(['subscriptions'=>$subscriptions]);
     }
 
@@ -335,7 +339,9 @@ if (!$media || $media->id != $request->input('image_id')) {
 
     public function updateLatestEscortSubscription(Request $request){
         $user=auth()->user();
-        $subscription=Subscription::with('orders')->where('escort_id',$user->id)->orderBy('id','desc')->first();
+        $sub_id=$request->input('subscription_id');
+        $subscription=Subscription::find($sub_id);
+        
         if(!$subscription){
             return Resp::error(['Subscription not found']);
         }
@@ -408,13 +414,13 @@ if (!$media || $media->id != $request->input('image_id')) {
             }
 
             // Merge and deduplicate location arrays
-        $current_locations = is_array($subscription_data->extra_location) ? $subscription_data->extra_location : [];
+        //$current_locations = is_array($subscription_data->extra_location) ? $subscription_data->extra_location : [];
         $new_locations = is_array($request->input('extra_locations')) ? $request->input('extra_locations') : [];
-        $merged_locations = collect(array_merge($current_locations, $new_locations))
-            ->flatten()
-            ->unique()
-            ->values()
-            ->toArray();
+        //$merged_locations = collect(array_merge($current_locations, $new_locations))
+        //    ->flatten()
+        //    ->unique()
+        //    ->values()
+        //    ->toArray();
 
         $updated_subscription = $subscription_data->update([
             'extra_location' => $request->input('extra_locations'),

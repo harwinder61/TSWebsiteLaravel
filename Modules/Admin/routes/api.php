@@ -36,6 +36,9 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/all-advert-users',[AdminController::class,'getAllAdvertUsers']);
         Route::post('/new-user',[AdminController::class,'newUser']);
         Route::post('/edit-your-profile',[AdminController::class,'editYourProfile']);
+        Route::post('/create-forum',[AdminController::class,'createForum']);
+        Route::get('/get-varifiacation-list',[AdminController::class,'getVarifiacationList']);
+        Route::post('/post-comment',[AdminController::class,'postComment']);                                                                                                                                                   
     });
     
 
