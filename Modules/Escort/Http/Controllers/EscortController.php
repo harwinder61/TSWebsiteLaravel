@@ -103,8 +103,13 @@ class EscortController extends Controller
                 'message' => 'Verify details saved successfully',
                 'passport_image_path' => $userFolder . '/' . $passportImageName,
                 'selfie_image_path' => $userFolder . '/' . $selfieImageName,
+                'user_data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    // Add any other user data you want to return
+                ],
             ]);
-    
         } catch (\Exception $e) {
             Log::error('Verification Error: ' . $e->getMessage());
             return Resp::error(['message' => 'An error occurred while processing your request'], 500);
@@ -290,7 +295,7 @@ public function profileViews($id, Request $request)
         if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
             $profile = Profile::where('escort_id', $user->id)->first();
             if ($profile) {
-                $profile->is_profile = 1;
+                $profile->is_media = 1;
                 $profile->save();
             }
         }
