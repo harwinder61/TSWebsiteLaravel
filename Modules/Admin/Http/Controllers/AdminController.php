@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\Auth;
 use Modules\Admin\app\Models\Forum;
 use Modules\Admin\app\Models\Master;
 use Modules\Admin\app\Models\Verify;
-use Modules\Escort\app\Models\verify as ModelsVerify;
+use Modules\Escort\app\Models\Verify as ModelsVerify;
 use Modules\Admin\app\Models\Comment;
 
 class AdminController extends Controller
@@ -82,12 +82,24 @@ class AdminController extends Controller
     }
    }
 
-
-    public function getVarifiacationList(Request $request)
-    {
-        $verifications = ModelsVerify::with(['escort','user'])->get();
-        return Resp::success(['verifications' => $verifications]);
-    }
+   public function getVarifiacationList(Request $request)
+   {
+       try {
+           $perPage = $request->query('per_page', 10);
+           $verifications = ModelsVerify::with(['escort', 'user'])->paginate($perPage);
+           return Resp::success([
+               'verifications' => $verifications,
+               'pagination' => [
+                   'total_results' => $verifications->total(),
+                   'total_pages' => $verifications->lastPage(),
+                   'page_number' => $verifications->currentPage(),
+                   'page_size' => $verifications->perPage()
+               ]
+           ]);
+       } catch (\Exception $e) {
+           return Resp::error(['message' => 'Failed to retrieve verifications', 'error' => $e->getMessage()]);
+       }
+   }
 
     public function createForum(Request $request)
     {
