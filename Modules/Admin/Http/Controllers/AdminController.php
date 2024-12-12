@@ -110,7 +110,6 @@ public function fanVarificationList(Request $request){
     }
    }
 
-
    public function getVarifiacationList(Request $request)
    {
        $query = ModelsVerify::with(['escort', 'user']);
@@ -125,14 +124,25 @@ public function fanVarificationList(Request $request){
            });
        }
    
-       if ($request->query('per_page')) {
-           $verifications = $query->paginate($request->query('per_page'));
-       } else {
-           $verifications = $query->get();
-       }
+       $perPage = (int)$request->query('per_page', 10);
+       $page = (int)$request->query('page', 1);
+       $offset = ($page - 1) * $perPage;
    
-       return Resp::success(['verifications' => $verifications]);
+       $verifications = $query->offset($offset)->limit($perPage)->get();
+   
+       $totalResults = $query->count();
+       $totalPages = ceil($totalResults / $perPage);
+   
+       $pagination = [
+           'total_results' => $totalResults,
+           'total_pages' => $totalPages,
+           'page' => $page,
+           'page_size' => $perPage,
+       ];
+   
+       return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
    }
+
     public function createForum(Request $request)
     {
         $validator = Validator::make($request->all(), [
