@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Escort\app\Models\Escort;
 use App\Models\User;
-
+use Modules\Fan\app\Models\Fan;
 // use Modules\Escort\Database\Factories\EscortFactory;
 
 class verify extends Model
@@ -29,5 +29,11 @@ class verify extends Model
     {
         return $this->belongsTo(User::class, 'escort_id', 'id');
     }
+
+    public function fan()
+    {
+        return $this->belongsTo(User::class, 'fan_id', 'id');
+    }
+
 
 }
