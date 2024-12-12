@@ -41,6 +41,9 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/post-comment',[AdminController::class,'postComment']);  
         Route::get('/get-forum',[AdminController::class,'getForum']);
         Route::get('/get-comments',[AdminController::class,'getComments']);
+        Route::post('/verified-status/{escort_id}',[AdminController::class,'verifiedStatus']);
+        Route::get('/escort-varification-list',[AdminController::class,'escortVarificationList']);
+        Route::get('/fan-varification-list',[AdminController::class,'fanVarificationList']);
                                                                                                                                                          
     });
     

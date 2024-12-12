@@ -38,6 +38,34 @@ use Modules\Admin\app\Models\Comment;
 class AdminController extends Controller
 {
 
+public function escortVarificationList(Request $request){
+    $verifications = ModelsVerify::with(['escort', 'user'])->paginate(10);
+    return Resp::success(['verifications' => $verifications]);
+}   
+
+public function fanVarificationList(Request $request){
+    $verifications = ModelsVerify::with(['user', 'fan'])->paginate(10);
+    return Resp::success(['verifications' => $verifications]);
+}
+
+    
+    public function verifiedStatus(Request $request,$escort_id){
+        $validator = Validator::make($request->all(), [
+            'action' => 'required|integer|in:1,0',
+        ]);
+        if ($validator->fails()) {
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        $verify = ModelsVerify::where('escort_id', $escort_id)->first();
+        if ($request->action == 1) {
+            $verify->verified_status = 1;
+        } elseif ($request->action == 0) {
+            $verify->verified_status = 4;
+        }
+        $verify->save();
+        return Resp::success(['message' => 'Verification status updated successfully']);
+    }
+
     public function getForum(Request $request){
         $forums = Forum::query();
         if (!is_null($request->query('category'))) {
@@ -85,13 +113,26 @@ class AdminController extends Controller
 
    public function getVarifiacationList(Request $request)
    {
-       $perPage = $request->query('per_page', 10);
-       $verifications = ModelsVerify::with(['escort', 'user'])
-           ->paginate($perPage);
+       $query = ModelsVerify::with(['escort', 'user']);
+   
+       if (!is_null($request->query('verified_status'))) {
+           $query->where('verified_status', $request->query('verified_status'));
+       }
+   
+       if (!is_null($request->query('escort_name'))) {
+           $query->whereHas('escort', function ($q) use ($request) {
+               $q->where('name', 'like', '%' . $request->query('escort_name') . '%');
+           });
+       }
+   
+       if ($request->query('per_page')) {
+           $verifications = $query->paginate($request->query('per_page'));
+       } else {
+           $verifications = $query->get();
+       }
    
        return Resp::success(['verifications' => $verifications]);
    }
-
     public function createForum(Request $request)
     {
         $validator = Validator::make($request->all(), [

@@ -56,25 +56,20 @@ class EscortController extends Controller
             $validator = Validator::make($request->all(), [
                 'passport_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
                 'selfie_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
-                'action' => 'nullable|integer|in:0,1',
             ]);
     
             if ($validator->fails()) {
                 return Resp::fieldErrors(['field_errors' => $validator->errors()]);
             }
     
-            //Log::info('Request has files: ' . ($request->hasFile() ? 'yes' : 'no'));
-    
             if ((!$request->hasFile('passport_image') && !$request->hasFile('selfie_image'))) {
-                Log::info('Updating verified_status to 3');
+                // Update verified_status to 4 if no images are selected
                 $profile = $user->profile;
                 $profile->verified_status = 3;
                 $profile->save();
     
-                Log::info('Verified status updated: ' . $profile->verified_status);
-    
                 return Resp::success([
-                    'message' => 'Verification status updated successfully',
+                    'message' => 'Verification status updated to 3 due to missing images',
                     'user_data' => [
                         'id' => $user->id,
                         'name' => $user->name,
@@ -103,33 +98,15 @@ class EscortController extends Controller
             $selfieImageName = 'selfie_' . time() . '_' . uniqid() . '.' . $selfieImage->getClientOriginalExtension();
             $selfieImage->move($directoryPath, $selfieImageName);
     
-            if ($request->has('action')) {
-                $action = $request->input('action');
-                if ($action == 1) {
-                    $verifiedStatus = 1;
-                } elseif ($action == 0) {
-                    $verifiedStatus = 4;
-                } else {
-                    return Resp::error(['message' => 'Invalid action parameter']);
-                }
-            } else {
-                // Handle the case where action parameter is not provided
-                // ...
-            }
-    
             // Save to Database
             $verify = new Verify();
             $verify->passport_image = $userFolder . '/' . $passportImageName;
             $verify->selfie_image = $userFolder . '/' . $selfieImageName;
             $verify->escort_id = $userId;
-            $verify->verified_status = $verifiedStatus;
             $verify->save();
-    
             $profile = $user->profile;
-            $profile->verified_status = $verifiedStatus;
+            $profile->verified_status = 2;
             $profile->save();
-    
-            Log::info('Verified status updated: ' . $profile->verified_status);
     
             return Resp::success([
                 'message' => 'Verify details saved successfully',
@@ -146,6 +123,9 @@ class EscortController extends Controller
             return Resp::error(['message' => 'An error occurred while processing your request'], 500);
         }
     }
+    
+
+
 
     public function getActiveSubscription(Request $request)
     {
