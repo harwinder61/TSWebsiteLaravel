@@ -50,6 +50,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/get-reminder',[AdminController::class,'getReminder']);
         Route::post('/post-reminder-comment',[AdminController::class,'postReminderComment']);
         Route::get('/get-reminder-comment',[AdminController::class,'getReminderComment']);
+        Route::get('/get-all-user-list/{user_type?}',[AdminController::class,'getAllUsers']);
 
 
 

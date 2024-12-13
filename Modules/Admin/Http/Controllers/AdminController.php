@@ -41,6 +41,16 @@ class AdminController extends Controller
 {
 
 
+    public function getAllUsers(Request $request){
+        $userType = $request->query('user_type');
+        $page = $request->query('page');
+        $perPage = $request->query('10');
+        $users = AuthUser::when($userType, function ($query, $userType) {
+            $query->where('user_type', $userType);
+        })->paginate($perPage, ['*'], 'page', $page);
+        return Resp::success(['users' => $users]);
+    }
+
 
     public function reminderCategory(){
     $reminderCategory =Remindercatagory::get();
