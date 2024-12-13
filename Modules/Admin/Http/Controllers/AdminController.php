@@ -347,7 +347,7 @@ public function verifiedStatus(Request $request, $escort_id){
         if (!$review) {
             return Resp::error(['Review not found']);
         }
-        $review->is_approved = false;
+        $review->status = false;
         $review->save();
         return Resp::success(['message' => 'Review disapproved successfully']);
     }
@@ -362,7 +362,7 @@ public function verifiedStatus(Request $request, $escort_id){
         if (!$review) {
             return Resp::error(['Review not found']);
         }
-        $review->is_approved = true;
+        $review->status = true;
         $review->save();
         return Resp::success(['message' => 'Review approved successfully']);
     }
