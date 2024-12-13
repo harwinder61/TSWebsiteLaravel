@@ -34,9 +34,54 @@ use Modules\Admin\app\Models\Master;
 use Modules\Admin\app\Models\Verify;
 use Modules\Escort\app\Models\Verify as ModelsVerify;
 use Modules\Admin\app\Models\Comment;
-
+use Modules\Admin\app\Models\Reminder;
+use Modules\Admin\app\Models\Remindercomment;   
+use Modules\Admin\app\Models\Remindercatagory;
 class AdminController extends Controller
 {
+
+
+
+    public function reminderCategory(){
+    $reminderCategory =Remindercatagory::get();
+    return Resp::success(['reminderCategory' => $reminderCategory]);
+    }
+
+
+public function getReminder(){
+    $reminder = Reminder::get();
+    return Resp::success(['reminder' => $reminder]);
+}
+
+public function postReminderComment(Request $request){
+   $validator = Validator::make($request->all(), [
+    'reminder_comment' => 'required|string',
+    'reminder_id' => 'required|exists:reminder,id',
+    'admin_id' => 'required|exists:users,id',
+   ]);
+   if($validator->fails()){
+    return Resp::error(['message' => $validator->errors()]);
+   }
+   $reminderComment = Remindercomment::create($validator->validated());
+   return Resp::success(['message' => 'Reminder comment posted successfully']);
+}
+public function getReminderComment(){
+    $reminderComment = Remindercomment::get();
+    return Resp::success(['reminderComment' => $reminderComment]);
+}
+public function createReminder(Request $request){
+    $validator = Validator::make($request->all(), [
+        'title' => 'required|string',
+        'description' => 'required|string',
+        'comment' => 'required|string',
+        'priority' => 'required|string'
+    ]);
+    if($validator->fails()){
+        return Resp::error(['message' => $validator->errors()]);
+    }
+    $reminder = Reminder::create($validator->validated());
+    return Resp::success(['message' => 'Reminder created successfully']);
+}
 
 public function escortVarificationList(Request $request){
     $verifications = ModelsVerify::with(['escort', 'user'])->paginate(10);
@@ -71,7 +116,7 @@ public function fanVarificationList(Request $request){
         if (!is_null($request->query('category'))) {
             $forums->where('category', $request->query('category'));
         }
-        $forums = $forums->get();
+        $forums = $forums->orderBy('created_at', 'desc')->get();
         $forums->load('postComments'); // Load the comments for each forum
         return Resp::success(['forums' => $forums]);
     }
