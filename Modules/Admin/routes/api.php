@@ -26,7 +26,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/spotlight-media',[AdminController::class,'spotlightMedia']);
         Route::post('/blog',[AdminController::class,'blog']);
         Route::get('/live-adverts-users',[AdminController::class,'getLiveAdvertsUsers']);
-        Route::get('/admin-users',[AdminController::class,'getAdminUsers']);
+        Route::get('/admin-users/{user_type?}',[AdminController::class,'getAdminUsers']);
         Route::get('/user-permissions/{id}',[AdminController::class,'getUserPermissions']);
         Route::post('/approve-review/{id}',[AdminController::class,'approveReview']);
         Route::post('/disapprove-review/{id}',[AdminController::class,'disapproveReview']);
@@ -50,11 +50,6 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/get-reminder',[AdminController::class,'getReminder']);
         Route::post('/post-reminder-comment',[AdminController::class,'postReminderComment']);
         Route::get('/get-reminder-comment',[AdminController::class,'getReminderComment']);
-        Route::get('/get-all-user-list/{user_type?}',[AdminController::class,'getAllUsers']);
-
-
-
-        
                                                                                                                                                          
     });
     
