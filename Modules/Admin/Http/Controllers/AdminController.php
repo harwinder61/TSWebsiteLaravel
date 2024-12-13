@@ -93,22 +93,25 @@ public function fanVarificationList(Request $request){
 }
 
     
-    public function verifiedStatus(Request $request,$escort_id){
-        $validator = Validator::make($request->all(), [
-            'action' => 'required|integer|in:1,0',
-        ]);
-        if ($validator->fails()) {
-            return Resp::error(['message' => $validator->errors()]);
-        }
-        $verify = ModelsVerify::where('escort_id', $escort_id)->first();
-        if ($request->action == 1) {
-            $verify->verified_status = 1;
-        } elseif ($request->action == 0) {
-            $verify->verified_status = 4;
-        }
-        $verify->save();
-        return Resp::success(['message' => 'Verification status updated successfully']);
+public function verifiedStatus(Request $request, $escort_id){
+    $validator = Validator::make($request->all(), [
+        'action' => 'required|integer|in:1,0',
+    ]);
+    if ($validator->fails()) {
+        return Resp::error(['message' => $validator->errors()]);
     }
+    $verify = ModelsVerify::where('escort_id', $escort_id)->first();
+    if (!$verify) {
+        return Resp::error(['message' => 'Verification record not found']);
+    }
+    if ($request->action == 1) {
+        $verify->verified_status = 1;
+    } elseif ($request->action == 0) {
+        $verify->verified_status = 4;
+    }
+    $verify->save();
+    return Resp::success(['message' => 'Verification status updated successfully']);
+}
 
     public function getForum(Request $request){
         $forums = Forum::query();
