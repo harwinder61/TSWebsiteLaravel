@@ -25,9 +25,11 @@ class SubscriptionController extends Controller
             'getSubscriptions',
             'locations',
             'slugToLocation',
-            'listReviews'
+            'listReviews',
+            'getEscortFanlist'
         ]);
     }
+
 
 
     public function getAllListReviews(Request $request)
@@ -92,6 +94,11 @@ public function listReviews($id, Request $request)
             ->orWhere('reviews.user_id', $id);
     });
 
+    $escortId = $request->query('escort_id');
+    if ($escortId) {
+        $query->where('reviews.escort_id', $escortId);
+    }
+
     $reviews = $query->paginate($request->input('page_size', 4));
 
     $total_reviews = $reviews->total();
@@ -152,6 +159,7 @@ public function listReviews($id, Request $request)
         'total_overall_value_for_money' => $total_overall_value_for_money
     ]);
 }   
+
 
     public function locations(Request $request)
     {

@@ -72,9 +72,9 @@ public function fanVarificationList(Request $request){
             $forums->where('category', $request->query('category'));
         }
         $forums = $forums->get();
+        $forums->load('postComments'); // Load the comments for each forum
         return Resp::success(['forums' => $forums]);
     }
-
     public function getComments(Request $request){
         $comments = Comment::query();
         if (!is_null($request->query('forum_id'))) {
@@ -379,13 +379,10 @@ public function fanVarificationList(Request $request){
     {
         $baseSlug = $slug;
         $counter = 1;
-
-        // Check if slug already exists in the database
         while (Blog::where('slug', $slug)->exists()) {
             $slug = $baseSlug . '-' . $counter;
             $counter++;
         }
-
         return $slug;
     }
 
@@ -958,5 +955,15 @@ public function fanVarificationList(Request $request){
         }
 
         return Resp::success(['list' => $permissions, 'user' => $user]);
+    }
+
+
+    public function getForumPost(Request $request,$id)
+    {
+        $post = Forum::find($id);
+        if (!$post) {
+            return Resp::error(['Post not found']);
+        }
+        return Resp::success(['data' => $post]);
     }
 }
