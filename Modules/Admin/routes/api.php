@@ -40,6 +40,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/get-varifiacation-list',[AdminController::class,'getVarifiacationList']);
         Route::post('/post-comment',[AdminController::class,'postComment']);  
         Route::get('/get-forum',[AdminController::class,'getForum']);
+        Route::get('/get-forum-post/{id}',[AdminController::class,'getForumPost']);
         Route::get('/get-comments',[AdminController::class,'getComments']);
         Route::post('/verified-status/{escort_id}',[AdminController::class,'verifiedStatus']);
         Route::get('/escort-varification-list',[AdminController::class,'escortVarificationList']);
