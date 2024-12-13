@@ -45,6 +45,15 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/verified-status/{escort_id}',[AdminController::class,'verifiedStatus']);
         Route::get('/escort-varification-list',[AdminController::class,'escortVarificationList']);
         Route::get('/fan-varification-list',[AdminController::class,'fanVarificationList']);
+        Route::get('/reminder-category',[AdminController::class,'reminderCategory']);
+        Route::post('/create-reminder',[AdminController::class,'createReminder']);
+        Route::get('/get-reminder',[AdminController::class,'getReminder']);
+        Route::post('/post-reminder-comment',[AdminController::class,'postReminderComment']);
+        Route::get('/get-reminder-comment',[AdminController::class,'getReminderComment']);
+        Route::get('/get-all-user-list/{user_type?}',[AdminController::class,'getAllUsers']);
+
+
+
         
                                                                                                                                                          
     });
