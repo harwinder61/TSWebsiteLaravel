@@ -41,17 +41,6 @@ class AdminController extends Controller
 {
 
 
-    public function getAllUsers(Request $request){
-        $userType = $request->query('user_type');
-        $page = $request->query('page');
-        $perPage = $request->query('10');
-        $users = AuthUser::when($userType, function ($query, $userType) {
-            $query->where('user_type', $userType);
-        })->paginate($perPage, ['*'], 'page', $page);
-        return Resp::success(['users' => $users]);
-    }
-
-
     public function reminderCategory(){
     $reminderCategory =Remindercatagory::get();
     return Resp::success(['reminderCategory' => $reminderCategory]);
@@ -918,8 +907,10 @@ public function fanVarificationList(Request $request){
     public function getUsers(Request $request)
     {
         $user_type = $request->query('user_type');
-
-        // Start with users query and select specific fields
+        $search = $request->query('s');
+        $page = $request->query('page', 1);
+        $perPage = $request->query('per_page', 10);
+    
         $users = AuthUser::query()
             ->select('users.*') // Select all fields from users table
             ->when($user_type, function ($query) use ($user_type) {
@@ -933,17 +924,22 @@ public function fanVarificationList(Request $request){
                         subscriptions.plan_code,
                         subscriptions.start_date,
                         subscriptions.end_date');
-
+    
+        // Add search filter
+        if ($search) {
+            $users->where(function ($query) use ($search) {
+                $query->where('email', 'like', '%' . $search . '%')
+                    ->orWhere('username', 'like', '%' . $search . '%');
+            });
+        }
+    
         // Pagination
-        $perPage = $request->query('per_page', 10);
-        $page = $request->query('page', 1);
-
         $totalCount = $users->count();
-
+    
         $result = $users->offset(($page - 1) * $perPage)
             ->limit($perPage)
             ->get();
-
+    
         return Resp::success([
             'list' => $result,
             'total_count' => $totalCount,
