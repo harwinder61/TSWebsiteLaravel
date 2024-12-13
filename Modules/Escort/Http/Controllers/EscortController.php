@@ -25,6 +25,7 @@ use Modules\Escort\app\Models\Verify;
 use Illuminate\Support\Facades\File;
 use App\Models\Plan;
 use App\Models\BaseSubscription;
+use App\Models\BaseReviews;
 class EscortController extends Controller
 {
     public function __construct()
@@ -32,7 +33,6 @@ class EscortController extends Controller
         $this->middleware(AuthMiddleware::class)->except(['profileViews']);
     } 
  
-
 
     public function featuredTsGirl(Request $request)
     {
