@@ -1005,7 +1005,7 @@ public function fanVarificationList(Request $request){
 
     public function getForumPost(Request $request,$id)
     {
-        $post = Forum::find($id);
+        $post = Forum::with('PostComments')->find($id);
         if (!$post) {
             return Resp::error(['Post not found']);
         }
