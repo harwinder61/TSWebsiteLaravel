@@ -28,4 +28,4 @@ Route::get('/list-reviews/{id?}',[SubscriptionController::class,'listReviews']);
 Route::get('/all-blog-list',[FanController::class,'allBlogList']);
 Route::get('all-list-reviews',[SubscriptionController::class,'getAllListReviews']);
 Route::get('advert-list',[SubscriptionController::class,'getAdvertLists']);
-Route::get('reviws-escort-fanlist/{id}',[SubscriptionController::class,'getEscortFanlist']);
+
