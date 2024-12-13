@@ -38,6 +38,7 @@ Route::group(['prefix' => 'escort'],function(){
     Route::get('/latest-subscription',[OrderController::class,'getLatestEscortSubscription']);
     Route::patch('/update-latest-subscription',[OrderController::class,'updateLatestEscortSubscription']);
     Route::post('/add-extra-locations',[OrderController::class,'extraLocationsUpdatedOrder']);
+    Route::get('reviws-escort-fanlist',[ReviewsController::class,'getEscortFanlist']);
 });
 });
 

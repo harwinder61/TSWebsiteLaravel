@@ -44,6 +44,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/verified-status/{escort_id}',[AdminController::class,'verifiedStatus']);
         Route::get('/escort-varification-list',[AdminController::class,'escortVarificationList']);
         Route::get('/fan-varification-list',[AdminController::class,'fanVarificationList']);
+        
                                                                                                                                                          
     });
     

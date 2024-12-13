@@ -25,10 +25,16 @@ class SubscriptionController extends Controller
             'getSubscriptions',
             'locations',
             'slugToLocation',
-            'listReviews'
+            'listReviews',
+            'getEscortFanlist'
         ]);
     }
 
+//    public function getEscortFanlist($id, Request $request){
+//     $user = auth()->user();
+//     $reviews = BaseReviews::where('escort_id',$id)->where('user_id',$user->id)->get();
+//     return Resp::success(['reviews'=>$reviews]);
+//    }
 
     public function getAllListReviews(Request $request)
     {
@@ -92,6 +98,11 @@ public function listReviews($id, Request $request)
             ->orWhere('reviews.user_id', $id);
     });
 
+    $escortId = $request->query('escort_id');
+    if ($escortId) {
+        $query->where('reviews.escort_id', $escortId);
+    }
+
     $reviews = $query->paginate($request->input('page_size', 4));
 
     $total_reviews = $reviews->total();
@@ -152,6 +163,92 @@ public function listReviews($id, Request $request)
         'total_overall_value_for_money' => $total_overall_value_for_money
     ]);
 }   
+
+
+
+
+
+
+
+
+// public function listReviews($id, Request $request)
+// {
+//     $escortId = $request->query('escort_id');
+
+//     $query = FanReviews::join('profile', 'reviews.escort_id', '=', 'profile.escort_id')
+//         ->leftJoin('users', 'reviews.user_id', '=', 'users.id')
+//         ->select('reviews.*', 'profile.name as escort_name', 'users.username as fan_name')
+//         ->without('reviews.fan')
+//         ->with(['escort.profile.media']);
+
+//     $query->where('reviews.escort_id', $id);
+
+//     if ($escortId) {
+//         $query->where('reviews.user_id', $escortId);
+//     }
+
+
+//     $reviews = $query->get();
+//     $total_reviews = $reviews->count();
+//     $total_overall_average = 0;
+//     $total_overall_photo_accuracy = 0;
+//     $total_overall_service = 0;
+//     $total_overall_cleanliness = 0;
+//     $total_overall_location = 0;
+//     $total_overall_value_for_money = 0;
+//     $sum_of_single_review_avg = 0;
+//     $sum_of_single_photo_accuracy = 0;
+//     $sum_of_single_service = 0;
+//     $sum_of_single_cleanliness = 0;
+//     $sum_of_single_location = 0;
+//     $sum_of_single_value_for_money = 0;
+
+//     foreach ($reviews as $review) {
+//         $averageRating = (
+//             $review->photo_accuracy +
+//             $review->service +
+//             $review->clean_liness +
+//             $review->location +
+//             $review->value_for_money
+//         ) / 5;
+//         $sum_of_single_photo_accuracy += $review->photo_accuracy;
+//         $sum_of_single_service += $review->service;
+//         $sum_of_single_cleanliness += $review->clean_liness;
+//         $sum_of_single_location += $review->location;
+//         $sum_of_single_value_for_money += $review->value_for_money;
+
+//         $review->avg_rating = round($averageRating, 2);
+//         $sum_of_single_review_avg = $sum_of_single_review_avg + round($averageRating, 2);
+//         $total_overall_average += $averageRating;
+//         $total_overall_photo_accuracy += $review->photo_accuracy;
+//         $total_overall_service += $review->service;
+//         $total_overall_cleanliness += $review->clean_liness;
+//         $total_overall_location += $review->location;
+//         $total_overall_value_for_money += $review->value_for_money;
+//     }
+
+//     if ($total_reviews > 0) {
+//         $total_overall_average = $total_overall_average / $total_reviews;
+//         $total_overall_photo_accuracy = $total_overall_photo_accuracy / $total_reviews;
+//         $total_overall_service = $total_overall_service / $total_reviews;
+//         $total_overall_cleanliness = $total_overall_cleanliness / $total_reviews;
+//         $total_overall_location = $total_overall_location / $total_reviews;
+//         $total_overall_value_for_money = $total_overall_value_for_money / $total_reviews;
+//     }
+
+//     return Resp::success([
+//         'userid'=>$escortId,
+//         'list' => $reviews,
+//         'total' => $total_reviews,
+//         'sum_of_single_review_avg' => $total_overall_average,
+//         'total_overall_photo_accuracy' => $total_overall_photo_accuracy,
+//         'total_overall_service' => $total_overall_service,
+//         'total_overall_cleanliness' => $total_overall_cleanliness,
+//         'total_overall_location' => $total_overall_location,
+//         'total_overall_value_for_money' => $total_overall_value_for_money,
+//         'escort_id'=>$id
+//     ]);
+// }
 
     public function locations(Request $request)
     {
