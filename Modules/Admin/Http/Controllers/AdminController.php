@@ -959,4 +959,14 @@ public function fanVarificationList(Request $request){
 
         return Resp::success(['list' => $permissions, 'user' => $user]);
     }
+
+
+    public function getForumPost(Request $request,$id)
+    {
+        $post = Forum::find($id);
+        if (!$post) {
+            return Resp::error(['Post not found']);
+        }
+        return Resp::success(['data' => $post]);
+    }
 }
