@@ -5,7 +5,9 @@ use Modules\Auth\app\Http\Controllers\AuthController;
 
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
 Route::post('login', [AuthController::class, 'login']);
+Route::post('login-with-gmail', [AuthController::class, 'loginWithGmail']);
 Route::post('register', [AuthController::class, 'register']);
+Route::post('register-with-gmail', [AuthController::class, 'registerWithGmail']);
 Route::get('logout',[AuthController::class,'logout']); 
 Route::get('user',[AuthController::class,'me']);
 Route::get('verify-email/{token}',[AuthController::class,'verifyEmail']);
