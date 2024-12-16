@@ -197,10 +197,32 @@ public function verifiedStatusForm(Request $request){
     }
 
 
-public function getReminder(){
-    $reminder = Reminder::get();
-    return Resp::success(['reminder' => $reminder]);
-}
+    public function getReminder(Request $request){
+        $perPage = $request->query('per_page', 10);
+        $page = $request->query('page', null);
+    
+        if ($page === null) {
+            $perPage = 2; // show only 2 records initially
+        }
+    
+        $reminder = Reminder::orderBy('id', 'desc')
+            ->offset(($page - 1) * $perPage)
+            ->limit($perPage)
+            ->get();
+    
+        $totalResults = Reminder::count();
+        $totalPages = ceil($totalResults / $perPage);
+    
+        return Resp::success([
+            'reminder' => $reminder,
+            'pagination' => [
+                'total_results' => $totalResults,
+                'total_pages' => $totalPages,
+                'page' => $page,
+                'page_size' => $perPage,
+            ]
+        ]);
+    }
 
 public function postReminderComment(Request $request){
    $validator = Validator::make($request->all(), [
@@ -226,14 +248,22 @@ public function createReminder(Request $request){
     $validator = Validator::make($request->all(), [
         'title' => 'required|string',
         'description' => 'required|string',
-        'category' => 'required|integer|exists:reminder_category,id',
+        'category_id' => 'required|integer|exists:reminder_category,id',
         'priority' => 'required|string'
     ]);
+
     if($validator->fails()){
         return Resp::error(['message' => $validator->errors()]);
     }
+
     $reminder = Reminder::create($validator->validated());
-    return Resp::success(['message' => 'Reminder created successfully']);
+
+    // Join reminder table with reminder_category table
+    $reminderWithCategory = Reminder::join('reminder_category', 'reminder.category_id', '=', 'reminder_category.id')
+    ->select('reminder.*', 'reminder_category.name as category_name')
+    ->find($reminder->id);
+
+    return Resp::success(['message' => 'Reminder created successfully', 'reminder' => $reminderWithCategory]);
 }
 
 public function escortVarificationList(Request $request){
@@ -407,7 +437,7 @@ public function getForum(Request $request){
        return $slug;
    }
 
-    public function editYourProfile(Request $request)
+    public function userprofile(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
