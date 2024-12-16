@@ -55,9 +55,12 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/get-email-template',[AdminController::class,'getEmailTemplate']);
         Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
         Route::post('/remove-comment/{id}',[AdminController::class,'removeComment']);
-
-
-                                                                                            
+        Route::get('/get-forum-list/{slug}',[AdminController::class,'getForumSlugList']);
+        Route::get('/get-forum-comments/{id}',[AdminController::class,'getForumComments']);
+        Route::post('/aproove-comment/{id}',[AdminController::class,'aprooveComment']);
+        Route::post('/reject-comment/{id}',[AdminController::class,'rejectComment']);
+        Route::post('/aproove-forum/{id}',[AdminController::class,'aprooveForum']);
+        Route::post('/reject-forum/{id}',[AdminController::class,'rejectForum']);                                                                                     
 
     });
     

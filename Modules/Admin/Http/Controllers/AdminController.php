@@ -38,8 +38,97 @@ use Modules\Admin\app\Models\Reminder;
 use Modules\Admin\app\Models\Remindercomment;   
 use Modules\Admin\app\Models\Remindercatagory;
 use Modules\Admin\app\Models\EmailTemplate;
+
 class AdminController extends Controller
 {
+
+
+public function aprooveForum($id){
+    $forum = Forum::find($id);
+    if(!$forum){
+        return Resp::error(['message' => 'Forum not found']);
+    }
+    $forum->is_approved = 1;
+    $forum->save();
+    return Resp::success(['message' => 'Forum aprooved successfully']);
+}
+
+
+public function rejectForum($id){
+    $forum = Forum::find($id);
+    if(!$forum){
+        return Resp::error(['message' => 'Forum not found']);
+    }
+    $forum->is_approved = 0;
+    $forum->save();
+    return Resp::success(['message' => 'Forum rejected successfully']);
+}
+
+public function aprooveComment($id){
+    $comment = Comment::find($id);
+    if(!$comment){
+        return Resp::error(['message' => 'Comment not found']);
+    }
+    $comment->is_approved = 1;
+    $comment->save();
+    return Resp::success(['message' => 'Comment aprooved successfully']);
+}
+
+public function rejectComment($id){
+    $comment = Comment::find($id);
+    if(!$comment){
+        return Resp::error(['message' => 'Comment not found']);
+    }
+    $comment->is_approved = 0;
+    $comment->save();
+    return Resp::success(['message' => 'Comment rejected successfully']);
+}
+
+
+public function getForumComments($id, Request $request)
+{
+    $perPage = $request->query('per_page', 10);
+    $page = $request->query('page', 1);
+    $offset = ($page - 1) * $perPage;
+
+    $comments = Comment::where('forum_id', $id)
+        ->offset($offset)
+        ->limit($perPage)
+        ->get();
+
+    if ($comments->count() == 0) {
+        return Resp::error(['message' => 'Comments not found']);
+    }
+
+    $totalResults = Comment::where('forum_id', $id)->count();
+
+    if ($perPage == 0) {
+        $totalPages = 1;
+    } else {
+        $totalPages = ceil($totalResults / $perPage);
+    }
+
+    return Resp::success([
+        'comments' => $comments,
+        'pagination' => [
+            'total_results' => $totalResults,
+            'total_pages' => $totalPages,
+            'page' => $page,
+            'page_size' => $perPage,
+        ]
+    ]);
+}
+
+public function getForumSlugList($slug){
+$forum = Forum::where('slug',$slug)->first();
+if(!$forum){
+    return Resp::error(['message' => 'Forum not found']);
+}
+$forum->load('postComments');
+$forum->load('getAuthor');
+return Resp::success(['forum' => $forum]);
+}
+
 
     public function addComment( $id,Request $request){
         $validator = Validator::make($request->all(), [
@@ -125,15 +214,19 @@ public function postReminderComment(Request $request){
    $reminderComment = Remindercomment::create($validator->validated());
    return Resp::success(['message' => 'Reminder comment posted successfully']);
 }
+
+
 public function getReminderComment(){
     $reminderComment = Remindercomment::get();
     return Resp::success(['reminderComment' => $reminderComment]);
 }
+
+
 public function createReminder(Request $request){
     $validator = Validator::make($request->all(), [
         'title' => 'required|string',
         'description' => 'required|string',
-        'comment' => 'required|string',
+        'category' => 'required|integer|exists:reminder_category,id',
         'priority' => 'required|string'
     ]);
     if($validator->fails()){
@@ -154,14 +247,14 @@ public function fanVarificationList(Request $request){
 }
 
     
-public function verifiedStatus(Request $request, $escort_id){
+public function verifiedStatus(Request $request, $id){
     $validator = Validator::make($request->all(), [
         'action' => 'required|integer|in:1,0',
     ]);
     if ($validator->fails()) {
         return Resp::error(['message' => $validator->errors()]);
     }
-    $verify = ModelsVerify::where('escort_id', $escort_id)->first();
+    $verify = ModelsVerify::where('id', $id)->first();
     if (!$verify) {
         return Resp::error(['message' => 'Verification record not found']);
     }
@@ -267,30 +360,52 @@ public function getForum(Request $request){
        return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
    }
 
-    public function createForum(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string',
-            'category' => 'required|string',
-            'description' => 'required|string',
-            'status' => 'required|integer|in:1,2,3',
-            'tags' => 'required|string',
-            'region' => 'required|string',
-            'author_id' => 'required|exists:users,id',
-        ]);
-    
-        if ($validator->fails()) {
-            return Resp::error(['message' => $validator->errors()]);
-        }
-    
-        $forum = Forum::create($validator->validated());
-        return Resp::success([
-            'message' => 'Forum created successfully', 
-            'forum' => $forum,
-            'author' => $forum->getAuthor
-        ]);
-    }
-
+   public function createForum(Request $request)
+   {
+       $validator = Validator::make($request->all(), [
+           'title' => 'required|string',
+           'category' => 'required|string',
+           'description' => 'required|string',
+           'status' => 'required|integer|in:1,2,3',
+           'tags' => 'required|string',
+           'region' => 'required|string',
+       ]);
+       if ($validator->fails()) {
+           return Resp::error(['message' => $validator->errors()]);
+       }
+       $slug = Str::slug($request->input('title'), '-');
+       $slug = $this->genrateForumSlug($slug);
+       $forumData = $validator->validated();
+       $forumData['slug'] = $slug;
+       $forumData['author_id'] = auth()->user()->id; 
+       $forum = new Forum();
+       $forum->title = $forumData['title'];
+       $forum->category = $forumData['category'];
+       $forum->description = $forumData['description'];
+       $forum->status = $forumData['status'];
+       $forum->tags = $forumData['tags'];
+       $forum->region = $forumData['region'];
+       $forum->slug = $forumData['slug'];
+       $forum->author_id = $forumData['author_id'];
+       $forum->save();
+       return Resp::success([
+           'message' => 'Forum created successfully',
+           'forum' => $forum,
+           'author' => $forum->getAuthor,
+           'slug' => $forum->slug
+       ]);
+   }
+   
+   private function genrateForumSlug($slug)
+   {
+       $baseSlug = $slug;
+       $counter = 1;
+       while (Forum::where('slug', $slug)->exists()) {
+           $slug = $baseSlug . '-' . $counter;
+           $counter++;
+       }
+       return $slug;
+   }
 
     public function editYourProfile(Request $request)
     {
