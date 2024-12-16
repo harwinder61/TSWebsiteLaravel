@@ -544,7 +544,7 @@ public function getForum(Request $request){
         if (!$review) {
             return Resp::error(['Review not found']);
         }
-        $review->status = false;
+        $review->status = 2;
         $review->save();
         return Resp::success(['message' => 'Review disapproved successfully']);
     }
