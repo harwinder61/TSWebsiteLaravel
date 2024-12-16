@@ -39,9 +39,37 @@ use Modules\Admin\app\Models\Remindercomment;
 use Modules\Admin\app\Models\Remindercatagory;
 use Modules\Admin\app\Models\EmailTemplate;
 
+
 class AdminController extends Controller
 {
 
+
+    public function getForum(Request $request){
+        
+        $forums = Forum::query();
+        if (!is_null($request->query('category'))) {
+            $forums->where('category', $request->query('category'));
+        }
+        $perPage = $request->query('per_page', 10);
+        $page = $request->query('page', 1);
+        $offset = ($page - 1) * $perPage;
+        $totalForums = $forums->count();
+        $totalPages = ceil($totalForums / $perPage);
+        $forums = $forums->orderBy('created_at', 'desc')->offset($offset)->limit($perPage)->get();
+        $forums->load('postComments');
+        $forums->load('getAuthor');
+        return Resp::success([
+            'forums' => $forums,
+            'pagination' => [
+                'total' => $totalForums,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => $totalPages,
+                'from' => ($page - 1) * $perPage + 1,
+                'to' => min($page * $perPage, $totalForums),
+            ],
+        ]);
+    }
 
 public function aprooveForum($id){
     $forum = Forum::find($id);
@@ -297,31 +325,6 @@ public function verifiedStatus(Request $request, $id){
     return Resp::success(['message' => 'Verification status updated successfully']);
 }
 
-public function getForum(Request $request){
-    $forums = Forum::query();
-    if (!is_null($request->query('category'))) {
-        $forums->where('category', $request->query('category'));
-    }
-    $perPage = $request->query('per_page', 10);
-    $page = $request->query('page', 1);
-    $offset = ($page - 1) * $perPage;
-    $totalForums = $forums->count();
-    $totalPages = ceil($totalForums / $perPage);
-    $forums = $forums->orderBy('created_at', 'desc')->offset($offset)->limit($perPage)->get();
-    $forums->load('postComments');
-    $forums->load('getAuthor');
-    return Resp::success([
-        'forums' => $forums,
-        'pagination' => [
-            'total' => $totalForums,
-            'per_page' => $perPage,
-            'current_page' => $page,
-            'last_page' => $totalPages,
-            'from' => ($page - 1) * $perPage + 1,
-            'to' => min($page * $perPage, $totalForums),
-        ],
-    ]);
-}
     public function getComments(Request $request){
         $comments = Comment::query();
         if (!is_null($request->query('forum_id'))) {
