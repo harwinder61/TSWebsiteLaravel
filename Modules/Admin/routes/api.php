@@ -50,7 +50,15 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/get-reminder',[AdminController::class,'getReminder']);
         Route::post('/post-reminder-comment',[AdminController::class,'postReminderComment']);
         Route::get('/get-reminder-comment',[AdminController::class,'getReminderComment']);
-                                                                                                                                                         
+        Route::post('/verified-status-form',[AdminController::class,'verifiedStatusForm']);
+        Route::post('/post-email-template',[AdminController::class,'postEmailTemplate']);
+        Route::get('/get-email-template',[AdminController::class,'getEmailTemplate']);
+        Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
+        Route::post('/remove-comment/{id}',[AdminController::class,'removeComment']);
+
+
+                                                                                            
+
     });
     
 

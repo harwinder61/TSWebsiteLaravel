@@ -37,9 +37,70 @@ use Modules\Admin\app\Models\Comment;
 use Modules\Admin\app\Models\Reminder;
 use Modules\Admin\app\Models\Remindercomment;   
 use Modules\Admin\app\Models\Remindercatagory;
+use Modules\Admin\app\Models\EmailTemplate;
 class AdminController extends Controller
 {
 
+    public function addComment( $id,Request $request){
+        $validator = Validator::make($request->all(), [
+            'comment' => 'required|string'
+        ]);
+        $forum = Forum::find($id);
+        if(!$forum){
+            return Resp::error(['message' => 'Forum not found']);
+        }
+        if($validator->fails()){
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        $comment = Comment::create([
+            'comment' => $request->comment,
+            'forum_id' => $id,
+            'commentator_id' => auth()->user()->id
+        ]);
+        if($comment){
+            return Resp::success(['message' => 'Comment added successfully','comment' => $comment]);
+        }else{
+            return Resp::error(['message' => 'Comment not added']);
+        }
+    }
+public function removeComment( $id,Request $request){
+    $comment = Comment::find($id);
+    if($comment){
+        $comment->delete();
+        return Resp::success(['message' => 'Comment removed successfully']);
+    }else{
+        return Resp::error(['message' => 'Comment not found']);
+    }
+}
+public function postEmailTemplate(Request $request){
+    $validator = Validator::make($request->all(), [
+        'subject' => 'required|string',
+        'message' => 'required|string',
+        'type' => 'required|string',
+    ]);
+    if($validator->fails()){
+        return Resp::error(['message' => $validator->errors()]);
+    }
+    $emailTemplate = EmailTemplate::create($validator->validated());
+    return Resp::success(['message' => 'Email template created successfully','emailTemplate' => $emailTemplate]);
+}
+public function getEmailTemplate(){
+    $emailTemplate = EmailTemplate::get();
+    return Resp::success(['emailTemplate' => $emailTemplate]);
+}
+public function verifiedStatusForm(Request $request){
+    $validator = Validator::make($request->all(), [
+        'forum_id' => 'required|exists:forum,id',
+        'verified_status' => 'required|integer|in:1,0',
+    ]);
+    if($validator->fails()){
+        return Resp::error(['message' => $validator->errors()]);
+    }
+    $forum = Forum::find($request->forum_id);
+    $forum->verified_status = $request->verified_status;
+    $forum->save();
+    return Resp::success(['message' => 'Forum verified status updated successfully']);
+}
 
     public function reminderCategory(){
     $reminderCategory =Remindercatagory::get();
@@ -113,15 +174,31 @@ public function verifiedStatus(Request $request, $escort_id){
     return Resp::success(['message' => 'Verification status updated successfully']);
 }
 
-    public function getForum(Request $request){
-        $forums = Forum::query();
-        if (!is_null($request->query('category'))) {
-            $forums->where('category', $request->query('category'));
-        }
-        $forums = $forums->orderBy('created_at', 'desc')->get();
-        $forums->load('postComments'); // Load the comments for each forum
-        return Resp::success(['forums' => $forums]);
+public function getForum(Request $request){
+    $forums = Forum::query();
+    if (!is_null($request->query('category'))) {
+        $forums->where('category', $request->query('category'));
     }
+    $perPage = $request->query('per_page', 10);
+    $page = $request->query('page', 1);
+    $offset = ($page - 1) * $perPage;
+    $totalForums = $forums->count();
+    $totalPages = ceil($totalForums / $perPage);
+    $forums = $forums->orderBy('created_at', 'desc')->offset($offset)->limit($perPage)->get();
+    $forums->load('postComments');
+    $forums->load('getAuthor');
+    return Resp::success([
+        'forums' => $forums,
+        'pagination' => [
+            'total' => $totalForums,
+            'per_page' => $perPage,
+            'current_page' => $page,
+            'last_page' => $totalPages,
+            'from' => ($page - 1) * $perPage + 1,
+            'to' => min($page * $perPage, $totalForums),
+        ],
+    ]);
+}
     public function getComments(Request $request){
         $comments = Comment::query();
         if (!is_null($request->query('forum_id'))) {
@@ -199,6 +276,7 @@ public function verifiedStatus(Request $request, $escort_id){
             'status' => 'required|integer|in:1,2,3',
             'tags' => 'required|string',
             'region' => 'required|string',
+            'author_id' => 'required|exists:users,id',
         ]);
     
         if ($validator->fails()) {
@@ -206,7 +284,11 @@ public function verifiedStatus(Request $request, $escort_id){
         }
     
         $forum = Forum::create($validator->validated());
-        return Resp::success(['message' => 'Forum created successfully', 'forum' => $forum]);
+        return Resp::success([
+            'message' => 'Forum created successfully', 
+            'forum' => $forum,
+            'author' => $forum->getAuthor
+        ]);
     }
 
 
@@ -401,14 +483,8 @@ public function verifiedStatus(Request $request, $escort_id){
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
-
-        // Generate the initial slug
         $slug = Str::slug($request->input('title'));
-
-        // Ensure the slug is unique
         $slug = $this->generateUniqueSlug($slug);
-
-        // Create the blog post
         $blog = Blog::create([
             'title' => $request->input('title'),
             'description' => $request->input('description'),
@@ -421,7 +497,6 @@ public function verifiedStatus(Request $request, $escort_id){
         return Resp::success(['message' => 'Blog created successfully']);
     }
 
-    // Helper function to generate a unique slug
     private function generateUniqueSlug($slug)
     {
         $baseSlug = $slug;
@@ -1000,10 +1075,6 @@ public function verifiedStatus(Request $request, $escort_id){
             ? json_decode($user->permission_ids, true)
             : $user->permission_ids;
 
-        // Handle case where permission_ids might be null
-        //if (empty($permission_ids)) {
-        //    return Resp::success(['list' => []]);
-        //}
         if (!empty($permission_ids)) {
             $permissions = Permissions::whereIn('id', $permission_ids)->get();
         }
