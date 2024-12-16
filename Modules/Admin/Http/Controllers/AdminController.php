@@ -91,7 +91,7 @@ public function getForumComments($id, Request $request)
     $page = $request->query('page', 1);
     $offset = ($page - 1) * $perPage;
 
-    $comments = Comment::where('forum_id', $id)
+    $comments = Comment::with('forum')->where('forum_id', $id)
         ->offset($offset)
         ->limit($perPage)
         ->get();
@@ -544,7 +544,7 @@ public function getForum(Request $request){
         if (!$review) {
             return Resp::error(['Review not found']);
         }
-        $review->status = false;
+        $review->status = 2;
         $review->save();
         return Resp::success(['message' => 'Review disapproved successfully']);
     }
