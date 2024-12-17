@@ -38,11 +38,54 @@ use Modules\Admin\app\Models\Reminder;
 use Modules\Admin\app\Models\Remindercomment;   
 use Modules\Admin\app\Models\Remindercatagory;
 use Modules\Admin\app\Models\EmailTemplate;
-
+use Modules\Admin\app\Models\EmailTemplates;
 
 class AdminController extends Controller
 {
+    public function updateEmailTemplate(Request $request, $id)
+    {
+        $emailTemplate = EmailTemplates::find($id);
+        if (!$emailTemplate) {
+            return Resp::error(['message' => 'Email template not found'], 404);
+        }
+    
+        $request->validate([
+            'subject' => 'required',
+            'content' => 'required',
+            'status' => 'required',
+        ]);
+    
+        $emailTemplate->subject = $request->input('subject');
+        $emailTemplate->content = $request->input('content');
+        $emailTemplate->status = $request->input('status');
+        if($request->input('status') == 1){
+            $emailTemplate->status = 1;
+        }else{
+            $emailTemplate->status = 0;
+        }
+        
+        if ($emailTemplate->save()) {
+            return Resp::success(['message' => 'Email template updated successfully']);
+        } else {
+            return Resp::error(['message' => 'Failed to update email template'], 500);
+        }
+    }
 
+
+    public function getEmail(Request $request)
+    {
+        $id = $request->query('id');
+        if ($id) {
+            $emailTemplate = EmailTemplates::find($id);
+            if (!$emailTemplate) {
+                return Resp::error(['message' => 'Email template not found'], 404);
+            }
+            return Resp::success(['emailTemplate' => $emailTemplate]);
+        } else {
+            $emailTemplates = EmailTemplates::all();
+            return Resp::success(['emailTemplates' => $emailTemplates]);
+        }
+    }
 
 
 public function reminderDone($id){
@@ -275,17 +318,25 @@ public function verifiedStatusForm(Request $request){
     //         ]);
     //     }
     // }
-
     public function getReminder(Request $request, $page = null){
+        $status = $request->query('status');
+    
         if ($page !== null) {
             $perPage = $request->query('per_page', 10);
             $reminder = Reminder::with('category')
+                ->when($status, function ($query, $status) {
+                    $query->where('status', $status);
+                })
                 ->orderBy('id', 'desc')
                 ->offset(($page - 1) * $perPage)
                 ->limit($perPage)
                 ->get();
             
-            $totalResults = Reminder::with('category')->count();
+            $totalResults = Reminder::with('category')
+                ->when($status, function ($query, $status) {
+                    $query->where('status', $status);
+                })
+                ->count();
             $totalPages = ceil($totalResults / $perPage);
             
             return Resp::success([
@@ -300,14 +351,21 @@ public function verifiedStatusForm(Request $request){
         } else {
             $perPage = $request->query('per_page', 10);
             $page = $request->query('page', 1);
-            
+    
             $reminder = Reminder::with('category')
+                ->when($status, function ($query, $status) {
+                    $query->where('status', $status);
+                })
                 ->orderBy('id', 'desc')
                 ->offset(($page - 1) * $perPage)
                 ->limit($perPage)
                 ->get();
             
-            $totalResults = Reminder::with('category')->count();
+            $totalResults = Reminder::with('category')
+                ->when($status, function ($query, $status) {
+                    $query->where('status', $status);
+                })
+                ->count();
             $totalPages = ceil($totalResults / $perPage);
             
             return Resp::success([
