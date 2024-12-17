@@ -405,7 +405,8 @@ public function createReminder(Request $request){
         'title' => 'required|string',
         'description' => 'required|string',
         'category_id' => 'required|integer|exists:reminder_category,id',
-        'priority' => 'required|string'
+        'priority' => 'required|string',
+        'admin_id' => 'required|integer|exists:users,id',
     ]);
 
     if($validator->fails()){
@@ -419,7 +420,14 @@ public function createReminder(Request $request){
     ->select('reminder.*', 'reminder_category.name as category_name')
     ->find($reminder->id);
 
-    return Resp::success(['message' => 'Reminder created successfully', 'reminder' => $reminderWithCategory]);
+    // Retrieve the admin user's data
+    $adminUser = User::find($reminder->admin_id);
+
+    return Resp::success([
+        'message' => 'Reminder created successfully',
+        'admin' => $adminUser,
+        'reminder' => $reminderWithCategory
+    ]);
 }
 
 public function escortVarificationList(Request $request){

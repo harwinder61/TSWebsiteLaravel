@@ -225,6 +225,18 @@ public function profileViews($id, Request $request)
     $subscription->update([
         'image_id' => $request->image_id
     ]);
+    if($request->input('start_date')){
+        $subscription->start_date = $request->input('start_date');
+        $subscription->save();
+    }
+    if($request->input('end_date')){
+        $subscription->end_date = $request->input('end_date');
+        $subscription->save();
+    }
+    if($request->input('plan_code')){
+        $subscription->plan_code = $request->input('plan_code');
+        $subscription->save();
+    }
     return Resp::success([
         'message' => 'Subscription updated successfully',
         'subscription' => $subscription
