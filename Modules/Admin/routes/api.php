@@ -35,7 +35,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/delete-blog/{id}',[AdminController::class,'deleteBlog']);
         Route::get('/all-advert-users',[AdminController::class,'getAllAdvertUsers']);
         Route::post('/user',[AdminController::class,'newUser']);
-        Route::put('/user/{id}',[AdminController::class,'userProfile']);
+        Route::put('/user/{id}',[AdminController::class,'userProfile']); 
         Route::post('/create-forum',[AdminController::class,'createForum']);
         Route::get('/get-varifiacation-list',[AdminController::class,'getVarifiacationList']);
         Route::post('/post-comment',[AdminController::class,'postComment']);  
@@ -73,7 +73,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
 
 Route::get('/blog/{id?}',[AdminController::class,'getBlog']);
 Route::get('/blog-slug/{slug?}',[AdminController::class,'getBlogBySlug']);
-Route::get('/get-forum/{id}',[AdminController::class,'getForum']);
+Route::get('/get-forum',[AdminController::class,'getForum']);
 
 
 

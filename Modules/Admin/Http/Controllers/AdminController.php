@@ -233,12 +233,13 @@ public function verifiedStatusForm(Request $request){
             $perPage = 2; // show only 2 records initially
         }
     
-        $reminder = Reminder::orderBy('id', 'desc')
+        $reminder = Reminder::with('category')
+            ->orderBy('id', 'desc')
             ->offset(($page - 1) * $perPage)
             ->limit($perPage)
             ->get();
     
-        $totalResults = Reminder::count();
+        $totalResults = Reminder::with('category')->count();
         $totalPages = ceil($totalResults / $perPage);
     
         return Resp::success([
