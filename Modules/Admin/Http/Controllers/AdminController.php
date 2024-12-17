@@ -39,6 +39,7 @@ use Modules\Admin\app\Models\Remindercomment;
 use Modules\Admin\app\Models\Remindercatagory;
 use Modules\Admin\app\Models\EmailTemplate;
 use Modules\Admin\app\Models\EmailTemplates;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -412,9 +413,7 @@ public function createReminder(Request $request){
     if($validator->fails()){
         return Resp::error(['message' => $validator->errors()]);
     }
-
     $reminder = Reminder::create($validator->validated());
-
     // Join reminder table with reminder_category table
     $reminderWithCategory = Reminder::join('reminder_category', 'reminder.category_id', '=', 'reminder_category.id')
     ->select('reminder.*', 'reminder_category.name as category_name')
@@ -422,13 +421,16 @@ public function createReminder(Request $request){
 
     // Retrieve the admin user's data
     $adminUser = User::find($reminder->admin_id);
-
     return Resp::success([
         'message' => 'Reminder created successfully',
         'admin' => $adminUser,
         'reminder' => $reminderWithCategory
     ]);
 }
+
+
+
+
 
 public function escortVarificationList(Request $request){
     $verifications = ModelsVerify::with(['escort', 'user'])->paginate(10);
@@ -756,13 +758,15 @@ public function verifiedStatus(Request $request, $id){
 
     public function blog(Request $request)
     {
-        // Validate input data
         $validator = Validator::make($request->all(), [
             'title' => 'required|string',
             'description' => 'required|string',
             'media_id' => 'required|exists:media,id',
             'date' => 'required|date',
             'status' => 'required|integer|in:1,2,3',
+            'seo_title' => 'nullable|string',
+            'seo_description' => 'nullable|string',
+            'seo_keywords' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -777,6 +781,9 @@ public function verifiedStatus(Request $request, $id){
             'date' => $request->input('date'),
             'slug' => $slug, // Add the slug to the data array
             'status' => $request->input('status'),
+            'seo_title' => $request->input('seo_title'),
+            'seo_description' => $request->input('seo_description'),
+            'seo_keywords' => $request->input('seo_keywords'),
         ]);
 
         return Resp::success(['message' => 'Blog created successfully']);
