@@ -14,7 +14,7 @@ class Reminder extends Model
      * The attributes that are mass assignable.
      */
 protected $table = 'reminder';
-protected $fillable = ['title','description','comment','priority','category_id'];
+protected $fillable = ['title','description','comment','priority','category_id','admin_id'];
 
 public function category()
 {

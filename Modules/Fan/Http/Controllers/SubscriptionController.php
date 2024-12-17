@@ -32,6 +32,7 @@ class SubscriptionController extends Controller
 
     public function getAllListReviews(Request $request)
     {
+
         $statuses = $request->query('status');
         $filter = $request->query('filter');
     
@@ -74,8 +75,9 @@ class SubscriptionController extends Controller
             'average_rating' => $averageRating,
         ];
     
-        return Resp::success(['reviews' => $reviews, 'pagination' => $pagination]);
+        return Resp::success(['reviews' => $reviews->values(), 'pagination' => $pagination]);
     }
+    
     
 
 
