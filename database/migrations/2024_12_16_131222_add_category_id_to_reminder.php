@@ -15,6 +15,7 @@ return new class extends Migration
             $table->unsignedBigInteger('category_id')->nullable();
         });
     }
+    
 
     /**
      * Reverse the migrations.

@@ -66,6 +66,10 @@ class FanController extends Controller
 //     ]);
 //    }
 
+
+
+
+
 public function allBlogList(Request $request){
     // Get pagination parameters
     $perPage = $request->query('per_page', 10); 

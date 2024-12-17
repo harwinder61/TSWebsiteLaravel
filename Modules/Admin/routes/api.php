@@ -35,11 +35,10 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/delete-blog/{id}',[AdminController::class,'deleteBlog']);
         Route::get('/all-advert-users',[AdminController::class,'getAllAdvertUsers']);
         Route::post('/user',[AdminController::class,'newUser']);
-        Route::put('/user-profile',[AdminController::class,'userProfile']);
+        Route::put('/user/{id}',[AdminController::class,'userProfile']);
         Route::post('/create-forum',[AdminController::class,'createForum']);
         Route::get('/get-varifiacation-list',[AdminController::class,'getVarifiacationList']);
         Route::post('/post-comment',[AdminController::class,'postComment']);  
-        Route::get('/get-forum',[AdminController::class,'getForum']);
         Route::get('/get-forum-post/{id}',[AdminController::class,'getForumPost']);
         Route::get('/get-comments',[AdminController::class,'getComments']);
         Route::post('/verified-status/{escort_id}',[AdminController::class,'verifiedStatus']);
@@ -62,6 +61,10 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/aproove-forum/{id}',[AdminController::class,'aprooveForum']);
         Route::post('/reject-forum/{id}',[AdminController::class,'rejectForum']); 
 
+        
+     
+
+
 
     });
     
@@ -70,6 +73,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
 
 Route::get('/blog/{id?}',[AdminController::class,'getBlog']);
 Route::get('/blog-slug/{slug?}',[AdminController::class,'getBlogBySlug']);
+Route::get('/get-forum/{id}',[AdminController::class,'getForum']);
+
 
 
 
