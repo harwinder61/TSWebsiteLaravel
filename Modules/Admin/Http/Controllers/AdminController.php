@@ -44,6 +44,21 @@ class AdminController extends Controller
 {
 
 
+
+public function reminderDone($id){
+    $reminder = Reminder::find($id);
+    if(!$reminder){
+        return Resp::error(['message' => 'Reminder not found']);
+    }
+    $reminder->status = 1;
+    $reminder->save();
+    if($reminder){
+        return Resp::success(['message' => 'Reminder aprooved successfully']);
+    }else{
+        return Resp::error(['message' => 'Reminder not found']);
+    }
+}
+
     public function getForum(Request $request){
         
         $forums = Forum::query();
@@ -225,31 +240,86 @@ public function verifiedStatusForm(Request $request){
     }
 
 
-    public function getReminder(Request $request){
-        $perPage = $request->query('per_page', 10);
-        $page = $request->query('page', null);
+    // public function getReminder(Request $request, $page = null){
+    //     if ($page !== null) {
+    //         $perPage = $page;
+    //         $reminder = Reminder::with('category')
+    //             ->orderBy('id', 'desc')
+    //             ->limit($perPage)
+    //             ->get();
+    //         return Resp::success([
+    //             'reminder' => $reminder,
+    //         ]);
+    //     } else {
+    //         $
+    //         $perPage = $request->query('per_page', 10);
+    //         $page = $request->query('page', 1);
     
-        if ($page === null) {
-            $perPage = 2; // show only 2 records initially
+    //         $reminder = Reminder::with('category')
+    //             ->orderBy('id', 'desc')
+    //             ->offset(($page - 1) * $perPage)
+    //             ->limit($perPage)
+    //             ->get();
+    
+    //         $totalResults = Reminder::with('category')->count();
+    //         $totalPages = ceil($totalResults / $perPage);
+    
+    //         return Resp::success([
+    //             'reminder' => $reminder,
+    //             'pagination' => [
+    //                 'total_results' => $totalResults,
+    //                 'total_pages' => $totalPages,
+    //                 'page' => $page,
+    //                 'page_size' => $perPage,
+    //             ]
+    //         ]);
+    //     }
+    // }
+
+    public function getReminder(Request $request, $page = null){
+        if ($page !== null) {
+            $perPage = $request->query('per_page', 10);
+            $reminder = Reminder::with('category')
+                ->orderBy('id', 'desc')
+                ->offset(($page - 1) * $perPage)
+                ->limit($perPage)
+                ->get();
+            
+            $totalResults = Reminder::with('category')->count();
+            $totalPages = ceil($totalResults / $perPage);
+            
+            return Resp::success([
+                'reminder' => $reminder,
+                'pagination' => [
+                    'total_results' => $totalResults,
+                    'total_pages' => $totalPages,
+                    'page' => $page,
+                    'page_size' => $perPage,
+                ]
+            ]);
+        } else {
+            $perPage = $request->query('per_page', 10);
+            $page = $request->query('page', 1);
+            
+            $reminder = Reminder::with('category')
+                ->orderBy('id', 'desc')
+                ->offset(($page - 1) * $perPage)
+                ->limit($perPage)
+                ->get();
+            
+            $totalResults = Reminder::with('category')->count();
+            $totalPages = ceil($totalResults / $perPage);
+            
+            return Resp::success([
+                'reminder' => $reminder,
+                'pagination' => [
+                    'total_results' => $totalResults,
+                    'total_pages' => $totalPages,
+                    'page' => $page,
+                    'page_size' => $perPage,
+                ]
+            ]);
         }
-    
-        $reminder = Reminder::orderBy('id', 'desc')
-            ->offset(($page - 1) * $perPage)
-            ->limit($perPage)
-            ->get();
-    
-        $totalResults = Reminder::count();
-        $totalPages = ceil($totalResults / $perPage);
-    
-        return Resp::success([
-            'reminder' => $reminder,
-            'pagination' => [
-                'total_results' => $totalResults,
-                'total_pages' => $totalPages,
-                'page' => $page,
-                'page_size' => $perPage,
-            ]
-        ]);
     }
 
 public function postReminderComment(Request $request){

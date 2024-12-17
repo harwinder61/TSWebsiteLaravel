@@ -15,5 +15,10 @@ class Reminder extends Model
      */
 protected $table = 'reminder';
 protected $fillable = ['title','description','comment','priority','category_id'];
+
+public function category()
+{
+    return $this->belongsTo(Remindercatagory::class,'category_id','id');
+}
  
 }
