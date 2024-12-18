@@ -18,4 +18,10 @@ class EscortController extends Controller
         $escorts=AuthUser::with('profile')->where('user_type',2)->get();
         return Resp::success(['list'=>$escorts]);
     }
+
+    public function getFans(Request $request){
+        
+        $fans=AuthUser::with('profile')->where('user_type',1)->get();
+        return Resp::success(['list'=>$fans]);
+    }
 }

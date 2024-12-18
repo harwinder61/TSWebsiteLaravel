@@ -67,6 +67,9 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/media',[AdminController::class,'media']);
         Route::post('/dynamic-page',[AdminController::class,'dynamicPage']);
         Route::put('/update-dynamic-page/{id}',[AdminController::class,'updateDynamicPage']);
+        Route::post('/reminder-delete/{id}',[AdminController::class,'reminderDelete']);
+        Route::get('/get-fan-list',[EscortController::class,'getFans']);
+
 
     });
     

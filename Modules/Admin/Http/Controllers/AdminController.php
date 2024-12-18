@@ -47,6 +47,16 @@ class AdminController extends Controller
 
 
 
+
+    public function reminderDelete($id){
+        $reminder = Reminder::find($id);
+        if(!$reminder){
+            return Resp::error(['message' => 'Reminder not found']);
+        }
+        $reminder->delete();
+        return Resp::success(['message' => 'Reminder deleted successfully']);
+    }
+
     public function updateDynamicPage($id,Request $request){
         $page = Pages::find($id);
         $validator = Validator::make($request->all(), [
@@ -95,7 +105,8 @@ class AdminController extends Controller
         $media = Media::with('escort') // Add this line to include the 'escort' relationship
             ->when($type, function ($query, $type) {
                 $query->where('type', $type);
-            });
+            })
+            ->orderBy('created_at', 'desc');
     
         $total_results = $media->count();
         $total_pages = ceil($total_results / $perPage);
@@ -114,10 +125,6 @@ class AdminController extends Controller
             'pagination' => $pagination
         ]);
     }
-
-
-
-
 public function deleteSubscription($id){
     $subscription = BaseSubscription::find($id);
     if(!$subscription){
@@ -134,13 +141,11 @@ public function deleteSubscription($id){
         if (!$emailTemplate) {
             return Resp::error(['message' => 'Email template not found'], 404);
         }
-    
         $request->validate([
             'subject' => 'required',
             'content' => 'required',
             'status' => 'required',
         ]);
-    
         $emailTemplate->subject = $request->input('subject');
         $emailTemplate->content = $request->input('content');
         $emailTemplate->status = $request->input('status');
@@ -158,6 +163,8 @@ public function deleteSubscription($id){
     }
 
 
+
+    
     public function getEmail(Request $request)
     {
         $id = $request->query('id');
@@ -371,25 +378,21 @@ public function verifiedStatusForm(Request $request){
 
     public function getReminder(Request $request, $page = null){
 
-        // Get status from the query params
-        $status = $request->query('status');
-    
         // Pagination settings
         if ($page !== null) {
-            $perPage = $request->query('per_page', 10);
         } else {
-            $perPage = $request->query('per_page', 10);
             $page = $request->query('page', 1);
         }
+        $perPage = $request->query('per_page', 10);
     
         try {
             // Query for reminders with optional filtering by status
-            $reminder = Reminder::with('category')
-                ->when($status, function ($query, $status) {    
-                    // Filter by the status if provided
-                    $query->where('status', $status);
-                })
-                ->orderBy('id', 'desc')
+            $reminderQuery = Reminder::with('category');
+            if ($request->has('status')) {
+                $status = $request->query('status'); // Get the value of 'status'
+                $reminderQuery->where('status', $status);
+            }
+            $reminder = $reminderQuery->orderBy('id', 'desc')
                 ->offset(($page - 1) * $perPage)
                 ->limit($perPage)
                 ->get();
@@ -421,7 +424,6 @@ public function verifiedStatusForm(Request $request){
             return Resp::error(['message' => 'Error fetching reminders']);
         }
     }
-    
     
 
 public function postReminderComment(Request $request){
