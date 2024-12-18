@@ -47,26 +47,27 @@ class AdminController extends Controller
 
     public function media(Request $request)
     {
-        $type = $request->query('type');
+        $type = $request->query('s', $request->query('type'));
         $perPage = $request->query('per_page', 10);
         $page = $request->query('page', 1);
     
-        $media = Media::when($type, function ($query, $type) {
-            $query->where('type', $type);
-        })->paginate($perPage);
+        $media = Media::with('escort') // Add this line to include the 'escort' relationship
+            ->when($type, function ($query, $type) {
+                $query->where('type', $type);
+            })
+            ->paginate($perPage);
     
         return Resp::success([
             'media' => $media->items(),
             'pagination' => [
                 'total_results' => $media->total(),
                 'total_pages' => $media->lastPage(),
-                'page' => $media->currentPage(),    
+                'page' => $media->currentPage(),
                 'page_size' => $perPage,
                 'prev' => $media->previousPageUrl(),
                 'next' => $media->nextPageUrl(),
-                ]
             ]
-        ); 
+        ]);
     }
 public function deleteSubscription($id){
     $subscription = BaseSubscription::find($id);
