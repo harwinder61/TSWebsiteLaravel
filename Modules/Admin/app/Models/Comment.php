@@ -7,15 +7,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 // use Modules\Admin\Database\Factories\PlanFactory;
 use  App\Models\Media;
 
-class Blog extends Model
+class Comment extends Model
 {
     use HasFactory;
 
-    protected $table='blog';
-    protected $fillable=['title','description','media_id','date','slug','status','seo_title','seo_description','seo_keywords'];
+    protected $table='comment';
+    protected $fillable=['comment','forum_id','user_id','commentator_id','status','message'];
 
     public function media(){
         return $this->belongsTo(Media::class,'media_id','id');
+    }
+
+    public function forum(){
+        return $this->belongsTo(Forum::class,'forum_id','id');
     }
     
 

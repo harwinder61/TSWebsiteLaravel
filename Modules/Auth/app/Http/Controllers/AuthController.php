@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Google_Client;
 
+
 class AuthController extends Controller
 {
 
@@ -29,7 +30,6 @@ class AuthController extends Controller
     {
         $this->middleware(AuthMiddleware::class)->except(['register','loginWithGmail','registerWithGmail',  'login', 'verifyEmail', 'verificationEmailToken', 'recoverPassword','resetPassword']);
     }
-
 
 
     public function resetOldEmail(Request $request) {
@@ -144,22 +144,20 @@ public function changePassword(Request $request) {
     public function resetPassword(Request $request){
         $validator = Validator::make($request->all(), [
             'token' => 'required|string',
-            'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:8|confirmed',
             'password_confirmation' => 'required|same:password',
         ]);
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-        $user = AuthUser::where('email',$request->email)->where('recovery_token',$request->token)->first();
+        $user = AuthUser::where('recovery_token', $request->token)->first();
         if(!$user){
             return Resp::error(['error' => 'No user found']);
         }
         $user->password = Hash::make($request->password);
         $user->recovery_token = null;
         $user->save();
-        return Resp::success(['message' => 'Password reset successfully']);
-        
+        return Resp::success(['message' => 'Password reset successfully']);     
     }
 
    public function recoverPassword(Request $request){

@@ -25,6 +25,7 @@ use Modules\Escort\app\Models\Verify;
 use Illuminate\Support\Facades\File;
 use App\Models\Plan;
 use App\Models\BaseSubscription;
+use App\Models\BaseReviews;
 class EscortController extends Controller
 {
     public function __construct()
@@ -33,70 +34,98 @@ class EscortController extends Controller
     } 
  
 
-
     public function featuredTsGirl(Request $request)
     {
         $user = auth()->user();
         $subscription = BaseSubscription::where('escort_id', $user->id)->latest()->first();
         return Resp::success(['has_subscription' => (bool) $subscription]);
     }
-
-    
-
-    public function verify(Request $request)
-{
-    try {
+     
+    public function getVerify(Request $request)
+    {
         $user = auth()->user();
-        
-
-        $validator = Validator::make($request->all(), [
-            'passport_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
-            'selfie_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
-        ]);
-
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-
-        if (!$request->hasFile('passport_image') || !$request->hasFile('selfie_image')) {
-            return Resp::error(['message' => 'Required image files not found'], 400);
-        }
-
-        // Process Images
-        $userId = $user->id;
-        $userFolder = 'uploads/media/user_' . $userId;
-
-
-        $directoryPath = storage_path('app/public/' . $userFolder);
-
-    
-        if (!File::exists($directoryPath)) {
-            File::makeDirectory($directoryPath, 0755, true);
-        }
-        // Save Passport Image
-        $passportImage = $request->file('passport_image');
-        $passportImageName = 'passport_' . time() . '_' . uniqid() . '.' . $passportImage->getClientOriginalExtension();
-        $passportImage->storeAs('public/' . $userFolder, $passportImageName);
-
-        // Save Selfie Image
-        $selfieImage = $request->file('selfie_image');
-        $selfieImageName = 'selfie_' . time() . '_' . uniqid() . '.' . $selfieImage->getClientOriginalExtension();
-        $selfieImage->storeAs('public/' . $userFolder, $selfieImageName);
-
-        // Save to Database
-        $verify = new Verify();
-        $verify->passport_image = $userFolder . '/' . $passportImageName;
-        $verify->selfie_image = $userFolder . '/' . $selfieImageName;
-        $verify->escort_id = $userId;
-        $verify->save();
-
-        return Resp::success(['message' => 'Verify details saved successfully']);
-
-    } catch (\Exception $e) {
-        Log::error('Verification Error: ' . $e->getMessage());
-        return Resp::error(['message' => 'An error occurred while processing your request'], 500);
+        $verify = Verify::where('escort_id', $user->id)->first();
+        return Resp::success(['verify' => $verify]);
     }
-}
+    
+    public function verify(Request $request)
+    {
+        try {
+            $user = auth()->user();
+    
+            $validator = Validator::make($request->all(), [
+                'passport_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
+                'selfie_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
+            ]);
+    
+            if ($validator->fails()) {
+                return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+            }
+    
+            if ((!$request->hasFile('passport_image') && !$request->hasFile('selfie_image'))) {
+                // Update verified_status to 4 if no images are selected
+                $profile = $user->profile;
+                $profile->verified_status = 3;
+                $profile->save();
+    
+                return Resp::success([
+                    'message' => 'Verification status updated to 3 due to missing images',
+                    'user_data' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                    ],
+                ]);
+            }
+    
+            // Process Images
+            $userId = $user->id;
+            $userFolder = 'uploads/media/user_' . $userId;
+    
+            $directoryPath = public_path($userFolder);
+    
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }
+    
+            // Save Passport Image
+            $passportImage = $request->file('passport_image');
+            $passportImageName = 'passport_' . time() . '_' . uniqid() . '.' . $passportImage->getClientOriginalExtension();
+            $passportImage->move($directoryPath, $passportImageName);
+    
+            // Save Selfie Image
+            $selfieImage = $request->file('selfie_image');
+            $selfieImageName = 'selfie_' . time() . '_' . uniqid() . '.' . $selfieImage->getClientOriginalExtension();
+            $selfieImage->move($directoryPath, $selfieImageName);
+    
+            // Save to Database
+            $verify = new Verify();
+            $verify->passport_image = $userFolder . '/' . $passportImageName;
+            $verify->selfie_image = $userFolder . '/' . $selfieImageName;
+            $verify->escort_id = $userId;
+            $verify->save();
+            $profile = $user->profile;
+            $profile->verified_status = 2;
+            $profile->save();
+    
+            return Resp::success([
+                'message' => 'Verify details saved successfully',
+                'passport_image_path' => $userFolder . '/' . $passportImageName,
+                'selfie_image_path' => $userFolder . '/' . $selfieImageName,
+                'user_data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Verification Error: ' . $e->getMessage());
+            return Resp::error(['message' => 'An error occurred while processing your request'], 500);
+        }
+    }
+    
+
+
 
     public function getActiveSubscription(Request $request)
     {
@@ -134,27 +163,6 @@ public function profileViews($id, Request $request)
 }
 
 
-// public function profileViews($id, Request $request)
-// {
-//     $user = auth()->user();
-    
-//     if ($user->user_type != 1) {    
-//         return Resp::error(['message' => 'Unauthorized user not a fan']);
-//     }
-
-//     $profile = AuthUser::where('id', $id)
-//                        ->where('user_type', 2)
-//                        ->with('profile')
-//                        ->first();
-
-//     if (!$profile || !$profile->profile) {
-//         return Resp::error(['message' => 'User is not an escort or profile not found']);
-//     }
-
-//     $profile->profile->increment('profile_views');
-
-//     return Resp::success(['message' => 'Profile views updated successfully']);
-// }
     public function hideProfile(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -217,6 +225,18 @@ public function profileViews($id, Request $request)
     $subscription->update([
         'image_id' => $request->image_id
     ]);
+    if($request->input('start_date')){
+        $subscription->start_date = $request->input('start_date');
+        $subscription->save();
+    }
+    if($request->input('end_date')){
+        $subscription->end_date = $request->input('end_date');
+        $subscription->save();
+    }
+    if($request->input('plan_code')){
+        $subscription->plan_code = $request->input('plan_code');
+        $subscription->save();
+    }
     return Resp::success([
         'message' => 'Subscription updated successfully',
         'subscription' => $subscription
@@ -227,74 +247,82 @@ public function profileViews($id, Request $request)
     
 
     
-public function updateMedia(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'gallery' => 'array',                   
-        'gallery.*' => 'exists:media,id',      
-        'private_gallery' => 'array',            
-        'private_gallery.*' => 'exists:media,id', 
-        'promo_video' => 'exists:media,id',
-        'description' => 'nullable|string',
-    ]);
-
-    // Return validation errors if any
-    if ($validator->fails()) {
-        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    }
-
-    $user = auth()->user();
-    if ($request->has('gallery')) {
-        $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
-        
-        Media::where('escort_id', $user->id)
-            ->where('type', 'gallery')
-            ->whereIn('id', $galleryIds)
-            ->update(['is_temp' => false]);
+    public function updateMedia(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'gallery' => 'array',                   
+            'gallery.*' => 'exists:media,id',      
+            'private_gallery' => 'array',            
+            'private_gallery.*' => 'exists:media,id', 
+            'promo_video' => 'exists:media,id',
+            'description' => 'nullable|string',
+        ]);
+    
+        // Return validation errors if any
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        $user = auth()->user();
+        if ($request->has('gallery')) {
+            $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
             
-
-        Media::where('escort_id', $user->id)
-            ->where('type', 'gallery')
-            ->whereNotIn('id', $galleryIds)
-            ->forceDelete();
+            Media::where('escort_id', $user->id)
+                ->where('type', 'gallery')
+                ->whereIn('id', $galleryIds)
+                ->update(['is_temp' => false]);
+                
+    
+            Media::where('escort_id', $user->id)
+                ->where('type', 'gallery')
+                ->whereNotIn('id', $galleryIds)
+                ->forceDelete();
+        }
+    
+        if ($request->has('private_gallery')) {
+            $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
+            
+            Media::where('escort_id', $user->id)
+                ->where('type', 'private_gallery')
+                ->whereIn('id', $privateGalleryIds)
+                ->update(['is_temp' => false]);
+    
+            Media::where('escort_id', $user->id)
+                ->where('type', 'private_gallery')
+                ->whereNotIn('id', $privateGalleryIds)
+                ->forceDelete();
+        }
+    
+        if ($request->has('promo_video')) {
+            $promoVideoId = $request->input('promo_video');
+            
+            Media::where('escort_id', $user->id)
+                ->where('type', 'promo_video')
+                ->where('id', $promoVideoId)
+                ->update(['is_temp' => false]);
+    
+            Media::where('escort_id', $user->id)
+                ->where('type', 'promo_video')
+                ->where('id', '!=', $promoVideoId)
+                ->forceDelete();
+        }
+    
+        if ($request->has('description')) {
+            $profile = Profile::where('escort_id', $user->id)->first();
+            $profile->description = $request->input('description');
+            $profile->save();
+        }
+    
+        if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
+            $profile = Profile::where('escort_id', $user->id)->first();
+            if ($profile) {
+                $profile->is_media = 1;
+                $profile->save();
+            }
+        }
+    
+        return Resp::success(['message' => 'Media updated successfully']);
     }
-
-    if ($request->has('private_gallery')) {
-        $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
-        
-        Media::where('escort_id', $user->id)
-            ->where('type', 'private_gallery')
-            ->whereIn('id', $privateGalleryIds)
-            ->update(['is_temp' => false]);
-
-        Media::where('escort_id', $user->id)
-            ->where('type', 'private_gallery')
-            ->whereNotIn('id', $privateGalleryIds)
-            ->forceDelete();
-    }
-
-    if ($request->has('promo_video')) {
-        $promoVideoId = $request->input('promo_video');
-        
-        Media::where('escort_id', $user->id)
-            ->where('type', 'promo_video')
-            ->where('id', $promoVideoId)
-            ->update(['is_temp' => false]);
-
-        Media::where('escort_id', $user->id)
-            ->where('type', 'promo_video')
-            ->where('id', '!=', $promoVideoId)
-            ->forceDelete();
-    }
-
-    if ($request->has('description')) {
-        $profile = Profile::where('escort_id', $user->id)->first();
-        $profile->description = $request->input('description');
-        $profile->save();
-    }
-
-    return Resp::success(['message' => 'Media updated successfully']);
-}
 
     public function getEscortProfile($id,Request $request)
     {
@@ -431,7 +459,9 @@ public function updateMedia(Request $request)
             }
 
             $profile_data = Profile::where('escort_id', $user->id)->first();
-
+            if(!$profile_data){
+                return Resp::error(['Profile not found !']);
+            }
             $is_incall_enabled = $request->input('is_incall_enabled');
             $is_outcall_enabled = $request->input('is_outcall_enabled');
             $baseRules = [

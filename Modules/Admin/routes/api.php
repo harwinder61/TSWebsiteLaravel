@@ -26,7 +26,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/spotlight-media',[AdminController::class,'spotlightMedia']);
         Route::post('/blog',[AdminController::class,'blog']);
         Route::get('/live-adverts-users',[AdminController::class,'getLiveAdvertsUsers']);
-        Route::get('/admin-users',[AdminController::class,'getAdminUsers']);
+        Route::get('/admin-users/{user_type?}',[AdminController::class,'getAdminUsers']);
         Route::get('/user-permissions/{id}',[AdminController::class,'getUserPermissions']);
         Route::post('/approve-review/{id}',[AdminController::class,'approveReview']);
         Route::post('/disapprove-review/{id}',[AdminController::class,'disapproveReview']);
@@ -34,6 +34,45 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/edit-blog/{id}',[AdminController::class,'editBlog']);
         Route::post('/delete-blog/{id}',[AdminController::class,'deleteBlog']);
         Route::get('/all-advert-users',[AdminController::class,'getAllAdvertUsers']);
+        Route::post('/user',[AdminController::class,'newUser']);
+        Route::put('/user/{id}',[AdminController::class,'userProfile']); 
+        Route::post('/create-forum',[AdminController::class,'createForum']);
+        Route::get('/get-varifiacation-list',[AdminController::class,'getVarifiacationList']);
+        Route::post('/post-comment',[AdminController::class,'postComment']);  
+        Route::get('/get-forum-post/{id}',[AdminController::class,'getForumPost']);
+        Route::get('/get-comments',[AdminController::class,'getComments']);
+        Route::post('/verified-status/{escort_id}',[AdminController::class,'verifiedStatus']);
+        Route::get('/escort-varification-list',[AdminController::class,'escortVarificationList']);
+        Route::get('/fan-varification-list',[AdminController::class,'fanVarificationList']);
+        Route::get('/reminder-category',[AdminController::class,'reminderCategory']);
+        Route::post('/create-reminder',[AdminController::class,'createReminder']);
+        Route::get('/get-reminder',[AdminController::class,'getReminder']);
+        Route::post('/post-reminder-comment',[AdminController::class,'postReminderComment']);
+        Route::get('/get-reminder-comment',[AdminController::class,'getReminderComment']);
+        Route::post('/verified-status-form',[AdminController::class,'verifiedStatusForm']);
+        Route::post('/post-email-template',[AdminController::class,'postEmailTemplate']);
+        Route::get('/get-email-template',[AdminController::class,'getEmailTemplate']);
+        Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
+        Route::post('/remove-comment/{id}',[AdminController::class,'removeComment']);
+        Route::get('/get-forum-list/{slug}',[AdminController::class,'getForumSlugList']);
+        Route::get('/get-forum-comments/{id}',[AdminController::class,'getForumComments']);
+        Route::post('/aproove-comment/{id}',[AdminController::class,'aprooveComment']);
+        Route::post('/reject-comment/{id}',[AdminController::class,'rejectComment']);
+        Route::post('/aproove-forum/{id}',[AdminController::class,'aprooveForum']);
+        Route::post('/reject-forum/{id}',[AdminController::class,'rejectForum']); 
+        Route::post('/reminder-done/{id}',[AdminController::class,'reminderDone']);
+        Route::get('/email-template',[AdminController::class,'getEmail']);
+        Route::put('/update-email-template/{id}',[AdminController::class,'updateEmailTemplate']);
+        Route::post('/delete-subscription/{id}',[AdminController::class,'deleteSubscription']);
+        Route::get('/media',[AdminController::class,'media']);
+
+
+
+        
+     
+
+
+
     });
     
 
@@ -41,6 +80,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
 
 Route::get('/blog/{id?}',[AdminController::class,'getBlog']);
 Route::get('/blog-slug/{slug?}',[AdminController::class,'getBlogBySlug']);
+Route::get('/get-forum',[AdminController::class,'getForum']);
+
 
 
 
