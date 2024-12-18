@@ -41,9 +41,73 @@ use Modules\Admin\app\Models\EmailTemplate;
 use Modules\Admin\app\Models\EmailTemplates;
 use Illuminate\Validation\Rule;
 use App\Models\BaseSubscription;
+use Modules\Admin\app\Models\Pages;
 class AdminController extends Controller
 {
 
+
+
+    public function updateDynamicPage($id,Request $request){
+        $page = Pages::find($id);
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string',
+            'description' => 'required|string',
+            'status' => 'required|integer|in:1,0',
+            'featured_image' => 'required|integer|exists:media,id',
+        ]);
+        if($validator->fails()){
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        if(!$page){
+            return Resp::error(['message' => 'Page not found']);
+        }
+        $page->update($validator->validated());
+        $page->media()->associate(Media::find($request->input('featured_image')));
+        $page->save();
+        $page->load('media'); // Load the related Media model
+        return Resp::success(['message' => 'Page updated successfully','page' => $page]);
+    }
+
+    public function dynamicPage(Request $request){
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string',
+            'description' => 'required|string',
+            'status' => 'required|integer|in:1,0',
+            'featured_image' => 'required|integer|exists:media,id',
+        ]);
+        if($validator->fails()){
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        $page = Pages::create($validator->validated());
+        $page->media()->associate(Media::find($request->input('featured_image')));
+        $page->save();
+        $page->load('media'); // Load the related Media model
+        return Resp::success(['message' => 'Page created successfully','page' => $page]);
+    }
+    public function media(Request $request)
+    {
+        $type = $request->query('s', $request->query('type'));
+        $perPage = $request->query('per_page', 10);
+        $page = $request->query('page', 1);
+    
+        $media = Media::with('escort') // Add this line to include the 'escort' relationship
+            ->when($type, function ($query, $type) {
+                $query->where('type', $type);
+            })
+            ->paginate($perPage);
+    
+        return Resp::success([
+            'media' => $media->items(),
+            'pagination' => [
+                'total_results' => $media->total(),
+                'total_pages' => $media->lastPage(),
+                'page' => $media->currentPage(),
+                'page_size' => $perPage,
+                'prev' => $media->previousPageUrl(),
+                'next' => $media->nextPageUrl(),
+            ]
+        ]);
+    }
 public function deleteSubscription($id){
     $subscription = BaseSubscription::find($id);
     if(!$subscription){
@@ -637,10 +701,10 @@ public function verifiedStatus(Request $request, $id){
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|max:255|unique:users,username',
             'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8',
             'user_type' => 'required|integer|in:1,2,3',
-            'password_confirmation' => 'required|same:password',
-
+            'firstname' => 'required|string|max:255',
+            'lastname' => 'required|string|max:255',
         ]);
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
@@ -650,6 +714,8 @@ public function verifiedStatus(Request $request, $id){
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'user_type' => $request->user_type,
+            'firstname' => $request->firstname,
+            'lastname' => $request->lastname,
         ]);
         return Resp::success(['message' => 'User created successfully']);
     }

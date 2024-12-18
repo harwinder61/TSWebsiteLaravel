@@ -18,56 +18,37 @@ use Illuminate\Support\Facades\Hash;
 use Modules\Admin\app\Models\Blog;
 use Modules\Fan\app\Models\Fan;
 use App\Models\Media;
-
+use Modules\Admin\app\Models\Pages;
 class FanController extends Controller
 {
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except('blog','allBlogList');
+        $this->middleware(AuthMiddleware::class)->except('blog','allBlogList','getDynamicPagesList');
     }
-
-//    public function addViewCount(Request $request){;
-//        $request->validate([
-//            'id'=>'required|numeric',
-//        ]);
-//        $fan=Fan::find($request->id);e
-//        $fan->view_count=$fan->view_count+1;
-//        $fan->save();
-//        return Resp::success();
-//    }
-// public function allBlogList(Request $request){
-//     // Get pagination parameters
-//     $perPage = $request->query('per_page', 5); 
-//     $page = $request->query('page', 1);
-//     $offset = ($page - 1) * $perPage;
-    
-//     // Retrieve paginated blogs
-//     $blogs = Blog::with('media')
-//         ->orderBy('created_at', 'asc')
-//         ->skip($offset)
-//         ->take($perPage)
-//         ->get();
-    
-//     // Get total number of blogs for pagination
-//     $total_results = Blog::count();
-//     $total_pages = ceil($total_results / $perPage);
-    
-//     $pagination = [
-//         'total_results' => $total_results,
-//         'total_pages' => $total_pages,
-//         'page_number' => $page,
-//         'page_size' => $perPage
-//     ];
-
-//     return Resp::success([
-//         'list' => $blogs,
-//         'pagination' => $pagination
-//     ]);
-//    }
-
-
-
+    public function getDynamicPagesList(Request $request){
+        $perPage = $request->query('per_page', 10);
+        $page = $request->query('page', 1);
+        $offset = ($page - 1) * $perPage;
+        if(!$request->query('id')){
+            $pages = Pages::offset($offset)->limit($perPage)->get();
+        }else{
+            $pages = Pages::find($request->query('id'));
+        }
+        if(!$pages){
+            return Resp::error(['message' => 'Page not found']);
+        }
+        $pages->load('media');
+        $total_results = Pages::count();
+        $total_pages = ceil($total_results / $perPage);
+        $pagination = [
+            'total_results' => $total_results,
+            'total_pages' => $total_pages,
+            'page' => $page,
+            'page_size' => $perPage
+        ];
+        return Resp::success(['pages' => $pages, 'pagination' => $pagination]);
+    }
 
 
 public function allBlogList(Request $request){
@@ -81,28 +62,22 @@ public function allBlogList(Request $request){
         ->orderBy('created_at', 'asc')
         ->skip($offset)
         ->take($perPage);
-    
     if (!is_null($request->query('status'))) {
         $blogs->where('status', $request->query('status'));
     }
-    
+    if (!is_null($request->query('title'))) {
+        $blogs->where('title', 'like', '%' . $request->query('title') . '%');
+    }
     $blogs = $blogs->get();
-    
-    // Get total number of blogs for pagination
     $total_results = Blog::count();
     $total_pages = ceil($total_results / $perPage);
-
-    
     $pagination = [
         'total_results' => $total_results,
         'total_pages' => $total_pages,
         'page' => (int)$page,
         'page_size' => $perPage
     ];
-
-    // Get a random selection of blog posts
     $randomBlogs = Blog::with('media')->inRandomOrder()->take(2)->get();
-
     return Resp::success([
         'list' => $blogs,
         'pagination' => $pagination,
