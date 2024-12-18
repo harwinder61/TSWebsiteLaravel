@@ -41,9 +41,33 @@ use Modules\Admin\app\Models\EmailTemplate;
 use Modules\Admin\app\Models\EmailTemplates;
 use Illuminate\Validation\Rule;
 use App\Models\BaseSubscription;
+
 class AdminController extends Controller
 {
 
+    public function media(Request $request)
+    {
+        $type = $request->query('type');
+        $perPage = $request->query('per_page', 10);
+        $page = $request->query('page', 1);
+    
+        $media = Media::when($type, function ($query, $type) {
+            $query->where('type', $type);
+        })->paginate($perPage);
+    
+        return Resp::success([
+            'media' => $media->items(),
+            'pagination' => [
+                'total_results' => $media->total(),
+                'total_pages' => $media->lastPage(),
+                'page' => $media->currentPage(),    
+                'page_size' => $perPage,
+                'prev' => $media->previousPageUrl(),
+                'next' => $media->nextPageUrl(),
+                ]
+            ]
+        ); 
+    }
 public function deleteSubscription($id){
     $subscription = BaseSubscription::find($id);
     if(!$subscription){
@@ -637,10 +661,10 @@ public function verifiedStatus(Request $request, $id){
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|max:255|unique:users,username',
             'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8',
             'user_type' => 'required|integer|in:1,2,3',
-            'password_confirmation' => 'required|same:password',
-
+            'firstname' => 'required|string|max:255',
+            'lastname' => 'required|string|max:255',
         ]);
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
@@ -650,6 +674,8 @@ public function verifiedStatus(Request $request, $id){
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'user_type' => $request->user_type,
+            'firstname' => $request->firstname,
+            'lastname' => $request->lastname,
         ]);
         return Resp::success(['message' => 'User created successfully']);
     }
