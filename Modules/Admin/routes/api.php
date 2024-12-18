@@ -65,13 +65,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::put('/update-email-template/{id}',[AdminController::class,'updateEmailTemplate']);
         Route::post('/delete-subscription/{id}',[AdminController::class,'deleteSubscription']);
         Route::get('/media',[AdminController::class,'media']);
-
-
-
-        
-     
-
-
+        Route::post('/dynamic-page',[AdminController::class,'dynamicPage']);
+        Route::put('/update-dynamic-page/{id}',[AdminController::class,'updateDynamicPage']);
 
     });
     

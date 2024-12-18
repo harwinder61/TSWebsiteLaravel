@@ -41,10 +41,49 @@ use Modules\Admin\app\Models\EmailTemplate;
 use Modules\Admin\app\Models\EmailTemplates;
 use Illuminate\Validation\Rule;
 use App\Models\BaseSubscription;
-
+use Modules\Admin\app\Models\Pages;
 class AdminController extends Controller
 {
 
+
+
+    public function updateDynamicPage($id,Request $request){
+        $page = Pages::find($id);
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string',
+            'description' => 'required|string',
+            'status' => 'required|integer|in:1,0',
+            'featured_image' => 'required|integer|exists:media,id',
+        ]);
+        if($validator->fails()){
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        if(!$page){
+            return Resp::error(['message' => 'Page not found']);
+        }
+        $page->update($validator->validated());
+        $page->media()->associate(Media::find($request->input('featured_image')));
+        $page->save();
+        $page->load('media'); // Load the related Media model
+        return Resp::success(['message' => 'Page updated successfully','page' => $page]);
+    }
+
+    public function dynamicPage(Request $request){
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string',
+            'description' => 'required|string',
+            'status' => 'required|integer|in:1,0',
+            'featured_image' => 'required|integer|exists:media,id',
+        ]);
+        if($validator->fails()){
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        $page = Pages::create($validator->validated());
+        $page->media()->associate(Media::find($request->input('featured_image')));
+        $page->save();
+        $page->load('media'); // Load the related Media model
+        return Resp::success(['message' => 'Page created successfully','page' => $page]);
+    }
     public function media(Request $request)
     {
         $type = $request->query('s', $request->query('type'));
