@@ -63,6 +63,9 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/reminder-done/{id}',[AdminController::class,'reminderDone']);
         Route::get('/email-template',[AdminController::class,'getEmail']);
         Route::put('/update-email-template/{id}',[AdminController::class,'updateEmailTemplate']);
+        Route::post('/delete-subscription/{id}',[AdminController::class,'deleteSubscription']);
+        
+
 
         
      

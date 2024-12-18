@@ -40,9 +40,20 @@ use Modules\Admin\app\Models\Remindercatagory;
 use Modules\Admin\app\Models\EmailTemplate;
 use Modules\Admin\app\Models\EmailTemplates;
 use Illuminate\Validation\Rule;
-
+use App\Models\BaseSubscription;
 class AdminController extends Controller
 {
+
+public function deleteSubscription($id){
+    $subscription = BaseSubscription::find($id);
+    if(!$subscription){
+        return Resp::error(['message' => 'Subscription not found']);
+    }
+    $subscription->delete();
+    return Resp::success(['message' => 'Subscription deleted successfully']);
+}
+
+
     public function updateEmailTemplate(Request $request, $id)
     {
         $emailTemplate = EmailTemplates::find($id);
@@ -502,8 +513,11 @@ public function verifiedStatus(Request $request, $id){
    {
        $query = ModelsVerify::with(['escort', 'user']);
    
-       if (!is_null($request->query('verified_status'))) {
-           $query->where('verified_status', $request->query('verified_status'));
+       if ($request->has('verified_status')) {
+           $verifiedStatus = explode(',', $request->query('verified_status'));
+           $query->whereIn('verified_status', $verifiedStatus);
+       } else {
+           $query->whereIn('verified_status', [1, 4]); // default to show only 1 and 4
        }
    
        if (!is_null($request->query('escort_name'))) {
@@ -530,7 +544,6 @@ public function verifiedStatus(Request $request, $id){
    
        return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
    }
-
    public function createForum(Request $request)
    {
        $validator = Validator::make($request->all(), [
