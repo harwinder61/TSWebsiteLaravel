@@ -84,6 +84,8 @@ class AdminController extends Controller
         $page->load('media'); // Load the related Media model
         return Resp::success(['message' => 'Page created successfully','page' => $page]);
     }
+
+
     public function media(Request $request)
     {
         $type = $request->query('s', $request->query('type'));
@@ -93,21 +95,29 @@ class AdminController extends Controller
         $media = Media::with('escort') // Add this line to include the 'escort' relationship
             ->when($type, function ($query, $type) {
                 $query->where('type', $type);
-            })
-            ->paginate($perPage);
+            });
     
-        return Resp::success([
-            'media' => $media->items(),
-            'pagination' => [
-                'total_results' => $media->total(),
-                'total_pages' => $media->lastPage(),
-                'page' => $media->currentPage(),
-                'page_size' => $perPage,
-                'prev' => $media->previousPageUrl(),
-                'next' => $media->nextPageUrl(),
-            ]
+        $total_results = $media->count();
+        $total_pages = ceil($total_results / $perPage);
+    
+        $media = $media->skip(($page - 1) * $perPage)->take($perPage)->get();
+    
+        $pagination = [
+            'total_results' => $total_results,
+            'total_pages' => $total_pages,
+            'page' => (int)$page,
+            'page_size' => $perPage
+        ];
+    
+        return response()->json([
+            'media' => $media,
+            'pagination' => $pagination
         ]);
     }
+
+
+
+
 public function deleteSubscription($id){
     $subscription = BaseSubscription::find($id);
     if(!$subscription){
@@ -360,8 +370,11 @@ public function verifiedStatusForm(Request $request){
 
 
     public function getReminder(Request $request, $page = null){
+
+        // Get status from the query params
         $status = $request->query('status');
     
+        // Pagination settings
         if ($page !== null) {
             $perPage = $request->query('per_page', 10);
         } else {
@@ -370,8 +383,10 @@ public function verifiedStatusForm(Request $request){
         }
     
         try {
+            // Query for reminders with optional filtering by status
             $reminder = Reminder::with('category')
-                ->when($status, function ($query, $status) {
+                ->when($status, function ($query, $status) {    
+                    // Filter by the status if provided
                     $query->where('status', $status);
                 })
                 ->orderBy('id', 'desc')
@@ -379,14 +394,18 @@ public function verifiedStatusForm(Request $request){
                 ->limit($perPage)
                 ->get();
     
+            // Calculate the total results (count) with optional status filtering
             $totalResults = Reminder::with('category')
                 ->when($status, function ($query, $status) {
+                    // Apply the status filter for counting as well
                     $query->where('status', $status);
                 })
                 ->count();
     
+            // Calculate the total number of pages
             $totalPages = ceil($totalResults / $perPage);
     
+            // Return the response with reminder data and pagination details
             return Resp::success([
                 'reminder' => $reminder,
                 'pagination' => [
@@ -397,10 +416,13 @@ public function verifiedStatusForm(Request $request){
                 ]
             ]);
         } catch (\Exception $e) {
+            // Log any errors and return an error response
             Log::error($e->getMessage());
             return Resp::error(['message' => 'Error fetching reminders']);
         }
     }
+    
+    
 
 public function postReminderComment(Request $request){
    $validator = Validator::make($request->all(), [
