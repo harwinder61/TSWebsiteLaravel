@@ -31,7 +31,10 @@ class FanController extends Controller
         $page = $request->query('page', 1);
         $offset = ($page - 1) * $perPage;
         if(!$request->query('id')){
-            $pages = Pages::offset($offset)->limit($perPage)->get();
+            $pages = Pages::orderBy('created_at', 'desc') // Order by created_at in descending order
+                ->offset($offset)
+                ->limit($perPage)
+                ->get();
         }else{
             $pages = Pages::find($request->query('id'));
         }
@@ -49,7 +52,6 @@ class FanController extends Controller
         ];
         return Resp::success(['pages' => $pages, 'pagination' => $pagination]);
     }
-
 
 public function allBlogList(Request $request){
     // Get pagination parameters
