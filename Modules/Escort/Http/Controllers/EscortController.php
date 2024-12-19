@@ -367,10 +367,6 @@ public function profileViews($id, Request $request)
     {
         $user = auth()->user();
         $profile_data = Profile::find($user->id);
-        $profile_data->county;
-        $profile_data->region;
-        $profile_data->city;
-        $profile_data->rates;
         if (!$profile_data) {
 
             return Resp::error(['message' => 'No profile found'], 404);
