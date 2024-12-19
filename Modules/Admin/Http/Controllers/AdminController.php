@@ -42,8 +42,65 @@ use Modules\Admin\app\Models\EmailTemplates;
 use Illuminate\Validation\Rule;
 use App\Models\BaseSubscription;
 use Modules\Admin\app\Models\Pages;
+use Modules\Admin\app\Models\Setting;
 class AdminController extends Controller
 {
+
+
+
+    public function getParallaxImage(Request $request){
+        $id = $request->query('id');
+        $setting = Setting::where('type','home_parallax')
+                          ->when($id, function ($query) use ($id) {
+                              $query->where('id', $id);
+                          })
+                          ->first();
+        if (!$setting) {
+            return Resp::error(['message' => 'Invalid or non-existent ID']);
+        }
+        $setting->load('media');
+        return Resp::success(['setting' => $setting]);
+    }
+
+
+
+public function parallaxImage(Request $request){
+    $validator = Validator::make($request->all(), [
+        'value' => 'required|integer|exists:media,id',
+    ]);
+    if($validator->fails()){
+        return Resp::error(['message' => $validator->errors()]);
+    }
+    $setting = Setting::where('type','home_parallax')->first();
+    if(!$setting){
+        $setting = new Setting();
+        $setting->type = 'home_parallax';
+    }
+    $setting->value = $request->value;
+    $setting->save();
+    $setting->load('media');
+    return Resp::success(['message' => 'Parallax image updated successfully','setting' => $setting]);
+}
+
+
+
+
+public function emailTemplateStatus($id,Request $request){
+    $emailTemplate = EmailTemplates::find($id);
+    $validator = Validator::make($request->all(), [
+        'status' => 'required|integer|in:1,0',
+    ]);
+    if($validator->fails()){
+        return Resp::error(['message' => $validator->errors()]);
+    }
+    if(!$emailTemplate){
+        return Resp::error(['message' => 'Email template not found']);
+    }
+    $emailTemplate->status = $request->status;
+    $emailTemplate->save();
+    return Resp::success(['message' => 'Email template status updated successfully']);
+}
+
 
 public function deleteUpdateDynamicPage($id){
     $page = Pages::find($id);
@@ -484,30 +541,44 @@ public function createReminder(Request $request){
         'description' => 'required|string',
         'category_id' => 'required|integer|exists:reminder_category,id',
         'priority' => 'required|string',
-        'admin_id' => 'required|integer|exists:users,id',
+        'admin_id' => 'required|array|exists:users,id',
     ]);
 
     if($validator->fails()){
         return Resp::error(['message' => $validator->errors()]);
     }
-    $reminder = Reminder::create($validator->validated());
-    // Join reminder table with reminder_category table
-    $reminderWithCategory = Reminder::join('reminder_category', 'reminder.category_id', '=', 'reminder_category.id')
-    ->select('reminder.*', 'reminder_category.name as category_name')
-    ->find($reminder->id);
 
-    // Retrieve the admin user's data
-    $adminUser = User::find($reminder->admin_id);
+    $adminIds = $request->input('admin_id');
+    $reminders = [];
+
+    foreach ($adminIds as $adminId) {
+        $reminder = Reminder::create([
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'category_id' => $request->input('category_id'),
+            'priority' => $request->input('priority'),
+            'admin_id' => $adminId,
+        ]);
+
+        // Join reminder table with reminder_category table
+        $reminderWithCategory = Reminder::join('reminder_category', 'reminder.category_id', '=', 'reminder_category.id')
+            ->select('reminder.*', 'reminder_category.name as category_name')
+            ->find($reminder->id);
+
+        // Retrieve the admin user's data
+        $adminUser = User::find($adminId);
+
+        $reminders[] = [
+            'admin' => $adminUser,
+            'reminder' => $reminderWithCategory,
+        ];
+    }
+
     return Resp::success([
-        'message' => 'Reminder created successfully',
-        'admin' => $adminUser,
-        'reminder' => $reminderWithCategory
+        'message' => 'Reminders created successfully',
+        'reminders' => $reminders,
     ]);
 }
-
-
-
-
 
 public function escortVarificationList(Request $request){
     $verifications = ModelsVerify::with(['escort', 'user'])->paginate(10);
@@ -1085,7 +1156,7 @@ public function verifiedStatus(Request $request, $id){
             ->when($request->query('user_type'), function ($query) use ($request) {
                 $query->where('user_type', $request->query('user_type'));
             })
-            ->paginate(50);
+            ->paginate(10); // Update this line to show only 10 signups
     
         $users->map(function ($user) {
             return [

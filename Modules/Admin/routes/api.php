@@ -70,6 +70,9 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/reminder-delete/{id}',[AdminController::class,'reminderDelete']);
         Route::get('/get-fan-list',[EscortController::class,'getFans']);
         Route::post('/delete-update-dynamic-page/{id}',[AdminController::class,'deleteUpdateDynamicPage']);
+        Route::post('/email-template-status/{id}',[AdminController::class,'emailTemplateStatus']);
+        Route::put('/parallax-image',[AdminController::class,'parallaxImage']);
+        Route::get('/get-parallax-image',[AdminController::class,'getParallaxImage']);
         Route::post('/update-media/{id}',[AdminController::class,'updateMedia']);
 
     });
