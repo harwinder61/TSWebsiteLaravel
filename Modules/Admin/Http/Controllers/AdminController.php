@@ -568,7 +568,7 @@ public function verifiedStatus(Request $request, $id){
 
    public function getVarifiacationList(Request $request)
    {
-       $query = ModelsVerify::with(['escort', 'user']);
+       $query = ModelsVerify::query();
    
        if ($request->has('verified_status')) {
            $verifiedStatus = explode(',', $request->query('verified_status'));
@@ -578,9 +578,7 @@ public function verifiedStatus(Request $request, $id){
        }
    
        if (!is_null($request->query('escort_name'))) {
-           $query->whereHas('escort', function ($q) use ($request) {
-               $q->where('name', 'like', '%' . $request->query('escort_name') . '%');
-           });
+           $query->where('escort_name', 'like', '%' . $request->query('escort_name') . '%');
        }
    
        $perPage = (int)$request->query('per_page', 10);
