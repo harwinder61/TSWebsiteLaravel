@@ -352,7 +352,6 @@ public function profileViews($id, Request $request)
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
         $inquiryForm = new Inquiry();
         $inquiryForm->subject = $request->input('subject');
         $inquiryForm->name = $request->input('name');
@@ -366,11 +365,9 @@ public function profileViews($id, Request $request)
     public function find(Request $request)
     {
         $user = auth()->user();
-        $profile_data = Profile::find($user->id);
-        $profile_data->county;
-        $profile_data->region;
-        $profile_data->city;
-        $profile_data->rates;
+        $profile_data = $user->profile;
+        // $profile_data = Profile::find($user->id);
+
         if (!$profile_data) {
 
             return Resp::error(['message' => 'No profile found'], 404);
