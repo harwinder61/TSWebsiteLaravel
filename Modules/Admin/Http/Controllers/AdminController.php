@@ -493,18 +493,12 @@ public function verifiedStatusForm(Request $request){
                 $status = $request->query('status'); // Get the value of 'status'
                 $reminderQuery->where('status', $status);
             }
+            $totalResults = $reminderQuery->count();
             $reminder = $reminderQuery->orderBy('id', 'desc')
                 ->offset(($page - 1) * $perPage)
                 ->limit($perPage)
                 ->get();
     
-            // Calculate the total results (count) with optional status filtering
-            $totalResults = Reminder::with('category')
-                ->when($status, function ($query, $status) {
-                    // Apply the status filter for counting as well
-                    $query->where('status', $status);
-                })
-                ->count();
     
             // Calculate the total number of pages
             $totalPages = ceil($totalResults / $perPage);
@@ -614,11 +608,13 @@ public function verifiedStatus(Request $request, $id){
     if (!$verify) {
         return Resp::error(['message' => 'Verification record not found']);
     }
+    
     if ($request->action == 1) {
         $verify->verified_status = 1;
     } elseif ($request->action == 0) {
         $verify->verified_status = 4;
     }
+    $verify->escort()->update(['escort_id' => $verify->verified_status]);
     $verify->save();
     return Resp::success(['message' => 'Verification status updated successfully']);
 }
