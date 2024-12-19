@@ -656,8 +656,7 @@ public function verifiedStatus(Request $request, $id){
 
    public function getVarifiacationList(Request $request)
    {
-       $query = ModelsVerify::query();
-       
+       $query = ModelsVerify::with(['escort', 'user']);
    
        if ($request->has('verified_status')) {
            $verifiedStatus = explode(',', $request->query('verified_status'));
@@ -667,14 +666,15 @@ public function verifiedStatus(Request $request, $id){
        }
    
        if (!is_null($request->query('escort_name'))) {
-           $query->where('escort_name', 'like', '%' . $request->query('escort_name') . '%');
+           $query->whereHas('escort', function ($q) use ($request) {
+               $q->where('name', 'like', '%' . $request->query('escort_name') . '%');
+           });
        }
-       
+   
        $perPage = (int)$request->query('per_page', 10);
        $page = (int)$request->query('page', 1);
        $offset = ($page - 1) * $perPage;
    
-       $query->with('profile'); $query->with('escort');
        $verifications = $query->offset($offset)->limit($perPage)->get();
    
        $totalResults = $query->count();
@@ -1430,8 +1430,6 @@ public function verifiedStatus(Request $request, $id){
 
         return Resp::success(['details' => $profile]);
     }
-
-
 
 
     public function getUsers(Request $request)
