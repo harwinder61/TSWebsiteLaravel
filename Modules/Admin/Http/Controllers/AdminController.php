@@ -45,7 +45,14 @@ use Modules\Admin\app\Models\Pages;
 class AdminController extends Controller
 {
 
-
+public function deleteUpdateDynamicPage($id){
+    $page = Pages::find($id);
+    if(!$page){
+        return Resp::error(['message' => 'Page not found']);
+    }
+    $page->delete();
+    return Resp::success(['message' => 'Page deleted successfully']);
+}
 
 
     public function reminderDelete($id){
@@ -98,13 +105,28 @@ class AdminController extends Controller
 
     public function media(Request $request)
     {
-        $type = $request->query('s', $request->query('type'));
-        $perPage = $request->query('per_page', 10);
+        $search_term = $request->query('s');
+        $video = $request->query('video');
+        $image = $request->query('image');
+        $perPage = $request->query('per_page', 12);
         $page = $request->query('page', 1);
     
         $media = Media::with('escort') // Add this line to include the 'escort' relationship
-            ->when($type, function ($query, $type) {
-                $query->where('type', $type);
+            ->when($video || $image, function ($query) use ($video, $image) {
+                // If either video or image is set, we filter by type first
+                $types = [];
+                if ($video) {
+                    $types[] = 'promo_video';
+                }
+                if ($image) {
+                    $types[] = 'gallery';
+                    $types[] = 'private_gallery';
+                }
+                $query->whereIn('type', $types);
+            })
+            ->when($search_term, function ($query, $search_term) {
+                // Apply search term to filtered results (video or image or both)
+                $query->where('path', 'like', '%' . $search_term . '%');
             })
             ->orderBy('created_at', 'desc');
     
@@ -125,6 +147,7 @@ class AdminController extends Controller
             'pagination' => $pagination
         ]);
     }
+    
 public function deleteSubscription($id){
     $subscription = BaseSubscription::find($id);
     if(!$subscription){
@@ -144,7 +167,7 @@ public function deleteSubscription($id){
         $request->validate([
             'subject' => 'required',
             'content' => 'required',
-            'status' => 'required',
+            'status' => 'required | in:1,0',
         ]);
         $emailTemplate->subject = $request->input('subject');
         $emailTemplate->content = $request->input('content');
@@ -686,8 +709,9 @@ public function verifiedStatus(Request $request, $id){
             'user_type' => $request->user_type,
             'firstname' => $request->first_name,
             'lastname' => $request->last_name,
-        ]);
-        return Resp::success(['message' => 'User created successfully']);
+        ])->load('profile'); // eager load the profile relationship
+        
+        return Resp::success(['message' => 'User created successfully', 'user' => $user]);
     }
 
 
