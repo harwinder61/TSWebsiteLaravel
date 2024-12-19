@@ -38,6 +38,8 @@ class SubscriptionController extends Controller
         $perPage = $request->query('per_page', 10);
         $page = $request->query('page', 1);
         $offset = ($page - 1) * $perPage;
+        $escortId = $request->query('escort_id'); // New query parameter for escort ID
+        $fanId = $request->query('fan_id'); // New query parameter for fan ID
     
         $reviews = BaseReviews::with('user') // Add relationship with user
             ->orderBy('created_at', 'desc') // Order by created_at in descending order
@@ -58,7 +60,14 @@ class SubscriptionController extends Controller
     
         if (!is_null($request->query('s'))) {
             $search_term = $request->query('s');
-            $reviews->where('user', $search_term); // Search for reviews based on escort_id
+            $reviews = $reviews->where('user.username', $search_term); // Search for reviews based on username
+        }
+    
+        if (!is_null($escortId)) {
+            $reviews = $reviews->where('escort_id', $escortId); // Filter by escort ID
+        }
+        if (!is_null($fanId)) {
+            $reviews = $reviews->where('user_id', $fanId); // Filter by fan ID
         }
     
         $reviews = $reviews->map(function ($review) {
@@ -81,8 +90,6 @@ class SubscriptionController extends Controller
     
         return Resp::success(['reviews' => $reviews->values(), 'pagination' => $pagination]);
     }
-    
-    
 
 
 public function listReviews($id, Request $request)
