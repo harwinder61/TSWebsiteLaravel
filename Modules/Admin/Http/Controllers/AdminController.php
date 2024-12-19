@@ -481,18 +481,12 @@ public function verifiedStatusForm(Request $request){
                 $status = $request->query('status'); // Get the value of 'status'
                 $reminderQuery->where('status', $status);
             }
+            $totalResults = $reminderQuery->count();
             $reminder = $reminderQuery->orderBy('id', 'desc')
                 ->offset(($page - 1) * $perPage)
                 ->limit($perPage)
                 ->get();
     
-            // Calculate the total results (count) with optional status filtering
-            $totalResults = Reminder::with('category')
-                ->when($status, function ($query, $status) {
-                    // Apply the status filter for counting as well
-                    $query->where('status', $status);
-                })
-                ->count();
     
             // Calculate the total number of pages
             $totalPages = ceil($totalResults / $perPage);
