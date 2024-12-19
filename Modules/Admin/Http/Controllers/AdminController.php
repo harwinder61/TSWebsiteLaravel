@@ -41,34 +41,113 @@ use Modules\Admin\app\Models\EmailTemplate;
 use Modules\Admin\app\Models\EmailTemplates;
 use Illuminate\Validation\Rule;
 use App\Models\BaseSubscription;
-
+use Modules\Admin\app\Models\Pages;
 class AdminController extends Controller
 {
 
+public function deleteUpdateDynamicPage($id){
+    $page = Pages::find($id);
+    if(!$page){
+        return Resp::error(['message' => 'Page not found']);
+    }
+    $page->delete();
+    return Resp::success(['message' => 'Page deleted successfully']);
+}
+
+
+    public function reminderDelete($id){
+        $reminder = Reminder::find($id);
+        if(!$reminder){
+            return Resp::error(['message' => 'Reminder not found']);
+        }
+        $reminder->delete();
+        return Resp::success(['message' => 'Reminder deleted successfully']);
+    }
+
+    public function updateDynamicPage($id,Request $request){
+        $page = Pages::find($id);
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string',
+            'description' => 'required|string',
+            'status' => 'required|integer|in:1,0',
+            'featured_image' => 'required|integer|exists:media,id',
+        ]);
+        if($validator->fails()){
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        if(!$page){
+            return Resp::error(['message' => 'Page not found']);
+        }
+        $page->update($validator->validated());
+        $page->media()->associate(Media::find($request->input('featured_image')));
+        $page->save();
+        $page->load('media'); // Load the related Media model
+        return Resp::success(['message' => 'Page updated successfully','page' => $page]);
+    }
+
+    public function dynamicPage(Request $request){
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string',
+            'description' => 'required|string',
+            'status' => 'required|integer|in:1,0',
+            'featured_image' => 'required|integer|exists:media,id',
+        ]);
+        if($validator->fails()){
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        $page = Pages::create($validator->validated());
+        $page->media()->associate(Media::find($request->input('featured_image')));
+        $page->save();
+        $page->load('media'); // Load the related Media model
+        return Resp::success(['message' => 'Page created successfully','page' => $page]);
+    }
+
+
     public function media(Request $request)
     {
-        $type = $request->query('s', $request->query('type'));
-        $perPage = $request->query('per_page', 10);
+        $search_term = $request->query('s');
+        $video = $request->query('video');
+        $image = $request->query('image');
+        $perPage = $request->query('per_page', 12);
         $page = $request->query('page', 1);
     
         $media = Media::with('escort') // Add this line to include the 'escort' relationship
-            ->when($type, function ($query, $type) {
-                $query->where('type', $type);
+            ->when($video || $image, function ($query) use ($video, $image) {
+                // If either video or image is set, we filter by type first
+                $types = [];
+                if ($video) {
+                    $types[] = 'promo_video';
+                }
+                if ($image) {
+                    $types[] = 'gallery';
+                    $types[] = 'private_gallery';
+                }
+                $query->whereIn('type', $types);
             })
-            ->paginate($perPage);
+            ->when($search_term, function ($query, $search_term) {
+                // Apply search term to filtered results (video or image or both)
+                $query->where('path', 'like', '%' . $search_term . '%');
+            })
+            ->orderBy('created_at', 'desc');
     
-        return Resp::success([
-            'media' => $media->items(),
-            'pagination' => [
-                'total_results' => $media->total(),
-                'total_pages' => $media->lastPage(),
-                'page' => $media->currentPage(),
-                'page_size' => $perPage,
-                'prev' => $media->previousPageUrl(),
-                'next' => $media->nextPageUrl(),
-            ]
+        $total_results = $media->count();
+        $total_pages = ceil($total_results / $perPage);
+    
+        $media = $media->skip(($page - 1) * $perPage)->take($perPage)->get();
+    
+        $pagination = [
+            'total_results' => $total_results,
+            'total_pages' => $total_pages,
+            'page' => (int)$page,
+            'page_size' => $perPage
+        ];
+    
+        return response()->json([
+            'media' => $media,
+            'pagination' => $pagination
         ]);
     }
+    
 public function deleteSubscription($id){
     $subscription = BaseSubscription::find($id);
     if(!$subscription){
@@ -85,13 +164,11 @@ public function deleteSubscription($id){
         if (!$emailTemplate) {
             return Resp::error(['message' => 'Email template not found'], 404);
         }
-    
         $request->validate([
             'subject' => 'required',
             'content' => 'required',
-            'status' => 'required',
+            'status' => 'required | in:1,0',
         ]);
-    
         $emailTemplate->subject = $request->input('subject');
         $emailTemplate->content = $request->input('content');
         $emailTemplate->status = $request->input('status');
@@ -109,6 +186,8 @@ public function deleteSubscription($id){
     }
 
 
+
+    
     public function getEmail(Request $request)
     {
         $id = $request->query('id');
@@ -320,91 +399,39 @@ public function verifiedStatusForm(Request $request){
     }
 
 
-    // public function getReminder(Request $request, $page = null){
-    //     if ($page !== null) {
-    //         $perPage = $page;
-    //         $reminder = Reminder::with('category')
-    //             ->orderBy('id', 'desc')
-    //             ->limit($perPage)
-    //             ->get();
-    //         return Resp::success([
-    //             'reminder' => $reminder,
-    //         ]);
-    //     } else {
-    //         $
-    //         $perPage = $request->query('per_page', 10);
-    //         $page = $request->query('page', 1);
-    
-    //         $reminder = Reminder::with('category')
-    //             ->orderBy('id', 'desc')
-    //             ->offset(($page - 1) * $perPage)
-    //             ->limit($perPage)
-    //             ->get();
-    
-    //         $totalResults = Reminder::with('category')->count();
-    //         $totalPages = ceil($totalResults / $perPage);
-    
-    //         return Resp::success([
-    //             'reminder' => $reminder,
-    //             'pagination' => [
-    //                 'total_results' => $totalResults,
-    //                 'total_pages' => $totalPages,
-    //                 'page' => $page,
-    //                 'page_size' => $perPage,
-    //             ]
-    //         ]);
-    //     }
-    // }
     public function getReminder(Request $request, $page = null){
-        $status = $request->query('status');
-    
+
+        // Pagination settings
         if ($page !== null) {
-            $perPage = $request->query('per_page', 10);
-            $reminder = Reminder::with('category')
-                ->when($status, function ($query, $status) {
-                    $query->where('status', $status);
-                })
-                ->orderBy('id', 'desc')
-                ->offset(($page - 1) * $perPage)
-                ->limit($perPage)
-                ->get();
-            
-            $totalResults = Reminder::with('category')
-                ->when($status, function ($query, $status) {
-                    $query->where('status', $status);
-                })
-                ->count();
-            $totalPages = ceil($totalResults / $perPage);
-            
-            return Resp::success([
-                'reminder' => $reminder,
-                'pagination' => [
-                    'total_results' => $totalResults,
-                    'total_pages' => $totalPages,
-                    'page' => $page,
-                    'page_size' => $perPage,
-                ]
-            ]);
         } else {
-            $perPage = $request->query('per_page', 10);
             $page = $request->query('page', 1);
+        }
+        $perPage = $request->query('per_page', 10);
     
-            $reminder = Reminder::with('category')
-                ->when($status, function ($query, $status) {
-                    $query->where('status', $status);
-                })
-                ->orderBy('id', 'desc')
+        try {
+            // Query for reminders with optional filtering by status
+            $reminderQuery = Reminder::with('category');
+            if ($request->has('status')) {
+                $status = $request->query('status'); // Get the value of 'status'
+                $reminderQuery->where('status', $status);
+            }
+            $reminder = $reminderQuery->orderBy('id', 'desc')
                 ->offset(($page - 1) * $perPage)
                 ->limit($perPage)
                 ->get();
-            
+    
+            // Calculate the total results (count) with optional status filtering
             $totalResults = Reminder::with('category')
                 ->when($status, function ($query, $status) {
+                    // Apply the status filter for counting as well
                     $query->where('status', $status);
                 })
                 ->count();
+    
+            // Calculate the total number of pages
             $totalPages = ceil($totalResults / $perPage);
-            
+    
+            // Return the response with reminder data and pagination details
             return Resp::success([
                 'reminder' => $reminder,
                 'pagination' => [
@@ -414,8 +441,13 @@ public function verifiedStatusForm(Request $request){
                     'page_size' => $perPage,
                 ]
             ]);
+        } catch (\Exception $e) {
+            // Log any errors and return an error response
+            Log::error($e->getMessage());
+            return Resp::error(['message' => 'Error fetching reminders']);
         }
     }
+    
 
 public function postReminderComment(Request $request){
    $validator = Validator::make($request->all(), [
@@ -664,8 +696,8 @@ public function verifiedStatus(Request $request, $id){
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8',
             'user_type' => 'required|integer|in:1,2,3',
-            'firstname' => 'required|string|max:255',
-            'lastname' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
         ]);
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
@@ -675,10 +707,11 @@ public function verifiedStatus(Request $request, $id){
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'user_type' => $request->user_type,
-            'firstname' => $request->firstname,
-            'lastname' => $request->lastname,
-        ]);
-        return Resp::success(['message' => 'User created successfully']);
+            'firstname' => $request->first_name,
+            'lastname' => $request->last_name,
+        ])->load('profile'); // eager load the profile relationship
+        
+        return Resp::success(['message' => 'User created successfully', 'user' => $user]);
     }
 
 
@@ -1045,8 +1078,8 @@ public function verifiedStatus(Request $request, $id){
             ->when($request->query('user_type'), function ($query) use ($request) {
                 $query->where('user_type', $request->query('user_type'));
             })
-            ->paginate($request->query('per_page', 10));
-
+            ->paginate(50);
+    
         $users->map(function ($user) {
             return [
                 'id' => $user->id,
@@ -1056,7 +1089,7 @@ public function verifiedStatus(Request $request, $id){
                 'created_at' => $user->created_at
             ];
         });
-
+    
         return Resp::success([
             'total_count' => $users->total(),
             'users' => $users->items(),
@@ -1068,10 +1101,7 @@ public function verifiedStatus(Request $request, $id){
             ]
         ]);
     }
-    // Pagination
-    // $perPage = $request->query('per_page', 10);
-    // $page = $request->query('page', 1);
-
+   
     public function updatePlan($plan_code, Request $request)
     {
 
@@ -1314,6 +1344,8 @@ public function verifiedStatus(Request $request, $id){
     }
 
 
+
+
     public function getUsers(Request $request)
     {
         $user_type = $request->query('user_type');
@@ -1324,16 +1356,19 @@ public function verifiedStatus(Request $request, $id){
         $users = AuthUser::query()
             ->select('users.*') // Select all fields from users table
             ->when($user_type, function ($query) use ($user_type) {
-                return $query->where('users.user_type', $user_type);
+                $userTypes = explode(',', $user_type); // Split the comma-separated string into an array
+                return $query->whereIn('users.user_type', $userTypes);
             })
             // Left join with subscriptions to preserve all users
             ->leftJoin('subscriptions', 'users.id', '=', 'subscriptions.escort_id')
             // Select subscription fields with distinct prefixes
-            ->selectRaw('subscriptions.id as subscription_id, 
+            ->selectRaw('subscriptions.id as subscription_id,
                         subscriptions.status as subscription_status,
                         subscriptions.plan_code,
                         subscriptions.start_date,
-                        subscriptions.end_date');
+                        subscriptions.end_date')
+    
+            ->orderBy('users.id', 'desc'); // Add this line to order results in descending order
     
         // Add search filter
         if ($search) {

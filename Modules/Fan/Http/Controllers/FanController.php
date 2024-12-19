@@ -18,15 +18,40 @@ use Illuminate\Support\Facades\Hash;
 use Modules\Admin\app\Models\Blog;
 use Modules\Fan\app\Models\Fan;
 use App\Models\Media;
-
+use Modules\Admin\app\Models\Pages;
 class FanController extends Controller
 {
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except('blog','allBlogList');
+        $this->middleware(AuthMiddleware::class)->except('blog','allBlogList','getDynamicPagesList');
     }
-
+    public function getDynamicPagesList(Request $request){
+        $perPage = $request->query('per_page', 10);
+        $page = $request->query('page', 1);
+        $offset = ($page - 1) * $perPage;
+        if(!$request->query('id')){
+            $pages = Pages::orderBy('created_at', 'desc') // Order by created_at in descending order
+                ->offset($offset)
+                ->limit($perPage)
+                ->get();
+        }else{
+            $pages = Pages::find($request->query('id'));
+        }
+        if(!$pages){
+            return Resp::error(['message' => 'Page not found']);
+        }
+        $pages->load('media');
+        $total_results = Pages::count();
+        $total_pages = ceil($total_results / $perPage);
+        $pagination = [
+            'total_results' => $total_results,
+            'total_pages' => $total_pages,
+            'page' => $page,
+            'page_size' => $perPage
+        ];
+        return Resp::success(['pages' => $pages, 'pagination' => $pagination]);
+    }
 
 public function allBlogList(Request $request){
     // Get pagination parameters

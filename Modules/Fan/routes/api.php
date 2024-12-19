@@ -29,4 +29,5 @@ Route::get('/all-blog-list',[FanController::class,'allBlogList']);
 Route::get('all-list-reviews',[SubscriptionController::class,'getAllListReviews']);
 Route::get('advert-list',[SubscriptionController::class,'getAdvertLists']);
 Route::get('all-user-list',[SubscriptionController::class,'getAllUserList']);
+Route::get('/dynamic-pages-list',[FanController::class,'getDynamicPagesList']);
 
