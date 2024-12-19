@@ -596,11 +596,13 @@ public function verifiedStatus(Request $request, $id){
     if (!$verify) {
         return Resp::error(['message' => 'Verification record not found']);
     }
+    
     if ($request->action == 1) {
         $verify->verified_status = 1;
     } elseif ($request->action == 0) {
         $verify->verified_status = 4;
     }
+    $verify->escort()->update(['escort_id' => $verify->verified_status]);
     $verify->save();
     return Resp::success(['message' => 'Verification status updated successfully']);
 }
