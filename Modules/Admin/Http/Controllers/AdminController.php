@@ -1347,49 +1347,51 @@ public function verifiedStatus(Request $request, $id){
 
 
     public function getUsers(Request $request)
-{
-    $user_type = $request->query('user_type');
-    $search = $request->query('s');
-    $page = $request->query('page', 1);
-    $perPage = $request->query('per_page', 10);
-
-    $users = AuthUser::query()
-        ->select('users.*') // Select all fields from users table
-        ->when($user_type, function ($query) use ($user_type) {
-            $userTypes = explode(',', $user_type); // Split the comma-separated string into an array
-            return $query->whereIn('users.user_type', $userTypes);
-        })
-        // Left join with subscriptions to preserve all users
-        ->leftJoin('subscriptions', 'users.id', '=', 'subscriptions.escort_id')
-        // Select subscription fields with distinct prefixes
-        ->selectRaw('subscriptions.id as subscription_id,
-                    subscriptions.status as subscription_status,
-                    subscriptions.plan_code,
-                    subscriptions.start_date,
-                    subscriptions.end_date');
-
-    // Add search filter
-    if ($search) {
-        $users->where(function ($query) use ($search) {
-            $query->where('email', 'like', '%' . $search . '%')
-                ->orWhere('username', 'like', '%' . $search . '%');
-        });
+    {
+        $user_type = $request->query('user_type');
+        $search = $request->query('s');
+        $page = $request->query('page', 1);
+        $perPage = $request->query('per_page', 10);
+    
+        $users = AuthUser::query()
+            ->select('users.*') // Select all fields from users table
+            ->when($user_type, function ($query) use ($user_type) {
+                $userTypes = explode(',', $user_type); // Split the comma-separated string into an array
+                return $query->whereIn('users.user_type', $userTypes);
+            })
+            // Left join with subscriptions to preserve all users
+            ->leftJoin('subscriptions', 'users.id', '=', 'subscriptions.escort_id')
+            // Select subscription fields with distinct prefixes
+            ->selectRaw('subscriptions.id as subscription_id,
+                        subscriptions.status as subscription_status,
+                        subscriptions.plan_code,
+                        subscriptions.start_date,
+                        subscriptions.end_date')
+    
+            ->orderBy('users.id', 'desc'); // Add this line to order results in descending order
+    
+        // Add search filter
+        if ($search) {
+            $users->where(function ($query) use ($search) {
+                $query->where('email', 'like', '%' . $search . '%')
+                    ->orWhere('username', 'like', '%' . $search . '%');
+            });
+        }
+    
+        // Pagination
+        $totalCount = $users->count();
+    
+        $result = $users->offset(($page - 1) * $perPage)
+            ->limit($perPage)
+            ->get();
+    
+        return Resp::success([
+            'list' => $result,
+            'total_count' => $totalCount,
+            'page' => (int)$page,
+            'per_page' => (int)$perPage
+        ]);
     }
-
-    // Pagination
-    $totalCount = $users->count();
-
-    $result = $users->offset(($page - 1) * $perPage)
-        ->limit($perPage)
-        ->get();
-
-    return Resp::success([
-        'list' => $result,
-        'total_count' => $totalCount,
-        'page' => (int)$page,
-        'per_page' => (int)$perPage
-    ]);
-}
 
     public function getLiveAdvertsUsers(Request $request)
     {
