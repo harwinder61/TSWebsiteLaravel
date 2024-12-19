@@ -124,9 +124,18 @@ public function deleteUpdateDynamicPage($id){
                 }
                 $query->whereIn('type', $types);
             })
-            ->when($search_term, function ($query, $search_term) {
+            //->when($search_term, function ($query, $search_term) {
                 // Apply search term to filtered results (video or image or both)
-                $query->where('path', 'like', '%' . $search_term . '%');
+              //  $query->where('path', 'like', '%' . $search_term . '%');
+              ->when($search_term, function ($query, $search_term) {
+                // Apply search term to multiple fields (a, b, or c)
+                $query->where(function($q) use ($search_term) {
+                    $q->where('path', 'like', '%' . $search_term . '%')
+                      ->orWhere('title', 'like', '%' . $search_term . '%')
+                      ->orWhere('description', 'like', '%' . $search_term . '%')
+                      ->orWhere('alternative_text', 'like', '%' . $search_term . '%')
+                      ->orWhere('caption', 'like', '%' . $search_term . '%');
+                });
             })
             ->orderBy('created_at', 'desc');
     
@@ -568,7 +577,7 @@ public function verifiedStatus(Request $request, $id){
 
    public function getVarifiacationList(Request $request)
    {
-       $query = ModelsVerify::with(['escort', 'user']);
+       $query = ModelsVerify::query();
    
        if ($request->has('verified_status')) {
            $verifiedStatus = explode(',', $request->query('verified_status'));
@@ -578,9 +587,7 @@ public function verifiedStatus(Request $request, $id){
        }
    
        if (!is_null($request->query('escort_name'))) {
-           $query->whereHas('escort', function ($q) use ($request) {
-               $q->where('name', 'like', '%' . $request->query('escort_name') . '%');
-           });
+           $query->where('escort_name', 'like', '%' . $request->query('escort_name') . '%');
        }
    
        $perPage = (int)$request->query('per_page', 10);
@@ -1457,5 +1464,33 @@ public function verifiedStatus(Request $request, $id){
             return Resp::error(['Post not found']);
         }
         return Resp::success(['data' => $post]);
+    }
+
+    public function updateMedia(Request $request, $id){
+        try{
+
+            $validator=Validator::make($request->all(),[
+                'title'=>'required',
+                'description'=>'required',
+                'alternative_text'=>'required',
+                'caption'=>'required'
+            ]);
+            if($validator->fails()){
+                return Resp::error(['message'=>$validator->errors()]);
+            }
+            $media = Media::find($id);
+            if (!$media) {
+                return Resp::error(['Media not found']);
+            }
+            $media->update([
+                'title'=>$request->title,
+                'description'=>$request->description,
+                "alternative_text"=>$request->alternative_text,
+                'caption'=>$request->caption
+            ]);
+            return Resp::success(['message' => 'Media updated successfully']);
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }
     }
 }

@@ -53,40 +53,38 @@ class FanController extends Controller
         return Resp::success(['pages' => $pages, 'pagination' => $pagination]);
     }
 
-public function allBlogList(Request $request){
-    // Get pagination parameters
-    $perPage = $request->query('per_page', 10); 
-    $page = $request->query('page', 1);
-    $offset = ($page - 1) * $perPage;
-    
-    // Retrieve paginated blogs
-    $blogs = Blog::with('media')
-        ->orderBy('created_at', 'asc')
-        ->skip($offset)
-        ->take($perPage);
-    if (!is_null($request->query('status'))) {
-        $blogs->where('status', $request->query('status'));
+    public function allBlogList(Request $request){
+        // Get pagination parameters
+        $perPage = $request->query('per_page', 10); 
+        $page = $request->query('page', 1);
+        $offset = ($page - 1) * $perPage;
+        $blogs = Blog::with('media')
+            ->orderBy('created_at', 'asc')
+            ->skip($offset)
+            ->take($perPage);
+        if (!is_null($request->query('status'))) {
+            $blogs->where('status', $request->query('status'));
+        }
+        if (!is_null($request->query('s'))) {
+            $search_term = $request->query('s');
+            $blogs->where('title', 'like', '%' . $search_term . '%');
+        }
+        $blogs = $blogs->get();
+        $total_results = Blog::count();
+        $total_pages = ceil($total_results / $perPage);
+        $pagination = [
+            'total_results' => $total_results,
+            'total_pages' => $total_pages,
+            'page' => (int)$page,
+            'page_size' => $perPage
+        ];
+        $randomBlogs = Blog::with('media')->inRandomOrder()->take(2)->get();
+        return Resp::success([
+            'list' => $blogs,
+            'pagination' => $pagination,
+            'random' => $randomBlogs
+        ]);
     }
-    if (!is_null($request->query('title'))) {
-        $blogs->where('title', 'like', '%' . $request->query('title') . '%');
-    }
-    $blogs = $blogs->get();
-    $total_results = Blog::count();
-    $total_pages = ceil($total_results / $perPage);
-    $pagination = [
-        'total_results' => $total_results,
-        'total_pages' => $total_pages,
-        'page' => (int)$page,
-        'page_size' => $perPage
-    ];
-    $randomBlogs = Blog::with('media')->inRandomOrder()->take(2)->get();
-    return Resp::success([
-        'list' => $blogs,
-        'pagination' => $pagination,
-        'random' => $randomBlogs
-    ]);
-}
-
    public function blog(Request $request){
     $blogs=Blog::with('media')->orderBy('created_at','asc')->get();
     return Resp::success(['list'=>$blogs]);

@@ -32,10 +32,9 @@ class SubscriptionController extends Controller
 
     public function getAllListReviews(Request $request)
     {
-
         $statuses = $request->query('status');
         $filter = $request->query('filter');
-    
+        $s = $request->query('s');
         $perPage = $request->query('per_page', 10);
         $page = $request->query('page', 1);
         $offset = ($page - 1) * $perPage;
@@ -55,6 +54,11 @@ class SubscriptionController extends Controller
             $reviews = $reviews->where('avg_rating', '<', 3); // Show only reviews with avg rating < 3
         } elseif ($filter === '1') {
             $reviews = $reviews->where('avg_rating', '>=', 3); // Show only reviews with avg rating >= 3
+        }
+    
+        if (!is_null($request->query('s'))) {
+            $search_term = $request->query('s');
+            $reviews->where('user', $search_term); // Search for reviews based on escort_id
         }
     
         $reviews = $reviews->map(function ($review) {
