@@ -35,5 +35,10 @@ class verify extends Model
         return $this->belongsTo(User::class, 'fan_id', 'id');
     }
 
+    public function profile()
+    {
+        return $this->belongsTo(Profile::class, 'escort_id', 'id');
+    }
+
 
 }

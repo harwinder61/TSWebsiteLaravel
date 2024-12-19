@@ -47,6 +47,18 @@ class AdminController extends Controller
 {
 
 
+    public function userDelete($id,Request $request){
+        die('ok');
+        // $user = User::find($id);
+        // if(!$user){
+        //     return Resp::error(['message' => 'User not found']);
+        // }
+        // if ($user->user_type !== 1 && $user->user_type !== 2) {
+        //     return Resp::error(['message' => 'Only ES or Fan users can be deleted']);
+        // }
+        // $user->delete();
+        // return Resp::success(['message' => 'User deleted successfully']);
+    }
 
     public function getParallaxImage(Request $request){
         $id = $request->query('id');
@@ -645,6 +657,7 @@ public function verifiedStatus(Request $request, $id){
    public function getVarifiacationList(Request $request)
    {
        $query = ModelsVerify::query();
+       
    
        if ($request->has('verified_status')) {
            $verifiedStatus = explode(',', $request->query('verified_status'));
@@ -656,11 +669,12 @@ public function verifiedStatus(Request $request, $id){
        if (!is_null($request->query('escort_name'))) {
            $query->where('escort_name', 'like', '%' . $request->query('escort_name') . '%');
        }
-   
+       
        $perPage = (int)$request->query('per_page', 10);
        $page = (int)$request->query('page', 1);
        $offset = ($page - 1) * $perPage;
    
+       $query->with('profile'); $query->with('escort');
        $verifications = $query->offset($offset)->limit($perPage)->get();
    
        $totalResults = $query->count();
