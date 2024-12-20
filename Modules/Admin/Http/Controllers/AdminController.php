@@ -604,7 +604,7 @@ public function verifiedStatus(Request $request, $id){
     if ($validator->fails()) {
         return Resp::error(['message' => $validator->errors()]);
     }
-    $verify = ModelsVerify::where('id', $id)->first();
+    $verify = ModelsVerify::where('escort_id', $id )->first();
     if (!$verify) {
         return Resp::error(['message' => 'Verification record not found']);
     }
@@ -654,81 +654,58 @@ public function verifiedStatus(Request $request, $id){
     }
    }
 
-//    public function getVarifiacationList(Request $request)
-//    {
-//        $query = ModelsVerify::with(['escort', 'user']);
+   public function getVarifiacationList(Request $request)
+   {
+       try {
+           // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
+           $query = ModelsVerify::with(['escort', 'user']);
+           
+           // Filter by verified status if provided
+           if ($request->has('verified_status')) {
+               $verifiedStatus = explode(',', $request->query('verified_status'));
+               $query->whereIn('verified_status', $verifiedStatus);
+           } else {
+               // Default to verified statuses 1 and 4 if not provided
+               $query->whereIn('verified_status', [1, 4]);
+           }
    
-//        if ($request->has('verified_status')) {
-//            $verifiedStatus = explode(',', $request->query('verified_status'));
-//            $query->whereIn('verified_status', $verifiedStatus);
-//        } else {
-//            $query->whereIn('verified_status', [1, 4]); // default to show only 1 and 4
-//        }
+           // Filter by escort name if 's' parameter is provided
+           if (!is_null($request->query('s'))) {
+               $query->whereHas('escort', function ($q) use ($request) {
+                   $q->where('name', 'like', '%' . $request->query('s') . '%');
+               });
+           }
    
-//        if (!is_null($request->query('escort_name'))) {
-//            $query->whereHas('escort', function ($q) use ($request) {
-//                $q->where('name', 'like', '%' . $request->query('escort_name') . '%');
-//            });
-//        }
+           // Pagination parameters
+           $perPage = (int)$request->query('per_page', 10);
+           $page = (int)$request->query('page', 1);
+           $offset = ($page - 1) * $perPage;
+           
+           // Fetch results with pagination
+           $verifications = $query->offset($offset)->limit($perPage)->get();
+           
+           // Calculate total results and total pages
+           $totalResults = $query->count();
+           $totalPages = ceil($totalResults / $perPage);
+           
+           // Build pagination response
+           $pagination = [
+               'total_results' => $totalResults,
+               'total_pages' => $totalPages,
+               'page' => $page,
+               'page_size' => $perPage,
+           ];
+           
+           // Return the successful response with verification list and pagination
+           return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
    
-//        $perPage = (int)$request->query('per_page', 10);
-//        $page = (int)$request->query('page', 1);
-//        $offset = ($page - 1) * $perPage;
+       } catch (\Exception $e) {
+           // Return an error if something goes wrong
+           return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
+       }
+   }
    
-//        $verifications = $query->offset($offset)->limit($perPage)->get();
    
-//        $totalResults = $query->count();
-//        $totalPages = ceil($totalResults / $perPage);
-   
-//        $pagination = [
-//            'total_results' => $totalResults,
-//            'total_pages' => $totalPages,
-//            'page' => $page,
-//            'page_size' => $perPage,
-//        ];
-   
-//        return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
-//    }
-
-public function getVarifiacationList(Request $request)
-{
-    $query = ModelsVerify::with(['escort', 'user']);
-
-    if ($request->has('verified_status')) {
-        $verifiedStatus = explode(',', $request->query('verified_status'));
-        $query->whereIn('verified_status', $verifiedStatus);
-    } else {
-        $query->whereIn('verified_status', [1, 4]); // default to show only 1 and 4
-    }
-
-    if (!is_null($request->query('escort_name'))) {
-        $query->whereHas('escort', function ($q) use ($request) {
-            $q->where('name', 'like', '%' . $request->query('escort_name') . '%');
-        });
-    }
-
-    if (!is_null($request->query('status'))) {
-        $query->where('status', $request->query('status'));
-    }
-
-    $perPage = (int)$request->query('per_page', 10);
-    $page = (int)$request->query('page', 1);
-    $offset = ($page - 1) * $perPage;
-
-    $verifications = $query->offset($offset)->limit($perPage)->get();
-
-    $totalResults = $query->count();
-    $totalPages = ceil($totalResults / $perPage);
-
-    $pagination = [
-        'total_results' => $totalResults,
-        'total_pages' => $totalPages,
-        'page' => $page,
-        'page_size' => $perPage,
-    ];
-
-    return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
-}
    public function createForum(Request $request)
    {
        $validator = Validator::make($request->all(), [
