@@ -1079,12 +1079,7 @@ public function verifiedStatus(Request $request, $id){
         if ($validated->fails()) {
             return Resp::error(['message' => $validated->errors()]);
         }
-        $media_exists = Media::where('escort_id', $request->input('user_id'))
-            ->where('id', $request->input('image_id'))
-            ->first();
-        if (!$media_exists) {
-            return Resp::error(['Media not found']);
-        }
+        
 
         try {
 
