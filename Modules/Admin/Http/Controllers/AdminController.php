@@ -794,30 +794,31 @@ public function verifiedStatus(Request $request, $id){
    
        return Resp::success(['message' => 'Profile updated successfully']);
    }
-    public function newUser(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8',
-            'user_type' => 'required|integer|in:1,2,3',
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-        ]);
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-        $user = AuthUser::create([
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'user_type' => $request->user_type,
-            'firstname' => $request->first_name,
-            'lastname' => $request->last_name,
-        ])->load('profile'); // eager load the profile relationship
-        
-        return Resp::success(['message' => 'User created successfully', 'user' => $user]);
-    }
+   public function newUser(Request $request)
+   {
+       $validator = Validator::make($request->all(), [
+           'username' => 'required|string|max:255|unique:users,username',
+           'email' => 'required|string|email|max:255|unique:users,email',
+           'password' => 'required|string|min:8',
+           'user_type' => 'required|integer|in:1,2,3',
+           'first_name' => 'required|string|max:255',
+           'last_name' => 'required|string|max:255',
+       ]);
+       if ($validator->fails()) {
+           return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+       }
+       $user = AuthUser::create([
+           'username' => $request->username,
+           'email' => $request->email,
+           'password' => Hash::make($request->password),
+           'user_type' => $request->user_type,
+           'firstname' => $request->first_name,
+           'lastname' => $request->last_name,
+           'email_verified' => 1, // Add this line
+       ])->load('profile'); // eager load the profile relationship
+   
+       return Resp::success(['message' => 'User created successfully', 'user' => $user]);
+   }
 
 
     public function deleteBlog($id, Request $request)
