@@ -1097,7 +1097,6 @@ public function verifiedStatus(Request $request, $id){
         if ($validated->fails()) {
             return Resp::error(['message' => $validated->errors()]);
         }
-        
 
         try {
 
@@ -1585,4 +1584,21 @@ public function verifiedStatus(Request $request, $id){
             return Resp::error(['message' => $e->getMessage()]);
         }
     }
+    public function tsSpotlightSort(Request $request) {
+        try {
+            $data = json_decode($request->getContent(), true);
+            foreach ($data as $item) {
+                // Extract the id and order from the item
+                $id = $item['id'];
+                $order = $item['order'];
+                 // Update the sort order for the subscription with the given id
+                Subscription::where('id', $id)->update([
+                    'sort_order' => $order
+                ]);
+            }
+            return Resp::success(['message' => 'Sort order updated successfully']);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }     
 }
