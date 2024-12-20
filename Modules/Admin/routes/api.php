@@ -75,6 +75,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/get-parallax-image',[AdminController::class,'getParallaxImage']);
         Route::post('/update-media/{id}',[AdminController::class,'updateMedia']);
         Route::post('/user-delete/{id}',[AdminController::class,'userDelete']);
+        
+
 
     });
 
