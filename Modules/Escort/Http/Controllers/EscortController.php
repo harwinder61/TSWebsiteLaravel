@@ -383,7 +383,7 @@ public function profileViews($id, Request $request)
         $user = auth()->user();
         $userType = $user->user_type;
 
-        if ($userType == 1) {
+        if ($userType == 1) {   
             return Resp::error(['Unauthorized user is not an escort']);
         } elseif ($userType == 2) {
 
