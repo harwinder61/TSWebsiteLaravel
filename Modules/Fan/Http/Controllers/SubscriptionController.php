@@ -277,6 +277,10 @@ public function listReviews($id, Request $request)
                 $subscriptions->where('plan_code', $request->query('plan_code'));
             }
 
+            if ($request->query('plan_code') == 'P104') {
+                $subscriptions->orderBy('sort_order'); // Sort by sort_order if plan_code is P104
+            }
+
             if (!is_null($request->query('escort_id'))) {
                 $subscriptions->where('escort_id', $request->query('escort_id'));
             }
