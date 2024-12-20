@@ -69,6 +69,12 @@ class FanController extends Controller
             $search_term = $request->query('s');
             $blogs->where('title', 'like', '%' . $search_term . '%');
         }
+        if (!is_null($request->query('title'))) {
+            $search_term = $request->query('title');
+            $blogs->where('title', 'like', '%' . $search_term . '%');
+        }
+
+
         $blogs = $blogs->get();
         $total_results = Blog::count();
         $total_pages = ceil($total_results / $perPage);
