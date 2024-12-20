@@ -14,7 +14,6 @@ use App\Models\BaseReviews;
 use PhpParser\Node\Stmt\Switch_;
 use Modules\Fan\app\Models\FanReviews;
 use App\Models\Reviews;
-
     
 class SubscriptionController extends Controller
 {
@@ -432,6 +431,7 @@ public function listReviews($id, Request $request)
             $user = auth()->user();
             
             $locationType="";
+            $s=$request->query('type');
             $subscriptions = EscortSubscription::query();
             
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
@@ -439,6 +439,7 @@ public function listReviews($id, Request $request)
 
             if ($request->query('slug')) {
                 $slug = $request->query('slug');
+
 
                 $location=Location::where('slug','like','%'.$slug.'%')->first();
                 $type=$location->type;
@@ -457,6 +458,14 @@ public function listReviews($id, Request $request)
                         break;
                 }
             }
+
+        $s = $request->query('s');  // Check the value of $s here
+            if ($s) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($s) {
+                    $query->where('username', 'like', '%' . $s . '%');
+                });
+            }
+
 
             if (!is_null($request->query('county_slug'))) {
                 $countySlug = $request->query('county_slug');
@@ -539,6 +548,7 @@ public function listReviews($id, Request $request)
                     $query->where('username', 'like', '%' . $request->query('username') . '%');
                 });
             }
+       
             
             $perPage = (int)$request->query('per_page',10); 
             $page = (int)$request->query('page', 1);

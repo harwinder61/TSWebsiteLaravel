@@ -654,41 +654,81 @@ public function verifiedStatus(Request $request, $id){
     }
    }
 
-   public function getVarifiacationList(Request $request)
-   {
-       $query = ModelsVerify::with(['escort', 'user']);
+//    public function getVarifiacationList(Request $request)
+//    {
+//        $query = ModelsVerify::with(['escort', 'user']);
    
-       if ($request->has('verified_status')) {
-           $verifiedStatus = explode(',', $request->query('verified_status'));
-           $query->whereIn('verified_status', $verifiedStatus);
-       } else {
-           $query->whereIn('verified_status', [1, 4]); // default to show only 1 and 4
-       }
+//        if ($request->has('verified_status')) {
+//            $verifiedStatus = explode(',', $request->query('verified_status'));
+//            $query->whereIn('verified_status', $verifiedStatus);
+//        } else {
+//            $query->whereIn('verified_status', [1, 4]); // default to show only 1 and 4
+//        }
    
-       if (!is_null($request->query('escort_name'))) {
-           $query->whereHas('escort', function ($q) use ($request) {
-               $q->where('name', 'like', '%' . $request->query('escort_name') . '%');
-           });
-       }
+//        if (!is_null($request->query('escort_name'))) {
+//            $query->whereHas('escort', function ($q) use ($request) {
+//                $q->where('name', 'like', '%' . $request->query('escort_name') . '%');
+//            });
+//        }
    
-       $perPage = (int)$request->query('per_page', 10);
-       $page = (int)$request->query('page', 1);
-       $offset = ($page - 1) * $perPage;
+//        $perPage = (int)$request->query('per_page', 10);
+//        $page = (int)$request->query('page', 1);
+//        $offset = ($page - 1) * $perPage;
    
-       $verifications = $query->offset($offset)->limit($perPage)->get();
+//        $verifications = $query->offset($offset)->limit($perPage)->get();
    
-       $totalResults = $query->count();
-       $totalPages = ceil($totalResults / $perPage);
+//        $totalResults = $query->count();
+//        $totalPages = ceil($totalResults / $perPage);
    
-       $pagination = [
-           'total_results' => $totalResults,
-           'total_pages' => $totalPages,
-           'page' => $page,
-           'page_size' => $perPage,
-       ];
+//        $pagination = [
+//            'total_results' => $totalResults,
+//            'total_pages' => $totalPages,
+//            'page' => $page,
+//            'page_size' => $perPage,
+//        ];
    
-       return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
-   }
+//        return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
+//    }
+
+public function getVarifiacationList(Request $request)
+{
+    $query = ModelsVerify::with(['escort', 'user']);
+
+    if ($request->has('verified_status')) {
+        $verifiedStatus = explode(',', $request->query('verified_status'));
+        $query->whereIn('verified_status', $verifiedStatus);
+    } else {
+        $query->whereIn('verified_status', [1, 4]); // default to show only 1 and 4
+    }
+
+    if (!is_null($request->query('escort_name'))) {
+        $query->whereHas('escort', function ($q) use ($request) {
+            $q->where('name', 'like', '%' . $request->query('escort_name') . '%');
+        });
+    }
+
+    if (!is_null($request->query('status'))) {
+        $query->where('status', $request->query('status'));
+    }
+
+    $perPage = (int)$request->query('per_page', 10);
+    $page = (int)$request->query('page', 1);
+    $offset = ($page - 1) * $perPage;
+
+    $verifications = $query->offset($offset)->limit($perPage)->get();
+
+    $totalResults = $query->count();
+    $totalPages = ceil($totalResults / $perPage);
+
+    $pagination = [
+        'total_results' => $totalResults,
+        'total_pages' => $totalPages,
+        'page' => $page,
+        'page_size' => $perPage,
+    ];
+
+    return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
+}
    public function createForum(Request $request)
    {
        $validator = Validator::make($request->all(), [
