@@ -1079,7 +1079,6 @@ public function verifiedStatus(Request $request, $id){
         if ($validated->fails()) {
             return Resp::error(['message' => $validated->errors()]);
         }
-        
 
         try {
 
