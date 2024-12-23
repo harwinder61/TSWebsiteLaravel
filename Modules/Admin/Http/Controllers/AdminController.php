@@ -61,9 +61,7 @@ class AdminController extends Controller
     }
 
 
-
-    public function getParallaxImage(Request $request)
-    {
+    public function getParallaxImage(Request $request){
         $id = $request->query('id');
     
         $setting = Setting::where('type', 'home_parallax')
@@ -76,7 +74,8 @@ class AdminController extends Controller
             return Resp::error(['message' => 'Invalid or non-existent ID']);
         }
     
-        $media = $setting->media();  
+        $ids = json_decode($setting->value, true);
+        $media = Media::whereIn('id', $ids)->get();
     
         return Resp::success([
             'setting' => $setting,
@@ -88,24 +87,20 @@ class AdminController extends Controller
 
     public function parallaxImage(Request $request){
         $validator = Validator::make($request->all(), [
-            'value' => 'required|array',
-            'value.*' => 'integer|exists:media,id',
+            'value' => 'required|array|exists:media,id',
+            'value.*' => 'exists:media,id', // validate each ID in the array
         ]);
-    
         if($validator->fails()){
             return Resp::error(['message' => $validator->errors()]);
         }
-    
-        $setting = Setting::where('type', 'home_parallax')->with('media')->first();
-    
+        $setting = Setting::where('type','home_parallax')->first();
         if(!$setting){
             $setting = new Setting();
             $setting->type = 'home_parallax';
         }
-    
         $setting->value = json_encode($request->value);
         $setting->save();
-    
+        $setting->load('media');
         return Resp::success(['message' => 'Parallax image updated successfully','setting' => $setting]);
     }
 
@@ -1575,10 +1570,10 @@ public function verifiedStatus(Request $request, $id){
         try{
 
             $validator=Validator::make($request->all(),[
-                'title'=>'required',
-                'description'=>'required',
-                'alternative_text'=>'required',
-                'caption'=>'required'
+                'title'=>'',
+                'description'=>'',
+                'alternative_text'=>'',
+                'caption'=>''
             ]);
             if($validator->fails()){
                 return Resp::error(['message'=>$validator->errors()]);

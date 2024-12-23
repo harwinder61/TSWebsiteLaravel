@@ -14,12 +14,9 @@ class Setting extends Model
     protected $table='settings';
     protected $fillable=['value','type'];
 
-    public function media()
-    {
-        // Decode the 'value' field (which contains media IDs) into an array
-        $mediaIds = json_decode($this->value);
-
-        // Retrieve the Media records that match the IDs in 'value'
-        return Media::whereIn('id', $mediaIds)->get();
+    public function media(){
+        $ids = json_decode($this->value, true);
+        return Media::whereIn('id', $ids)->get();
     }
+
 }
