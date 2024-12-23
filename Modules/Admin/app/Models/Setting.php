@@ -15,7 +15,8 @@ class Setting extends Model
     protected $fillable=['value','type'];
 
     public function media(){
-        return $this->belongsTo(Media::class, 'value', 'id');
+        $ids = json_decode($this->value, true);
+        return Media::whereIn('id', $ids)->get();
     }
 
 }

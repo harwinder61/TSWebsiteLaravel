@@ -60,40 +60,49 @@ class AdminController extends Controller
         // return Resp::success(['message' => 'User deleted successfully']);
     }
 
+
     public function getParallaxImage(Request $request){
         $id = $request->query('id');
-        $setting = Setting::where('type','home_parallax')
+    
+        $setting = Setting::where('type', 'home_parallax')
                           ->when($id, function ($query) use ($id) {
                               $query->where('id', $id);
                           })
-                          ->first();
+                          ->first();  
+    
         if (!$setting) {
             return Resp::error(['message' => 'Invalid or non-existent ID']);
         }
+    
+        $ids = json_decode($setting->value, true);
+        $media = Media::whereIn('id', $ids)->get();
+    
+        return Resp::success([
+            'setting' => $setting,
+            'media' => $media 
+        ]);
+    }
+    
+
+
+    public function parallaxImage(Request $request){
+        $validator = Validator::make($request->all(), [
+            'value' => 'required|array|exists:media,id',
+            'value.*' => 'exists:media,id', // validate each ID in the array
+        ]);
+        if($validator->fails()){
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        $setting = Setting::where('type','home_parallax')->first();
+        if(!$setting){
+            $setting = new Setting();
+            $setting->type = 'home_parallax';
+        }
+        $setting->value = json_encode($request->value);
+        $setting->save();
         $setting->load('media');
-        return Resp::success(['setting' => $setting]);
+        return Resp::success(['message' => 'Parallax image updated successfully','setting' => $setting]);
     }
-
-
-
-public function parallaxImage(Request $request){
-    $validator = Validator::make($request->all(), [
-        'value' => 'required|integer|exists:media,id',
-    ]);
-    if($validator->fails()){
-        return Resp::error(['message' => $validator->errors()]);
-    }
-    $setting = Setting::where('type','home_parallax')->first();
-    if(!$setting){
-        $setting = new Setting();
-        $setting->type = 'home_parallax';
-    }
-    $setting->value = $request->value;
-    $setting->save();
-    $setting->load('media');
-    return Resp::success(['message' => 'Parallax image updated successfully','setting' => $setting]);
-}
-
 
 
 
@@ -801,8 +810,8 @@ public function verifiedStatus(Request $request, $id){
    public function newUser(Request $request)
    {
        $validator = Validator::make($request->all(), [
-           'username' => 'required|string|max:255|unique:users,username',
-           'email' => 'required|string|email|max:255|unique:users,email',
+           'username' => 'required|string|max:255',
+           'email' => 'required|string|email|max:255',
            'password' => 'required|string|min:8',
            'user_type' => 'required|integer|in:1,2,3',
            'first_name' => 'required|string|max:255',
@@ -1565,10 +1574,10 @@ public function verifiedStatus(Request $request, $id){
         try{
 
             $validator=Validator::make($request->all(),[
-                'title'=>'required',
-                'description'=>'required',
-                'alternative_text'=>'required',
-                'caption'=>'required'
+                'title'=>'',
+                'description'=>'',
+                'alternative_text'=>'',
+                'caption'=>''
             ]);
             if($validator->fails()){
                 return Resp::error(['message'=>$validator->errors()]);
