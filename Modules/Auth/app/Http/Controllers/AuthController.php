@@ -1,7 +1,6 @@
 <?php
 
 namespace Modules\Auth\app\Http\Controllers;
-
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
@@ -21,8 +20,9 @@ use App\Services\EmailService as Mailer;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Google_Client;
-
-
+use Modules\Admin\app\Models\EmailTemplates;
+use App\Mail\DynamicEmail;
+use App\Mail\EmailHelper;
 class AuthController extends Controller
 {
 
@@ -60,14 +60,29 @@ class AuthController extends Controller
         
         // Send verification email
         $email = new Mailer();
-        $email->to($user->email);
+        $email->to($request->new_email);
         $email->subject('Verify Your New Email');
         $email->setBodyByTemplate('verify-email', [
             'verification_token' => $verification_token,
             'user' => $user
         ]);
         $email->send();
-        
+
+        $template = EmailTemplates::where('type','ts_reset_email_confirmations')->first();
+        if(!$template){
+            return Resp::error(['message' => 'Email template not found']);
+        }
+
+        $templateSubject = $template->subject;
+        $templateBody = $template->content;
+        $recipientEmail = $request->input('new_email'); 
+        $dynamicData = [
+            '{{name}}' => $user->username,
+            '{{email}}' => $user->email,
+            '{{link}}' => $user->verification_token,
+        ];
+        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+
         return Resp::success([
             'message' => 'Email changed successfully. Please verify your new email address.'
         ]);

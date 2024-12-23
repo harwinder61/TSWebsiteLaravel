@@ -21,7 +21,6 @@ use App\Models\Subscription as subscriptions;
 use Modules\Escort\app\Models\Subscription;
 use Illuminate\Support\Facades\Log;
 use App\Models\Image;
-use App\Models\Media;
 use Illuminate\Support\Facades\File;
 use Stripe\Service\SubscriptionService;
 use App\Models\User;
@@ -43,9 +42,33 @@ use Illuminate\Validation\Rule;
 use App\Models\BaseSubscription;
 use Modules\Admin\app\Models\Pages;
 use Modules\Admin\app\Models\Setting;
+use App\Mail\EmailHelper;
+use App\Models\Media;
 class AdminController extends Controller
 {
 
+
+public function profileUpdateMedia($id,Request $request){
+    $media = Media::find($id);
+    if(!$media){
+        return Resp::error(['message' => 'Media not found']);
+    }
+    $media->type = $request->type;
+    $media->save();
+    return Resp::success(['message' => 'Media updated successfully','media' => $media]);
+}
+
+
+
+    public function profileMedia(Request $request)
+    {
+        $media = Media::query();
+        if (!is_null($request->query('id'))) {
+            $media = $media->where('id', $request->query('id'));
+        }
+        $media = $media->get();
+        return Resp::success(['media' => $media]);
+    }
 
     public function userDelete($id,Request $request){
         die('ok');
@@ -60,49 +83,89 @@ class AdminController extends Controller
         // return Resp::success(['message' => 'User deleted successfully']);
     }
 
+    public function sendEmail(Request $request)
+    {
+        // Dynamic data (e.g., user name and email)
+        $dynamicData = [
+            '{{name}}' => 'John Doe',
+            '{{email}}' => 'john@example.com',
+        ];
+        $template = EmailTemplate::where('type','new_order')->first();
+        if(!$template){
+            return Resp::error(['message' => 'Email template not found']);
+        }
 
-    public function getParallaxImage(Request $request){
+        $templateSubject = $template->subject;
+        $templateBody = $template->content;
+        $recipientEmail = $request->input('email'); // You can pass this via API request
+        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+
+        return response()->json(['message' => $result]);
+    }
+
+    public function getParallaxImage(Request $request)
+    {
         $id = $request->query('id');
     
-        $setting = Setting::where('type', 'home_parallax')
-                          ->when($id, function ($query) use ($id) {
-                              $query->where('id', $id);
-                          })
-                          ->first();  
+        // Fetch the settings with type 'home_parallax', limit to 2 settings if necessary
+        $settings = Setting::where('type', 'home_parallax')
+                           ->when($id, fn($query) => $query->where('id', $id))
+                           ->take(2)  // Get 2 settings
+                           ->get();
     
-        if (!$setting) {
-            return Resp::error(['message' => 'Invalid or non-existent ID']);
-        }
+        // Fetch specific media for value_mobile and value_desktop
+        $settings->each(function ($setting) {
+            // Load the actual media for mobile and desktop using their respective IDs
+            $setting->mobile_image = Media::find($setting->value_mobile);
+            $setting->desktop_image = Media::find($setting->value_desktop);
+        });
     
-        $ids = json_decode($setting->value, true);
-        $media = Media::whereIn('id', $ids)->get();
-    
-        return Resp::success([
-            'setting' => $setting,
-            'media' => $media 
-        ]);
+        return Resp::success(['settings' => $settings]);
     }
     
+    
+    
 
-
-    public function parallaxImage(Request $request){
+    public function parallaxImage(Request $request)
+    {
+        // Validate the incoming request
         $validator = Validator::make($request->all(), [
-            'value' => 'required|array|exists:media,id',
-            'value.*' => 'exists:media,id', // validate each ID in the array
+            'value_mobile' => 'required|exists:media,id',  // Mobile image ID validation
+            'value_desktop' => 'required|exists:media,id', // Desktop image ID validation
         ]);
-        if($validator->fails()){
+    
+        // If validation fails, return error
+        if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
-        $setting = Setting::where('type','home_parallax')->first();
-        if(!$setting){
+    
+        // Fetch or create the Setting with type 'home_parallax'
+        $setting = Setting::where('type', 'home_parallax')->first();
+        if (!$setting) {
             $setting = new Setting();
             $setting->type = 'home_parallax';
         }
-        $setting->value = json_encode($request->value);
+    
+        // Assign media IDs to the setting for mobile and desktop
+        $setting->value_mobile = $request->value_mobile;  // Mobile image media ID
+        $setting->value_desktop = $request->value_desktop;  // Desktop image media ID
+    
+        // Save the Setting
         $setting->save();
-        $setting->load('media');
-        return Resp::success(['message' => 'Parallax image updated successfully','setting' => $setting]);
+    
+        // Fetch the actual media objects for mobile and desktop
+        $mobileMedia = Media::find($setting->value_mobile);  // Mobile media object
+        $desktopMedia = Media::find($setting->value_desktop);  // Desktop media object
+    
+        // Return a success response with the updated setting and media objects
+        return Resp::success([
+            'message' => 'Parallax images updated successfully',
+            'setting' => $setting,
+            'mobile_image' => $mobileMedia,  // Return mobile image details
+            'desktop_image' => $desktopMedia,  // Return desktop image details
+        ]);
     }
+    
 
 
 
@@ -1619,5 +1682,22 @@ public function verifiedStatus(Request $request, $id){
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
         }
-    }     
+    }   
+    
+    public function deleteMedia(Request $request){
+
+        try{
+
+         $media = Media::find($request->input("media_id"));
+         if (!$media) {
+             return Resp::error(['Media not found']);
+
+         }
+         $media->delete();
+         return Resp::success(['message' => 'Media deleted successfully']);
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+
+    }
 }
