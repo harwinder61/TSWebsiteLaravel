@@ -41,7 +41,6 @@ Route::group(['prefix' => 'escort'],function(){
     Route::get('reviws-escort-fanlist',[ReviewsController::class,'getEscortFanlist']);
 });
 });
-
 Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
 Route::get('/locations/countries',[MasterController::class,'countries']);
 Route::get('/locations/regions',[MasterController::class,'regions']);
