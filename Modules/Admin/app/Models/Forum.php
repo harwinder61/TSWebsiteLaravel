@@ -16,7 +16,7 @@ class Forum extends Model
     public function postComments(){
         return $this->hasMany(Comment::class,'forum_id','id');
     }
-    public function getAuthor(){
+    public function author(){
         return $this->belongsTo(User::class,'author_id','id');
     }
 }

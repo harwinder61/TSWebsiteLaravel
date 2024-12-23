@@ -309,7 +309,7 @@ public function reminderDone($id){
         $totalPages = ceil($totalForums / $perPage);
         $forums = $forums->orderBy('created_at', 'desc')->offset($offset)->limit($perPage)->get();
         $forums->load('postComments');
-        $forums->load('getAuthor');
+        $forums->load('author');
         return Resp::success([
             'forums' => $forums,
             'pagination' => [
@@ -412,7 +412,8 @@ return Resp::success(['forum' => $forum]);
 
     public function addComment( $id,Request $request){
         $validator = Validator::make($request->all(), [
-            'comment' => 'required|string'
+            'comment' => 'required|string',
+             'parent_comment_id' => 'nullable|exists:comment,id'
         ]);
         $forum = Forum::find($id);
         if(!$forum){
@@ -424,7 +425,8 @@ return Resp::success(['forum' => $forum]);
         $comment = Comment::create([
             'comment' => $request->comment,
             'forum_id' => $id,
-            'commentator_id' => auth()->user()->id
+            'commentator_id' => auth()->user()->id,
+            'parent_comment_id' => $request->input('parent_comment_id')
         ]);
         if($comment){
             return Resp::success(['message' => 'Comment added successfully','comment' => $comment]);
@@ -635,6 +637,7 @@ public function verifiedStatus(Request $request, $id){
         'commentator_id' => 'required|exists:users,id',
         'status' => 'required|integer|in:1,2,3',
         'message' => 'required|string',
+        'parent_comment_id' => 'nullable|exists:comment,id',
     ]);
     if($validator->fails()){
         return Resp::error(['message' => $validator->errors()]);
@@ -645,6 +648,7 @@ public function verifiedStatus(Request $request, $id){
         'commentator_id' => $request->commentator_id,
         'status' => $request->status,
         'message' => $request->message,
+        'parent_comment_id' => $request->parent_comment_id
     ]);
     $saved = $comment->save();
     if($saved){
@@ -1550,7 +1554,7 @@ public function verifiedStatus(Request $request, $id){
 
     public function getForumPost(Request $request,$id)
     {
-        $post = Forum::with('PostComments')->find($id);
+        $post = Forum::with(['postComments','postComments.user','postComments.replies','postComments.replies.replies','postComments.replies.replies.user','author','postComments.replies.user'])->find($id);
         if (!$post) {
             return Resp::error(['Post not found']);
         }
