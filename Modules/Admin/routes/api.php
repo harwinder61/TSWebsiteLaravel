@@ -79,14 +79,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         
         Route::post('/delete-media',[AdminController::class,'deleteMedia']);
         Route::post('/send-dynamic-email',[AdminController::class,'sendDynamicEmail']);
-<<<<<<< HEAD
-        Route::get('/profile-media',[AdminController::class,'profileMedia']); 
-        Route::put('/profile-update-media/{id}',[AdminController::class,'profileUpdateMedia']);                                                                                        
-    });                         
-=======
 
     });
->>>>>>> a05a3990c66de3d618d5188c512e32afe9208b7c
 
 
 });
