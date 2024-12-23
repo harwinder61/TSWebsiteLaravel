@@ -793,9 +793,9 @@ public function verifiedStatus(Request $request, $id){
            return Resp::error(['message' => 'User type cannot be changed']);
        }
    
-       if ($user->username == $request->input('username')) {
-           return Resp::error(['message' => 'Username cannot be the same as the current username']);
-       }
+    //    if ($user->username == $request->input('username')) {
+    //        return Resp::error(['message' => 'Username cannot be the same as the current username']);
+    //    }
    
        $user->update([
            'username' => $request->input('username'),
@@ -828,8 +828,14 @@ public function verifiedStatus(Request $request, $id){
            'firstname' => $request->first_name,
            'lastname' => $request->last_name,
            'email_verified' => 1, // Add this line
-       ])->load('profile'); // eager load the profile relationship
-   
+       ]);//->load('profile'); // eager load the profile relationship
+
+       $user_id = $user->id;
+       $escort = Profile::create([
+           'name' => $user->username,
+           'escort_id' => $user->id,
+
+       ]);
        return Resp::success(['message' => 'User created successfully', 'user' => $user]);
    }
 
