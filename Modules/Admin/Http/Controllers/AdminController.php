@@ -21,7 +21,6 @@ use App\Models\Subscription as subscriptions;
 use Modules\Escort\app\Models\Subscription;
 use Illuminate\Support\Facades\Log;
 use App\Models\Image;
-use App\Models\Media;
 use Illuminate\Support\Facades\File;
 use Stripe\Service\SubscriptionService;
 use App\Models\User;
@@ -44,9 +43,32 @@ use App\Models\BaseSubscription;
 use Modules\Admin\app\Models\Pages;
 use Modules\Admin\app\Models\Setting;
 use App\Mail\EmailHelper;
+use App\Models\Media;
 class AdminController extends Controller
 {
 
+
+public function profileUpdateMedia($id,Request $request){
+    $media = Media::find($id);
+    if(!$media){
+        return Resp::error(['message' => 'Media not found']);
+    }
+    $media->type = $request->type;
+    $media->save();
+    return Resp::success(['message' => 'Media updated successfully','media' => $media]);
+}
+
+
+
+    public function profileMedia(Request $request)
+    {
+        $media = Media::query();
+        if (!is_null($request->query('id'))) {
+            $media = $media->where('id', $request->query('id'));
+        }
+        $media = $media->get();
+        return Resp::success(['media' => $media]);
+    }
 
     public function userDelete($id,Request $request){
         die('ok');
@@ -80,8 +102,6 @@ class AdminController extends Controller
 
         return response()->json(['message' => $result]);
     }
-
-    
 
     public function getParallaxImage(Request $request)
     {

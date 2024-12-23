@@ -77,7 +77,9 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/user-delete/{id}',[AdminController::class,'userDelete']);
         Route::post('/ts-spotlight/sort',[AdminController::class,'tsSpotlightSort']);
         Route::post('/send-dynamic-email',[AdminController::class,'sendDynamicEmail']);
-    });
+        Route::get('/profile-media',[AdminController::class,'profileMedia']); 
+        Route::put('/profile-update-media/{id}',[AdminController::class,'profileUpdateMedia']);                                                                                        
+    });                         
 
 
 });
