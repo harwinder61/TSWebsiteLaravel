@@ -1570,10 +1570,10 @@ public function verifiedStatus(Request $request, $id){
         try{
 
             $validator=Validator::make($request->all(),[
-                'title'=>'required',
-                'description'=>'required',
-                'alternative_text'=>'required',
-                'caption'=>'required'
+                'title'=>'',
+                'description'=>'',
+                'alternative_text'=>'',
+                'caption'=>''
             ]);
             if($validator->fails()){
                 return Resp::error(['message'=>$validator->errors()]);
