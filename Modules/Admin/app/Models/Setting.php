@@ -12,11 +12,16 @@ class Setting extends Model
     use HasFactory;
 
     protected $table='settings';
-    protected $fillable=['value','type'];
+    protected $fillable=['value_mobile','value_desktop','type'];
 
-    public function media(){
-        $ids = json_decode($this->value, true);
-        return Media::whereIn('id', $ids)->get();
+    public function mobileMedia()
+    {
+        return $this->belongsTo(Media::class, 'value_mobile', 'id');
     }
 
+    // Define the relationship for the desktop image
+    public function desktopMedia()
+    {
+        return $this->belongsTo(Media::class, 'value_desktop', 'id');
+    }
 }
