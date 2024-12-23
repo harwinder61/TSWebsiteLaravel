@@ -1676,5 +1676,22 @@ public function verifiedStatus(Request $request, $id){
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
         }
-    }     
+    }   
+    
+    public function deleteMedia(Request $request){
+
+        try{
+
+         $media = Media::find($request->input("media_id"));
+         if (!$media) {
+             return Resp::error(['Media not found']);
+
+         }
+         $media->delete();
+         return Resp::success(['message' => 'Media deleted successfully']);
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+
+    }
 }
