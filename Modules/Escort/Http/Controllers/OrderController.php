@@ -22,6 +22,8 @@ use Modules\Escort\app\Mail\OrderPaidNotification;
 use App\Services\EmailService;
 use App\Models\Media;
 use App\Models\Location;
+use App\Mail\EmailHelper;
+use Modules\Admin\app\Models\EmailTemplates;
 
 
 
@@ -179,7 +181,18 @@ if (!$media || $media->id != $request->input('image_id')) {
         if ($request->has('fan_centro_link')) {
             $response['fan_centro_link'] = $request->input('fan_centro_link');
         }
-    
+        $template = EmailTemplates::where('type','new_order')->first();
+        if(!$template){
+            return Resp::error(['message' => 'Email template not found']);
+        }
+        $templateSubject = $template->subject;
+        $templateBody = $template->content;
+        $recipientEmail = $user->email; // You can pass this via API request
+        $dynamicData = [
+            '[CUSTOMER_NAME]' => $user->username,
+            '[CUSTOMER_EMAIL]' => $user->email,
+        ];
+        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
         return Resp::success($response);
     }
 
