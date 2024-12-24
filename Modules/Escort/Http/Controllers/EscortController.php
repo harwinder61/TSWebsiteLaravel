@@ -66,6 +66,9 @@ class EscortController extends Controller
                 // Update verified_status to 4 if no images are selected
                 $profile = $user->profile;
                 $profile->verified_status = 3;
+                $verify = Verify::where('escort_id', $user->id)->first();
+                $verify->verified_status = 3;
+                $verify->save();
                 $profile->save();
     
                 return Resp::success([
@@ -107,6 +110,8 @@ class EscortController extends Controller
             $profile = $user->profile;
             $profile->verified_status = 2;
             $profile->save();
+            $verify->verified_status = 2;
+            $verify->save();
     
             return Resp::success([
                 'message' => 'Verify details saved successfully',
@@ -244,9 +249,6 @@ public function profileViews($id, Request $request)
         ]);
     }
 
-    
-
-    
     public function updateMedia(Request $request)
     {
         $validator = Validator::make($request->all(), [

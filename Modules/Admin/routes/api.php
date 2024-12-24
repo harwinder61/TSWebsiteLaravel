@@ -85,8 +85,6 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::put('/delete-profile/{id}',[AdminController::class,'deleteProfile']);
         Route::get('/show-profile/{id}',[AdminController::class,'showProfile']);
         Route::put('/hide-profile/{id}',[AdminController::class,'hideProfile']);
-
-
         Route::post('/add-gallery-image',[AdminController::class,'addGalleryImagePath']);
         Route::post('/create-forum-category',[AdminController::class,'createCategory']);
         Route::get('/forum-categories',[AdminController::class,'forumCategories']);
