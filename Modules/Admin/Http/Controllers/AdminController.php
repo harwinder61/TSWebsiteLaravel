@@ -45,8 +45,29 @@ use Modules\Admin\app\Models\Pages;
 use Modules\Admin\app\Models\Setting;
 use App\Mail\EmailHelper;
 use App\Models\Media;
+
 class AdminController extends Controller
 {
+
+
+public function hideProfile($id,Request $request){
+    $validator = Validator::make($request->all(), [
+        'is_hidden' => 'required|boolean'
+    ]);
+
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+    $user = AuthUser::find($id);
+    if ($request->is_hidden) {
+        $user->is_hidden = $request->is_hidden;
+        $user->save();
+        
+        return Resp::success(['message' => 'Profile hidden successfully']);
+    }
+    
+    return Resp::success(['user'=>$user],'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
+}
 
 
 public function deleteProfile($id,Request $request){
@@ -70,23 +91,47 @@ public function showProfile($id){
 
 
 public function resetEmail($id,Request $request){
-    $user = User::find($id);
-    if(!$user){
-        return Resp::error(['message' => 'User not found']);
+     $validator = Validator::make($request->all(), [
+        'email' => 'required|email|unique:users,email,' . $id,
+    ]);
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
+    $user = AuthUser::find($id);
     $user->email = $request->email;
     $user->save();
     return Resp::success(['message' => 'Email reset successfully']);
 }
 
 public function resetPassword($id,Request $request){
-    $user = User::find($id);
+    $validator = Validator::make($request->all(), [
+        'token' => 'required|string',
+        'password' => 'required|string|min:8|confirmed',
+        'password_confirmation' => 'required|same:password',
+    ]);
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+    $user = AuthUser::where('recovery_token', $request->token)->first();
     if(!$user){
-        return Resp::error(['message' => 'User not found']);
+        return Resp::error(['error' => 'No user found']);
     }
     $user->password = Hash::make($request->password);
+    $user->recovery_token = null;
     $user->save();
-    return Resp::success(['message' => 'Password reset successfully']);
+    $template = EmailTemplates::where('type','ts_new_password_notification')->first();
+    if(!$template){
+        return Resp::error(['message' => 'Email template not found']);
+    }
+    $templateSubject = $template->subject;
+    $templateBody = $template->content;
+    $recipientEmail = $user->email; // You can pass this via API request
+    $dynamicData = [
+        '[CUSTOMER_NAME]' => $user->username,
+        '[CUSTOMER_EMAIL]' => $user->email,
+    ];
+    $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+    return Resp::success(['message' => 'Password reset successfully']);     
 }
 
 

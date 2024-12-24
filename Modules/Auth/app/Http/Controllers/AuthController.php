@@ -23,7 +23,6 @@ use Google_Client;
 use Modules\Admin\app\Models\EmailTemplates;
 use App\Mail\DynamicEmail;
 use App\Mail\EmailHelper;
-
 class AuthController extends Controller
 {
 
@@ -143,6 +142,18 @@ public function changePassword(Request $request) {
         }
         $user->email_verified = true;
         $user->save();
+        $template = EmailTemplates::where('type','ts_reset_email_confirmations')->first();
+        if(!$template){
+            return Resp::error(['message' => 'Email template not found']);
+        }
+        $templateSubject = $template->subject;
+        $templateBody = $template->content;
+        $recipientEmail = $user->email; // You can pass this via API request
+        $dynamicData = [
+            '[CUSTOMER_NAME]' => $user->username,
+            '[CUSTOMER_EMAIL]' => $user->email,
+        ];
+        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
         return Resp::success(["current user" => $user], "email verified successfully");
     }
 
@@ -173,6 +184,18 @@ public function changePassword(Request $request) {
         $user->password = Hash::make($request->password);
         $user->recovery_token = null;
         $user->save();
+        $template = EmailTemplates::where('type','ts_new_password_notification')->first();
+        if(!$template){
+            return Resp::error(['message' => 'Email template not found']);
+        }
+        $templateSubject = $template->subject;
+        $templateBody = $template->content;
+        $recipientEmail = $user->email; // You can pass this via API request
+        $dynamicData = [
+            '[CUSTOMER_NAME]' => $user->username,
+            '[CUSTOMER_EMAIL]' => $user->email,
+        ];
+        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
         return Resp::success(['message' => 'Password reset successfully']);     
     }
 
@@ -200,48 +223,60 @@ public function changePassword(Request $request) {
    }
 
 
-    public function register(Request $request)
+        public function register(Request $request)
 
-    {
-        $validator = Validator::make($request->all(), [
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'user_type' => 'required|integer|in:1,2,3',
-            'password_confirmation' => 'required|same:password',
-        ], [
-            'user_type.in' => 'The user type must be either 1 or 2 or 3',
-            'password.confirmed' => 'The password and confirm password do not match',
-        ]);
+        {
+            $validator = Validator::make($request->all(), [
+                'username' => 'required|string|max:255|unique:users,username',
+                'email' => 'required|string|email|max:255|unique:users,email',
+                'password' => 'required|string|min:8|confirmed',
+                'user_type' => 'required|integer|in:1,2,3',
+                'password_confirmation' => 'required|same:password',
+            ], [
+                'user_type.in' => 'The user type must be either 1 or 2 or 3',
+                'password.confirmed' => 'The password and confirm password do not match',
+            ]);
 
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+            if ($validator->fails()) {
+                return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+            }
+
+            $verification_token = Str::random(30);
+
+            $user = AuthUser::create([
+                'username' => $request->username,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'user_type' => $request->user_type,
+                'verification_token' => $verification_token,
+                'email_verified' => false,
+            ]);
+            $email = new Mailer();
+            $email->to($user->email);
+            $email->subject('Test Email');
+            $email->setBodyByTemplate('verify-email',['verification_token' => $verification_token,'user' => $user]);
+            $email->send();
+
+            $user_id = $user->id;
+            $escort = Profile::create([
+                'name' => $user->username,
+                'escort_id' => $user->id,
+
+            ]);
+            $template = EmailTemplates::where('type','flash_email_notification')->first();
+            if(!$template){
+                return Resp::error(['message' => 'Email template not found']);
+            }
+            $templateSubject = $template->subject;
+            $templateBody = $template->content;
+            $recipientEmail = $user->email; // You can pass this via API request
+            $dynamicData = [
+                '[CUSTOMER_NAME]' => $user, //customer name
+                '[CUSTOMER_EMAIL]' => $user->email,
+            ];
+            $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+            return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
         }
-
-        $verification_token = Str::random(30);
-
-        $user = AuthUser::create([
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'user_type' => $request->user_type,
-            'verification_token' => $verification_token,
-            'email_verified' => false,
-        ]);
-        $email = new Mailer();
-        $email->to($user->email);
-        $email->subject('Test Email');
-        $email->setBodyByTemplate('verify-email',['verification_token' => $verification_token,'user' => $user]);
-        $email->send();
-
-        $user_id = $user->id;
-        $escort = Profile::create([
-            'name' => $user->username,
-            'escort_id' => $user->id,
-
-        ]);
-        return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
-    }
     public function registerWithGmail(Request $request)
 
     {
@@ -294,7 +329,6 @@ public function changePassword(Request $request) {
    
     public function login(Request $request)
     {
-   
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
