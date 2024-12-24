@@ -373,12 +373,16 @@ public function deleteUpdateDynamicPage($id){
     public function media(Request $request)
     {
         $search_term = $request->query('s');
+        $escort_id = $request->query('escort_id');
         $video = $request->query('video');
         $image = $request->query('image');
         $perPage = $request->query('per_page', 12);
         $page = $request->query('page', 1);
     
         $media = Media::with('escort') // Add this line to include the 'escort' relationship
+            ->when($escort_id, function ($query) use ($escort_id) {
+                $query->where('escort_id', $escort_id);
+            })
             ->when($video || $image, function ($query) use ($video, $image) {
                 // If either video or image is set, we filter by type first
                 $types = [];
@@ -391,10 +395,7 @@ public function deleteUpdateDynamicPage($id){
                 }
                 $query->whereIn('type', $types);
             })
-            //->when($search_term, function ($query, $search_term) {
-                // Apply search term to filtered results (video or image or both)
-              //  $query->where('path', 'like', '%' . $search_term . '%');
-              ->when($search_term, function ($query, $search_term) {
+            ->when($search_term, function ($query, $search_term) {
                 // Apply search term to multiple fields (a, b, or c)
                 $query->where(function($q) use ($search_term) {
                     $q->where('path', 'like', '%' . $search_term . '%')
