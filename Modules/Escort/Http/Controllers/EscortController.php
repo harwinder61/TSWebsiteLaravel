@@ -456,6 +456,7 @@ public function profileViews($id, Request $request)
             }
 
             $profile_data = Profile::where('escort_id', $user->id)->first();
+            Log::info($profile_data);
             if(!$profile_data){
                 return Resp::error(['Profile not found !']);
             }
@@ -500,16 +501,16 @@ public function profileViews($id, Request $request)
                 return Resp::fieldErrors(['field_errors' => $validator->errors()]);
             }
 
-            $profile_rates = ProfileRates::where('escort_id', $profile_data->id)->get();
+            $profile_rates = ProfileRates::where('escort_id', $profile_data->escort_id)->get();
             $rates_data = $request->input('rates');
             if (!$profile_rates) {
                 $profile_rates = ProfileRates::create([
-                    'escort_id' => $profile_data->id,
+                    'escort_id' => $profile_data->escort_id,
                 ]);
             }
             foreach ($rates_data as $rate) {
                 $category = strtolower($rate['category']);
-                $profile_rates = ProfileRates::where('escort_id', $user->id)
+                $profile_rates = ProfileRates::where('escort_id', $profile_data->escort_id)
                     ->where('category', $category)
                     ->first();
 
@@ -527,12 +528,12 @@ public function profileViews($id, Request $request)
                     if ($profile_rates) {
                         $profile_rates->update($rate_data);
                     } else {
-                        $rate_data['escort_id'] = $user->id;
+                        $rate_data['escort_id'] = $profile_data->escort_id;
                         ProfileRates::create($rate_data);
                     }
                 }
             }
-            $profile_data = Profile::where('escort_id', $user->id)->first();
+            $profile_data = Profile::where('escort_id', $profile_data->escort_id)->first();
             $profile_data->rates;
             return Resp::success(['details' => $profile_data]);
         } else {

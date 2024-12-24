@@ -74,11 +74,14 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::put('/parallax-image',[AdminController::class,'parallaxImage']);
         Route::get('/get-parallax-image',[AdminController::class,'getParallaxImage']);
         Route::post('/update-media/{id}',[AdminController::class,'updateMedia']);
+        Route::put('/profile-update-media/{id}',[AdminController::class,'profileUpdateMedia']);
+        Route::get('/profile-media',[AdminController::class,'profileMedia']);
+        Route::post('/delete-media',[AdminController::class,'deleteMedia']);
         Route::post('/user-delete/{id}',[AdminController::class,'userDelete']);
         Route::post('/ts-spotlight/sort',[AdminController::class,'tsSpotlightSort']);
-        
-        Route::post('/delete-media',[AdminController::class,'deleteMedia']);
-        Route::post('/send-dynamic-email',[AdminController::class,'sendDynamicEmail']);
+        Route::get('/send-dynamic-email',[AdminController::class,'sendDynamicEmail']);
+        Route::put('/reset-password',[AdminController::class,'resetPassword']);
+
 
     });
 
@@ -89,7 +92,3 @@ Route::get('/blog/{id?}',[AdminController::class,'getBlog']);
 Route::get('/blog-slug/{slug?}',[AdminController::class,'getBlogBySlug']);
 Route::get('/get-forum',[AdminController::class,'getForum']);
 Route::post('/send-email',[AdminController::class,'sendEmail']);
-
-
-
-
