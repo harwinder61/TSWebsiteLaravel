@@ -7,16 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 // use Modules\Admin\Database\Factories\PlanFactory;
 use  App\Models\Media;
 
-class Blog extends Model
+class Pages extends Model
 {
     use HasFactory;
 
-    protected $table='blog';
-    protected $fillable=['title','description','media_id','date','slug','status','seo_title','seo_description','seo_keywords'];
+    protected $table='pages';
+    protected $fillable=['title','description','status','featured_image',];
 
     public function media(){
-        return $this->belongsTo(Media::class,'media_id','id');
+        return $this->belongsTo(Media::class,'featured_image','id');
     }
-    
-
 }

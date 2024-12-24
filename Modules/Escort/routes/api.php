@@ -41,7 +41,6 @@ Route::group(['prefix' => 'escort'],function(){
     Route::get('reviws-escort-fanlist',[ReviewsController::class,'getEscortFanlist']);
 });
 });
-
 Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
 Route::get('/locations/countries',[MasterController::class,'countries']);
 Route::get('/locations/regions',[MasterController::class,'regions']);
@@ -54,5 +53,6 @@ Route::get('/escort-profile-id/{id}',[EscortController::class,'getEscortProfile'
 Route::get('/get-all-media',[MediaController::class,'getAllMedia']);
 Route::get('/search/header',[OrderController::class,'getLocationAndSubscriptions']);
 Route::post('/location-id-to-name',[OrderController::class,'locationIdsToLocationNames']);
+
 
 

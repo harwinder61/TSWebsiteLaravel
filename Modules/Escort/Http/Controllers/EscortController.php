@@ -66,6 +66,9 @@ class EscortController extends Controller
                 // Update verified_status to 4 if no images are selected
                 $profile = $user->profile;
                 $profile->verified_status = 3;
+                $verify = Verify::where('escort_id', $user->id)->first();
+                $verify->verified_status = 3;
+                $verify->save();
                 $profile->save();
     
                 return Resp::success([
@@ -107,6 +110,8 @@ class EscortController extends Controller
             $profile = $user->profile;
             $profile->verified_status = 2;
             $profile->save();
+            $verify->verified_status = 2;
+            $verify->save();
     
             return Resp::success([
                 'message' => 'Verify details saved successfully',
@@ -225,6 +230,18 @@ public function profileViews($id, Request $request)
     $subscription->update([
         'image_id' => $request->image_id
     ]);
+    if($request->input('start_date')){
+        $subscription->start_date = $request->input('start_date');
+        $subscription->save();
+    }
+    if($request->input('end_date')){
+        $subscription->end_date = $request->input('end_date');
+        $subscription->save();
+    }
+    if($request->input('plan_code')){
+        $subscription->plan_code = $request->input('plan_code');
+        $subscription->save();
+    }
     return Resp::success([
         'message' => 'Subscription updated successfully',
         'subscription' => $subscription
@@ -232,9 +249,6 @@ public function profileViews($id, Request $request)
         ]);
     }
 
-    
-
-    
     public function updateMedia(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -340,7 +354,6 @@ public function profileViews($id, Request $request)
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
         $inquiryForm = new Inquiry();
         $inquiryForm->subject = $request->input('subject');
         $inquiryForm->name = $request->input('name');
@@ -354,11 +367,9 @@ public function profileViews($id, Request $request)
     public function find(Request $request)
     {
         $user = auth()->user();
-        $profile_data = Profile::find($user->id);
-        $profile_data->county;
-        $profile_data->region;
-        $profile_data->city;
-        $profile_data->rates;
+        $profile_data = $user->profile;
+        // $profile_data = Profile::find($user->id);
+
         if (!$profile_data) {
 
             return Resp::error(['message' => 'No profile found'], 404);
@@ -374,7 +385,7 @@ public function profileViews($id, Request $request)
         $user = auth()->user();
         $userType = $user->user_type;
 
-        if ($userType == 1) {
+        if ($userType == 1) {   
             return Resp::error(['Unauthorized user is not an escort']);
         } elseif ($userType == 2) {
 
@@ -447,6 +458,7 @@ public function profileViews($id, Request $request)
             }
 
             $profile_data = Profile::where('escort_id', $user->id)->first();
+            Log::info($profile_data);
             if(!$profile_data){
                 return Resp::error(['Profile not found !']);
             }
@@ -491,16 +503,16 @@ public function profileViews($id, Request $request)
                 return Resp::fieldErrors(['field_errors' => $validator->errors()]);
             }
 
-            $profile_rates = ProfileRates::where('escort_id', $profile_data->id)->get();
+            $profile_rates = ProfileRates::where('escort_id', $profile_data->escort_id)->get();
             $rates_data = $request->input('rates');
             if (!$profile_rates) {
                 $profile_rates = ProfileRates::create([
-                    'escort_id' => $profile_data->id,
+                    'escort_id' => $profile_data->escort_id,
                 ]);
             }
             foreach ($rates_data as $rate) {
                 $category = strtolower($rate['category']);
-                $profile_rates = ProfileRates::where('escort_id', $user->id)
+                $profile_rates = ProfileRates::where('escort_id', $profile_data->escort_id)
                     ->where('category', $category)
                     ->first();
 
@@ -518,12 +530,12 @@ public function profileViews($id, Request $request)
                     if ($profile_rates) {
                         $profile_rates->update($rate_data);
                     } else {
-                        $rate_data['escort_id'] = $user->id;
+                        $rate_data['escort_id'] = $profile_data->escort_id;
                         ProfileRates::create($rate_data);
                     }
                 }
             }
-            $profile_data = Profile::where('escort_id', $user->id)->first();
+            $profile_data = Profile::where('escort_id', $profile_data->escort_id)->first();
             $profile_data->rates;
             return Resp::success(['details' => $profile_data]);
         } else {

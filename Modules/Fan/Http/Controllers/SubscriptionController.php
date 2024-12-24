@@ -14,7 +14,6 @@ use App\Models\BaseReviews;
 use PhpParser\Node\Stmt\Switch_;
 use Modules\Fan\app\Models\FanReviews;
 use App\Models\Reviews;
-
     
 class SubscriptionController extends Controller
 {
@@ -29,122 +28,170 @@ class SubscriptionController extends Controller
             'getEscortFanlist'
         ]);
     }
+  
+//     public function getAllListReviews(Request $request)
+// {
+//     $statuses = $request->query('status');
+//     $filter = $request->query('filter');
+//     $s = $request->query('s');
+//     $perPage = $request->query('per_page', 10);
+//     $page = $request->query('page', 1);
+//     $offset = ($page - 1) * $perPage;
+//     $escortId = $request->query('escort_id');
+//     $fanId = $request->query('fan_id');
 
-    public function getAllListReviews(Request $request)
-    {
-        $statuses = $request->query('status');
-        $filter = $request->query('filter');
+//     // Check if both fanId and escortId are provided
+//     if ($fanId && $escortId) {
+//         // Get reviews with the given fanId and escortId
+//         $reviews = BaseReviews::with('user') // Relationship with user
+//             ->where('user_id', $fanId)
+//             ->where('escort_id', $escortId)
+//             ->orderBy('created_at', 'desc')
+//             ->get();
+
+//         // Check if reviews exist for this fanId and escortId combination
+//         if ($reviews->isEmpty()) {
+//             return Resp::error(['message' => 'No reviews found for this fan and escort']);
+//         }
+
+//         return Resp::success(['list' => $reviews]);
+//     }
+
+//     // Start building the query for reviews if fanId and escortId are not both provided
+//     $reviews = BaseReviews::with('user') // Relationship with user
+//         ->orderBy('created_at', 'desc') // Order by created_at descending
+//         ->offset($offset)
+//         ->limit($perPage);
+
+//     // Apply filters based on query parameters
+//     if ($statuses) {
+//         $statuses = explode(',', $statuses); // Convert comma-separated string to array
+//         $reviews->whereIn('status', $statuses);
+//     }
+
+//     if ($s) {
+//         $reviews->whereHas('user', function ($query) use ($s) {
+//             $query->where('username', 'like', '%' . $s . '%');
+//         });
+//     }
+
+//     if ($filter === '0') {
+//         $reviews->where('avg_rating', '<', 3); // avg_rating < 3
+//     } elseif ($filter === '1') {
+//         $reviews->where('avg_rating', '>=', 3); // avg_rating >= 3
+//     }
+
+//     if ($escortId) {
+//         $reviews->where('escort_id', $escortId); // Filter by escort ID
+//     }
+
+//     if ($fanId) {
+//         $reviews->where('user_id', $fanId); // Filter by fan ID
+//     }
+
+//     // Execute the query and calculate avg_rating for each review
+//     $reviews = $reviews->get()->map(function ($review) {
+//         $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
+//         return $review;
+//     });
+
+//     // Pagination calculations
+//     $totalResults = BaseReviews::count();
+//     $totalPages = ceil($totalResults / $perPage);
     
-        if ($statuses) {
-            $statuses = explode(',', $statuses); // Convert comma-separated string to array
-            $reviews = BaseReviews::whereIn('status', $statuses)
-                ->with('user') // Add relationship with user
-                ->orderBy('created_at', 'desc') // Order by created_at in descending order
-                ->get();
-    
-            if ($statuses[0] == 0 || $statuses[0] == 1) { // Check if status is either 0 or 1
-                $totalResults = count($reviews);
-                $totalPages = ceil($totalResults / 10);
-                $pagination = [
-                    'total_results' => $totalResults,
-                    'total_pages' => $totalPages,
-                    'page' => 1,
-                    'page_size' => 10,
-                ];
-    
-                $reviews = $reviews->map(function ($review) {
-                    $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
-                    return $review;
-                });
-    
-                $totalRatings = $reviews->sum('avg_rating');
-                $averageRating = $totalRatings / $reviews->count();
-    
-                $pagination['average_rating'] = $averageRating;
-    
-                return Resp::success(['reviews' => $reviews, 'pagination' => $pagination]);
-            } else {
-                $perPage = $request->query('per_page', 10);
-                $page = $request->query('page', 1);
-                $offset = ($page - 1) * $perPage;
-                $totalResults = BaseReviews::count();
-                $reviews = BaseReviews::with('user') // Add relationship with user
-                    ->orderBy('created_at', 'desc') // Order by created_at in descending order
-                    ->offset($offset)
-                    ->limit($perPage)
-                    ->get();
-    
-                if (!is_null($request->query('status'))) {
-                    $reviews = $reviews->where('status', $request->query('status'));
-                }
-                if ($filter === '0') {
-                    $reviews = $reviews->where('avg_rating', '<', 3); // Show only reviews with avg rating < 3
-                } elseif ($filter === '1') {
-                    $reviews = $reviews->where('avg_rating', '>=', 3); // Show only reviews with avg rating >= 3
-                }
-    
-                $reviews = $reviews->map(function ($review) {
-                    $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
-                    return $review;
-                });
-    
-                $totalRatings = $reviews->sum('avg_rating');
-                $averageRating = $totalRatings / $reviews->count();
-    
-                $totalPages = ceil($totalResults / $perPage);
-    
-                $pagination = [
-                    'total_results' => $totalResults,
-                    'total_pages' => $totalPages,
-                    'page' => (int)$page,
-                    'page_size' => $perPage,
-                    'average_rating' => $averageRating,
-                ];
-    
-                return Resp::success(['reviews' => $reviews, 'pagination' => $pagination]);
-            }
-        } else {
-            $perPage = $request->query('per_page', 10);
-            $page = $request->query('page', 1);
-            $offset = ($page - 1) * $perPage;
-            $totalResults = BaseReviews::count();
-            $reviews = BaseReviews::with('user') // Add relationship with user
-                ->orderBy('created_at', 'desc') // Order by created_at in descending order
-                ->offset($offset)
-                ->limit($perPage)
-                ->get();
-    
-            if (!is_null($request->query('status'))) {
-                $reviews = $reviews->where('status', $request->query('status'));
-            }
-            if ($filter === '0') {
-                $reviews = $reviews->where('avg_rating', '<', 3); // Show only reviews with avg rating < 3
-            } elseif ($filter === '1') {
-                $reviews = $reviews->where('avg_rating', '>=', 3); // Show only reviews with avg rating >= 3
-            }
-    
-            $reviews = $reviews->map(function ($review) {
-                $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
-                return $review;
-            });
-    
-            $totalRatings = $reviews->sum('avg_rating');
-            $averageRating = $totalRatings / $reviews->count();
-    
-            $totalPages = ceil($totalResults / $perPage);
-    
-            $pagination = [
-                'total_results' => $totalResults,
-                'total_pages' => $totalPages,
-                'page' => (int)$page,
-                'page_size' => $perPage,
-                'average_rating' => $averageRating,
-            ];
-    
-            return Resp::success(['reviews' => $reviews, 'pagination' => $pagination]);
-        }
+//     $totalRatings = $reviews->sum('avg_rating');
+//     $averageRating = $reviews->count() > 0 ? $totalRatings / $reviews->count() : 0;
+
+//     // Pagination response
+//     $pagination = [
+//         'total_results' => $totalResults,
+//         'total_pages' => $totalPages,
+//         'page' => (int)$page,
+//         'page_size' => $perPage,
+//         'average_rating' => $averageRating,
+//     ];
+
+//     // Return response with reviews and pagination data
+//     return Resp::success(['reviews' => $reviews->values(), 'pagination' => $pagination]);
+// }
+
+public function getAllListReviews(Request $request)
+{
+    $statuses = $request->query('status');
+    $filter = $request->query('filter');
+    $s = $request->query('s');
+    $perPage = $request->query('per_page', 10);
+    $page = $request->query('page', 1);
+    $offset = ($page - 1) * $perPage;
+    $escortId = $request->query('escort_id');
+    $fanId = $request->query('fan_id');
+    $verifiedStatus = $request->query('verified_status'); // New filter parameter
+
+    // Start building the query for reviews
+    $reviewsQuery = BaseReviews::with('user') // Relationship with user
+        ->orderBy('created_at', 'desc') // Order by created_at descending
+        ->offset($offset)
+        ->limit($perPage);
+
+    // Apply filters based on query parameters
+    if ($statuses) {
+        $statuses = explode(',', $statuses); // Convert comma-separated string to array
+        $reviewsQuery->whereIn('status', $statuses);
     }
-    
+
+    if ($s) {
+        $reviewsQuery->whereHas('user', function ($query) use ($s) {
+            $query->where('username', 'like', '%' . $s . '%');
+        });
+    }
+
+    if ($filter === '0') {
+        $reviewsQuery->where('avg_rating', '<', 3); // avg_rating < 3
+    } elseif ($filter === '1') {
+        $reviewsQuery->where('avg_rating', '>=', 3); // avg_rating >= 3
+    }
+
+    if ($escortId) {
+        $reviewsQuery->where('escort_id', $escortId); // Filter by escort ID
+    }
+
+    if ($fanId) {
+        $reviewsQuery->where('user_id', $fanId); // Filter by fan ID
+    }
+
+    // Apply the new verified_status filter if provided
+    if ($verifiedStatus !== null) {
+        $reviewsQuery->where('verified_status', $verifiedStatus); // Filter by verified_status
+    }
+
+    // Get the filtered reviews
+    $reviews = $reviewsQuery->get()->map(function ($review) {
+        $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
+        return $review;
+    });
+
+    // Get the total count of filtered reviews for pagination
+    $totalResults = $reviewsQuery->count();
+    $totalPages = ceil($totalResults / $perPage);
+
+    // Calculate the total average rating of the reviews
+    $totalRatings = $reviews->sum('avg_rating');
+    $averageRating = $reviews->count() > 0 ? $totalRatings / $reviews->count() : 0;
+
+    // Pagination response
+    $pagination = [
+        'total_results' => $totalResults,
+        'total_pages' => $totalPages,
+        'page' => (int)$page,
+        'page_size' => $perPage,
+        'average_rating' => $averageRating,
+    ];
+
+    // Return response with reviews and pagination data
+    return Resp::success(['reviews' => $reviews->values(), 'pagination' => $pagination]);
+}
+
+
 
 
 public function listReviews($id, Request $request)
@@ -308,6 +355,10 @@ public function listReviews($id, Request $request)
                 $subscriptions->where('plan_code', $request->query('plan_code'));
             }
 
+            if ($request->query('plan_code') == 'P104') {
+                $subscriptions->orderBy('sort_order'); // Sort by sort_order if plan_code is P104
+            }
+
             if (!is_null($request->query('escort_id'))) {
                 $subscriptions->where('escort_id', $request->query('escort_id'));
             }
@@ -462,6 +513,7 @@ public function listReviews($id, Request $request)
             $user = auth()->user();
             
             $locationType="";
+            $s=$request->query('type');
             $subscriptions = EscortSubscription::query();
             
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
@@ -469,6 +521,7 @@ public function listReviews($id, Request $request)
 
             if ($request->query('slug')) {
                 $slug = $request->query('slug');
+
 
                 $location=Location::where('slug','like','%'.$slug.'%')->first();
                 $type=$location->type;
@@ -487,6 +540,14 @@ public function listReviews($id, Request $request)
                         break;
                 }
             }
+
+        $s = $request->query('s');  // Check the value of $s here
+            if ($s) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($s) {
+                    $query->where('username', 'like', '%' . $s . '%');
+                });
+            }
+
 
             if (!is_null($request->query('county_slug'))) {
                 $countySlug = $request->query('county_slug');
@@ -569,6 +630,7 @@ public function listReviews($id, Request $request)
                     $query->where('username', 'like', '%' . $request->query('username') . '%');
                 });
             }
+       
             
             $perPage = (int)$request->query('per_page',10); 
             $page = (int)$request->query('page', 1);
