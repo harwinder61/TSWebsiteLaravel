@@ -865,10 +865,12 @@ public function verifiedStatus(Request $request, $id){
     
     if ($request->action == 1) {
         $verify->verified_status = 1;
+        $verify->escort()->update(['verified_status' => $verify->verified_status]);
     } elseif ($request->action == 0) {
         $verify->verified_status = 4;
+        $verify->escort()->update(['verified_status' => $verify->verified_status]);
     }
-    $verify->escort()->update(['escort_id' => $verify->verified_status]);
+    $verify->escort()->update(['verified_status' => $verify->verified_status]);
     $verify->save();
     return Resp::success(['message' => 'Verification status updated successfully']);
 }
@@ -922,7 +924,7 @@ public function verifiedStatus(Request $request, $id){
                $query->whereIn('verified_status', $verifiedStatus);
            } else {
                // Default to verified statuses 1 and 4 if not provided
-               $query->whereIn('verified_status', [1, 4]);
+               $query->whereIn('verified_status', [1,2,3,4]);
            }
    
            // Filter by escort name if 's' parameter is provided

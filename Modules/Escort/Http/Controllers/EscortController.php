@@ -110,6 +110,8 @@ class EscortController extends Controller
             $profile = $user->profile;
             $profile->verified_status = 2;
             $profile->save();
+            $verify->verified_status = 2;
+            $verify->save();
     
             return Resp::success([
                 'message' => 'Verify details saved successfully',
@@ -247,9 +249,6 @@ public function profileViews($id, Request $request)
         ]);
     }
 
-    
-
-    
     public function updateMedia(Request $request)
     {
         $validator = Validator::make($request->all(), [
