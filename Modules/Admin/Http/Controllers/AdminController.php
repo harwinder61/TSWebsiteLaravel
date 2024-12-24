@@ -868,12 +868,12 @@ public function verifiedStatus(Request $request, $id){
     
     if ($request->action == 1) {
         $verify->verified_status = 1;
-        $verify->escort()->update(['verified_status' => $verify->verified_status]);
+        
     } elseif ($request->action == 0) {
         $verify->verified_status = 4;
-        $verify->escort()->update(['verified_status' => $verify->verified_status]);
+       
     }
-    $verify->escort()->update(['verified_status' => $verify->verified_status]);
+    //$verify->escort()->update(['verified_status' => $verify->verified_status]);
     $verify->save();
     $escort_profile = BaseProfile::where('escort_id', $id)->update(['verified_status' => $verify->verified_status]);
     return Resp::success(['message' => 'Verification status updated successfully']);
