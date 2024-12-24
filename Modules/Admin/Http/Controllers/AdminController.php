@@ -48,17 +48,104 @@ class AdminController extends Controller
 {
 
 
-public function profileUpdateMedia($id,Request $request){
-    $media = Media::find($id);
-    if(!$media){
-        return Resp::error(['message' => 'Media not found']);
+
+public function resetPassword(Request $request){
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|email',
+        'password' => 'required|string|min:8',
+    ]);
+    if($validator->fails()){
+        return Resp::error(['message' => $validator->errors()]);
     }
-    $media->type = $request->type;
-    $media->save();
-    return Resp::success(['message' => 'Media updated successfully','media' => $media]);
+    $user = User::where('email',$request->email)->first();
+    if(!$user){
+        return Resp::error(['message' => 'User not found']);
+    }
+    $user->password = Hash::make($request->password);
+    $user->save();
+    return Resp::success(['message' => 'Password reset successfully']);
 }
 
+public function profileUpdateMedia($id,Request $request){
+    $validator = Validator::make($request->all(), [
+        'gallery' => 'array',                   
+        'gallery.*' => 'exists:media,id',      
+        'private_gallery' => 'array',            
+        'private_gallery.*' => 'exists:media,id', 
+        'promo_video' => 'exists:media,id',
+        'description' => 'nullable|string',
+    ]);
 
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+
+    // Check if escort exists
+    $escort = AuthUser::find($id);
+    if (!$escort) {
+        return Resp::error(['message' => 'Escort not found']);
+    }
+
+    if ($request->has('gallery')) {
+        $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
+        
+        Media::where('escort_id', $id)
+            ->where('type', 'gallery')
+            ->whereIn('id', $galleryIds)
+            ->update(['is_temp' => false]);
+            
+        Media::where('escort_id', $id)
+            ->where('type', 'gallery')
+            ->whereNotIn('id', $galleryIds)
+            ->forceDelete();
+    }
+
+    if ($request->has('private_gallery')) {
+        $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
+        
+        Media::where('escort_id', $id)
+            ->where('type', 'private_gallery')
+            ->whereIn('id', $privateGalleryIds)
+            ->update(['is_temp' => false]);
+
+        Media::where('escort_id', $id)
+            ->where('type', 'private_gallery')
+            ->whereNotIn('id', $privateGalleryIds)
+            ->forceDelete();
+    }
+
+    if ($request->has('promo_video')) {
+        $promoVideoId = $request->input('promo_video');
+        
+        Media::where('escort_id', $id)
+            ->where('type', 'promo_video')
+            ->where('id', $promoVideoId)
+            ->update(['is_temp' => false]);
+
+        Media::where('escort_id', $id)
+            ->where('type', 'promo_video')
+            ->where('id', '!=', $promoVideoId)
+            ->forceDelete();
+    }
+
+    if ($request->has('description')) {
+        $profile = Profile::where('escort_id', $id)->first();
+        if ($profile) {
+            $profile->description = $request->input('description');
+            $profile->save();
+        }
+    }
+
+    if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
+        $profile = Profile::where('escort_id', $id)->first();
+        if ($profile) {
+            $profile->is_media = 1;
+            $profile->save();
+        }
+    }
+
+    return Resp::success(['message' => 'Media updated successfully']);
+}
 
     public function profileMedia(Request $request)
     {
@@ -836,8 +923,8 @@ public function verifiedStatus(Request $request, $id){
            'last_name' => 'required|string|max:255',
            'password' => 'required|string|min:8',
            'user_type' => 'required|integer|in:1,2,3', // Only allow 1 (fan) or 2 (escort)
-           'username' => 'required|string|max:255',
-           'email' => 'required|email',
+           'username' => 'required|string|max:255|unique:users,username',
+           'email' => 'required|email|unique:users,email',
        ]);
    
        if ($validator->fails()) {
@@ -873,8 +960,8 @@ public function verifiedStatus(Request $request, $id){
    public function newUser(Request $request)
    {
        $validator = Validator::make($request->all(), [
-           'username' => 'required|string|max:255',
-           'email' => 'required|string|email|max:255',
+           'username' => 'required|string|max:255|unique:users,username',
+           'email' => 'required|string|email|max:255|unique:users,email',
            'password' => 'required|string|min:8',
            'user_type' => 'required|integer|in:1,2,3',
            'first_name' => 'required|string|max:255',
@@ -1089,8 +1176,6 @@ public function verifiedStatus(Request $request, $id){
             'checkout_text' => 'nullable|string',
             'desktop_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
             'mobile_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000'
-
-
         ]);
 
         if ($validator->fails()) {
