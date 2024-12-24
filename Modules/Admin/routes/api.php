@@ -84,6 +84,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::put('/reset-password/{id}',[AdminController::class,'resetPassword']);
         Route::put('/delete-profile/{id}',[AdminController::class,'deleteProfile']);
         Route::get('/show-profile/{id}',[AdminController::class,'showProfile']);
+        Route::put('/hide-profile/{id}',[AdminController::class,'hideProfile']);
+
 
 
     });
