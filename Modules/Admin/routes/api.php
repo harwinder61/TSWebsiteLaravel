@@ -79,7 +79,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         
         Route::post('/delete-media',[AdminController::class,'deleteMedia']);
         Route::post('/send-dynamic-email',[AdminController::class,'sendDynamicEmail']);
-
+        Route::post('/add-gallery-image',[AdminController::class,'addGalleryImagePath']);
     });
 
 

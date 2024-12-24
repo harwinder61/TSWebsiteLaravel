@@ -1674,4 +1674,47 @@ public function verifiedStatus(Request $request, $id){
         }
 
     }
+
+
+    public function addGalleryImagePath(Request $request){
+        try{
+            $validator=Validator::make($request->all(),[
+                'escort_id'=>'required|exists:users,id',
+                'path'=>'required',
+            ]);
+            if($validator->fails()){
+                return Resp::error([$validator->errors()]);
+            }
+
+            $media=Media::create([
+                'escort_id'=>$request->escort_id,
+                'path'=>$request->path,
+                'type'=>"gallery",
+                'is_temp'=>1
+            ]);
+            return Resp::success(['message' => 'Media added successfully','media'=>$media]);
+
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }   
+    }
+
+    public function createCategory(Request $request){
+        try{
+            $validator=Validator::make($request->all(),[
+                'name'=>'required',
+                'description'=>'required',
+            ]);
+            if($validator->fails()){
+                return Resp::error([$validator->errors()]);
+            }
+            $category=Category::create([
+                'name'=>$request->name,
+                'description'=>$request->description,
+            ]);
+            return Resp::success(['message' => 'Category created successfully','category'=>$category]);
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
 }
