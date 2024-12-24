@@ -4,10 +4,12 @@ namespace Modules\Admin\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\BaseReviews;
+use App\Models\ForumCategory;
 use Illuminate\Http\Request;
 use Modules\Admin\app\Models\Plan;
 use App\Services\Resp;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Modules\Escort\app\Models\Profile;
 use Modules\Escort\app\Models\ProfileRates;
 use Illuminate\Support\Facades\Response;
@@ -21,13 +23,11 @@ use App\Models\Subscription as subscriptions;
 use Modules\Escort\app\Models\Subscription;
 use Illuminate\Support\Facades\Log;
 use App\Models\Image;
-use App\Models\Media;
 use Illuminate\Support\Facades\File;
 use Stripe\Service\SubscriptionService;
 use App\Models\User;
 use Modules\Admin\app\Models\Blog;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Modules\Admin\app\Models\Forum;
 use Modules\Admin\app\Models\Master;
@@ -44,9 +44,165 @@ use App\Models\BaseSubscription;
 use Modules\Admin\app\Models\Pages;
 use Modules\Admin\app\Models\Setting;
 use App\Mail\EmailHelper;
+use App\Models\Media;
 class AdminController extends Controller
 {
 
+
+public function deleteProfile($id,Request $request){
+    $profile = Profile::find($id);
+    if(!$profile){
+        return Resp::error(['message' => 'Profile not found']);
+    }
+    $profile->delete();
+    
+    return Resp::success(['message' => 'Profile deleted successfully']);
+}
+
+public function showProfile($id){
+    $profile = Profile::find($id);
+    if(!$profile){
+        return Resp::error(['message' => 'Profile not found']);
+    }
+    return Resp::success(['profile' => $profile]);
+}
+
+
+
+public function resetEmail($id,Request $request){
+    $user = User::find($id);
+    if(!$user){
+        return Resp::error(['message' => 'User not found']);
+    }
+    $user->email = $request->email;
+    $user->save();
+    return Resp::success(['message' => 'Email reset successfully']);
+}
+
+public function resetPassword($id,Request $request){
+    $user = User::find($id);
+    if(!$user){
+        return Resp::error(['message' => 'User not found']);
+    }
+    $user->password = Hash::make($request->password);
+    $user->save();
+    return Resp::success(['message' => 'Password reset successfully']);
+}
+
+
+public function profileUpdateMedia($id, Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'gallery' => 'array',
+        'gallery.*' => 'exists:media,id',
+        'private_gallery' => 'array',
+        'private_gallery.*' => 'exists:media,id',
+        'promo_video' => 'exists:media,id',
+        'description' => 'nullable|string',
+    ]);
+
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+
+    // Check if escort exists
+    $escort = AuthUser::find($id);
+    if (!$escort) {
+        return Resp::error(['message' => 'Escort not found']);
+    }
+
+    // Update gallery
+    if ($request->has('gallery')) {
+        $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
+
+        // Set is_temp to false for existing gallery media
+        Media::where('escort_id', $id)
+            ->where('type', 'gallery')
+            ->whereIn('id', $galleryIds)
+            ->update(['is_temp' => false]);
+
+        // Delete non-updated gallery media
+        Media::where('escort_id', $id)
+            ->where('type', 'gallery')
+            ->whereNotIn('id', $galleryIds)
+            ->forceDelete();
+    }
+
+    // Update private_gallery
+    if ($request->has('private_gallery')) {
+        $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
+
+        // Set is_temp to false for existing private_gallery media
+        Media::where('escort_id', $id)
+            ->where('type', 'private_gallery')
+            ->whereIn('id', $privateGalleryIds)
+            ->update(['is_temp' => false]);
+
+        // Delete non-updated private_gallery media
+        Media::where('escort_id', $id)
+            ->where('type', 'private_gallery')
+            ->whereNotIn('id', $privateGalleryIds)
+            ->forceDelete();
+    }
+
+    // Update promo_video
+    if ($request->has('promo_video')) {
+        $promoVideoId = $request->input('promo_video');
+
+        // Set is_temp to false for existing promo_video media
+        Media::where('escort_id', $id)
+            ->where('type', 'promo_video')
+            ->where('id', $promoVideoId)
+            ->update(['is_temp' => false]);
+
+        // Delete non-updated promo_video media
+        Media::where('escort_id', $id)
+            ->where('type', 'promo_video')
+            ->where('id', '!=', $promoVideoId)
+            ->forceDelete();
+    }
+
+    // Update description
+    if ($request->has('description')) {
+        $profile = Profile::where('escort_id', $id)->first();
+        if ($profile) {
+            $profile->description = $request->input('description');
+            $profile->save();
+        }
+    }
+
+    // Update is_media flag if all fields are updated
+    if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
+        $profile = Profile::where('escort_id', $id)->first();
+        if ($profile) {
+            $profile->is_media = 1;
+            $profile->save();
+        }
+    }
+
+    return Resp::success(['message' => 'Media updated successfully']);
+}
+
+public function profileMedia(Request $request)
+{
+    $media = Media::query();
+    if (!is_null($request->query('id'))) {
+        $media = $media->where('id', $request->query('id'));
+    }
+    $media = $media->get();
+
+    $gallery = $media->where('type', 'gallery')->values();
+    $privateGallery = $media->where('type', 'private_gallery')->values();
+    $promoVideo = $media->where('type', 'promo_video')->first();
+
+    return Resp::success([
+        'list' => [
+            'gallery' => $gallery,
+            'private_gallery' => $privateGallery,
+            'promo_video' => $promoVideo
+        ]
+    ]);
+}
 
     public function userDelete($id,Request $request){
         die('ok');
@@ -80,8 +236,6 @@ class AdminController extends Controller
 
         return response()->json(['message' => $result]);
     }
-
-    
 
     public function getParallaxImage(Request $request)
     {
@@ -125,19 +279,11 @@ class AdminController extends Controller
             $setting = new Setting();
             $setting->type = 'home_parallax';
         }
-    
-        // Assign media IDs to the setting for mobile and desktop
         $setting->value_mobile = $request->value_mobile;  // Mobile image media ID
         $setting->value_desktop = $request->value_desktop;  // Desktop image media ID
-    
-        // Save the Setting
         $setting->save();
-    
-        // Fetch the actual media objects for mobile and desktop
         $mobileMedia = Media::find($setting->value_mobile);  // Mobile media object
         $desktopMedia = Media::find($setting->value_desktop);  // Desktop media object
-    
-        // Return a success response with the updated setting and media objects
         return Resp::success([
             'message' => 'Parallax images updated successfully',
             'setting' => $setting,
@@ -329,7 +475,8 @@ public function deleteSubscription($id){
             return Resp::success(['emailTemplate' => $emailTemplate]);
         } else {
             $emailTemplates = EmailTemplates::all();
-            return Resp::success(['emailTemplates' => $emailTemplates]);
+            return Resp::success(['emailTemplates' => 
+            $emailTemplates]);
         }
     }
 
@@ -816,8 +963,8 @@ public function verifiedStatus(Request $request, $id){
            'last_name' => 'required|string|max:255',
            'password' => 'required|string|min:8',
            'user_type' => 'required|integer|in:1,2,3', // Only allow 1 (fan) or 2 (escort)
-           'username' => 'required|string|max:255',
-           'email' => 'required|email',
+           'username' => 'required|string|max:255|unique:users,username',
+           'email' => 'required|email|unique:users,email',
        ]);
    
        if ($validator->fails()) {
@@ -836,9 +983,9 @@ public function verifiedStatus(Request $request, $id){
            return Resp::error(['message' => 'User type cannot be changed']);
        }
    
-       if ($user->username == $request->input('username')) {
-           return Resp::error(['message' => 'Username cannot be the same as the current username']);
-       }
+    //    if ($user->username == $request->input('username')) {
+    //        return Resp::error(['message' => 'Username cannot be the same as the current username']);
+    //    }
    
        $user->update([
            'username' => $request->input('username'),
@@ -853,8 +1000,8 @@ public function verifiedStatus(Request $request, $id){
    public function newUser(Request $request)
    {
        $validator = Validator::make($request->all(), [
-           'username' => 'required|string|max:255',
-           'email' => 'required|string|email|max:255',
+           'username' => 'required|string|max:255|unique:users,username',
+           'email' => 'required|string|email|max:255|unique:users,email',
            'password' => 'required|string|min:8',
            'user_type' => 'required|integer|in:1,2,3',
            'first_name' => 'required|string|max:255',
@@ -871,8 +1018,14 @@ public function verifiedStatus(Request $request, $id){
            'firstname' => $request->first_name,
            'lastname' => $request->last_name,
            'email_verified' => 1, // Add this line
-       ])->load('profile'); // eager load the profile relationship
-   
+       ]);//->load('profile'); // eager load the profile relationship
+
+       $user_id = $user->id;
+       $escort = Profile::create([
+           'name' => $user->username,
+           'escort_id' => $user->id,
+
+       ]);
        return Resp::success(['message' => 'User created successfully', 'user' => $user]);
    }
 
@@ -1063,8 +1216,6 @@ public function verifiedStatus(Request $request, $id){
             'checkout_text' => 'nullable|string',
             'desktop_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
             'mobile_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000'
-
-
         ]);
 
         if ($validator->fails()) {
@@ -1703,18 +1854,30 @@ public function verifiedStatus(Request $request, $id){
         try{
             $validator=Validator::make($request->all(),[
                 'name'=>'required',
-                'description'=>'required',
             ]);
             if($validator->fails()){
                 return Resp::error([$validator->errors()]);
             }
-            $category=Category::create([
+            $baseSlug = Str::slug($request->name);
+            $randomString = Str::random(8);
+            $slug = $baseSlug . '-' . $randomString;
+            $category=ForumCategory::create([
                 'name'=>$request->name,
-                'description'=>$request->description,
+                'slug'=>$slug,
             ]);
             return Resp::success(['message' => 'Category created successfully','category'=>$category]);
         }catch(\Exception $e){
             return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
+
+
+    public function forumCategories(Request $request){
+        try{
+            $categories=ForumCategory::all();
+            return Resp::success(['categories'=>$categories]);
+        }catch(\Exception $e){
+            return Resp::error(['message'=> $e->getMessage()]);
         }
     }
 }
