@@ -4,10 +4,12 @@ namespace Modules\Admin\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\BaseReviews;
+use App\Models\ForumCategory;
 use Illuminate\Http\Request;
 use Modules\Admin\app\Models\Plan;
 use App\Services\Resp;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Modules\Escort\app\Models\Profile;
 use Modules\Escort\app\Models\ProfileRates;
 use Illuminate\Support\Facades\Response;
@@ -26,7 +28,6 @@ use Stripe\Service\SubscriptionService;
 use App\Models\User;
 use Modules\Admin\app\Models\Blog;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Modules\Admin\app\Models\Forum;
 use Modules\Admin\app\Models\Master;
@@ -1868,5 +1869,60 @@ public function verifiedStatus(Request $request, $id){
             return Resp::error(['message' => $e->getMessage()]);
         }
 
+    }
+
+
+    public function addGalleryImagePath(Request $request){
+        try{
+            $validator=Validator::make($request->all(),[
+                'escort_id'=>'required|exists:users,id',
+                'path'=>'required',
+            ]);
+            if($validator->fails()){
+                return Resp::error([$validator->errors()]);
+            }
+
+            $media=Media::create([
+                'escort_id'=>$request->escort_id,
+                'path'=>$request->path,
+                'type'=>"gallery",
+                'is_temp'=>1
+            ]);
+            return Resp::success(['message' => 'Media added successfully','media'=>$media]);
+
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }   
+    }
+
+    public function createCategory(Request $request){
+        try{
+            $validator=Validator::make($request->all(),[
+                'name'=>'required',
+            ]);
+            if($validator->fails()){
+                return Resp::error([$validator->errors()]);
+            }
+            $baseSlug = Str::slug($request->name);
+            $randomString = Str::random(8);
+            $slug = $baseSlug . '-' . $randomString;
+            $category=ForumCategory::create([
+                'name'=>$request->name,
+                'slug'=>$slug,
+            ]);
+            return Resp::success(['message' => 'Category created successfully','category'=>$category]);
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
+
+
+    public function forumCategories(Request $request){
+        try{
+            $categories=ForumCategory::all();
+            return Resp::success(['categories'=>$categories]);
+        }catch(\Exception $e){
+            return Resp::error(['message'=> $e->getMessage()]);
+        }
     }
 }
