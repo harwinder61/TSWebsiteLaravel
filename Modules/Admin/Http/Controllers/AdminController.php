@@ -49,35 +49,137 @@ use App\Models\Media;
 class AdminController extends Controller
 {
 
-
-public function hideProfile($id,Request $request){
+ 
+  public function profileUpdateMedia($id,Request $request){
     $validator = Validator::make($request->all(), [
-        'is_hidden' => 'required|boolean'
+        'gallery' => 'array',                   
+        'gallery.*' => 'exists:media,id',      
+        'private_gallery' => 'array',            
+        'private_gallery.*' => 'exists:media,id', 
+        'promo_video' => 'exists:media,id',
+        'description' => 'nullable|string',
     ]);
 
+    // Return validation errors if any
     if ($validator->fails()) {
         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
-    $user = AuthUser::find($id);
-    if ($request->is_hidden) {
-        $user->is_hidden = $request->is_hidden;
-        $user->save();
-        
-        return Resp::success(['message' => 'Profile hidden successfully']);
-    }
-    
-    return Resp::success(['user'=>$user],'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
-}
 
+    $user = AuthUser::find($id);
+    if ($request->has('gallery')) {
+        $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
+        
+        Media::where('escort_id', $user->id)
+            ->where('type', 'gallery')
+            ->whereIn('id', $galleryIds)
+            ->update(['is_temp' => false]);
+            
+
+        Media::where('escort_id', $user->id)
+            ->where('type', 'gallery')
+            ->whereNotIn('id', $galleryIds)
+            ->forceDelete();
+    }
+
+    if ($request->has('private_gallery')) {
+        $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
+        
+        Media::where('escort_id', $user->id)
+            ->where('type', 'private_gallery')
+            ->whereIn('id', $privateGalleryIds)
+            ->update(['is_temp' => false]);
+
+        Media::where('escort_id', $user->id)
+            ->where('type', 'private_gallery')
+            ->whereNotIn('id', $privateGalleryIds)
+            ->forceDelete();
+    }
+
+    if ($request->has('promo_video')) {
+        $promoVideoId = $request->input('promo_video');
+        
+        Media::where('escort_id', $user->id)
+            ->where('type', 'promo_video')
+            ->where('id', $promoVideoId)
+            ->update(['is_temp' => false]);
+
+        Media::where('escort_id', $user->id)
+            ->where('type', 'promo_video')
+            ->where('id', '!=', $promoVideoId)
+            ->forceDelete();
+    }
+
+    if ($request->has('description')) {
+        $profile = Profile::where('escort_id', $user->id)->first();
+        $profile->description = $request->input('description');
+        $profile->save();
+    }
+
+    if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
+        $profile = Profile::where('escort_id', $user->id)->first();
+        if ($profile) {
+            $profile->is_media = 1;
+            $profile->save();
+        }
+    }
+
+    return Resp::success(['message' => 'Media updated successfully']);
+  }
+
+
+
+    public function hideProfile($id, Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'is_hidden' => 'required|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $user = AuthUser::find($id);
+        if ($request->is_hidden) {
+            $user->is_hidden = $request->is_hidden;
+            $user->save();
+            
+            return Resp::success(['message' => 'Profile hidden successfully']);
+        }
+        
+        return Resp::success(['user'=>$user],'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
+    }
 
 public function deleteProfile($id,Request $request){
-    $profile = Profile::find($id);
-    if(!$profile){
-        return Resp::error(['message' => 'Profile not found']);
-    }
-    $profile->delete();
+    $validator = Validator::make($request->all(), [
+        'is_delete' => 'required|boolean'
+    ]);
+
+if ($validator->fails()) {
+    return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+}
+
+$user = AuthUser::find($id);
+// Only update if is_delete is true
+if ($request->is_delete) {
+    $user->delete_on = now();
+    $user->is_delete = $request->is_delete; 
+    $user->save();
     
-    return Resp::success(['message' => 'Profile deleted successfully']);
+    $template = EmailTemplates::where('type','account_deleted')->first();
+    if(!$template){
+        return Resp::error(['message' => 'Email template not found']);
+    }
+    $templateSubject = $template->subject;
+    $templateBody = $template->content;
+    $recipientEmail = $user->email; // You can pass this via API request
+    $dynamicData = [
+        '[CUSTOMER_NAME]' => $user->username,
+        '[CUSTOMER_EMAIL]' => $user->email,
+    ];
+    $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+    return Resp::success(['user'=>$user],'Profile deleted successfully');
+}
+
+    return Resp::error(['message' => 'Invalid request']);
 }
 
 public function showProfile($id){
@@ -104,128 +206,33 @@ public function resetEmail($id,Request $request){
 }
 
 public function resetPassword($id,Request $request){
-    $validator = Validator::make($request->all(), [
-        'token' => 'required|string',
-        'password' => 'required|string|min:8|confirmed',
-        'password_confirmation' => 'required|same:password',
-    ]);
-    if ($validator->fails()) {
-        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    }
-    $user = AuthUser::where('recovery_token', $request->token)->first();
-    if(!$user){
-        return Resp::error(['error' => 'No user found']);
-    }
-    $user->password = Hash::make($request->password);
-    $user->recovery_token = null;
-    $user->save();
-    $template = EmailTemplates::where('type','ts_new_password_notification')->first();
-    if(!$template){
-        return Resp::error(['message' => 'Email template not found']);
-    }
-    $templateSubject = $template->subject;
-    $templateBody = $template->content;
-    $recipientEmail = $user->email; // You can pass this via API request
-    $dynamicData = [
-        '[CUSTOMER_NAME]' => $user->username,
-        '[CUSTOMER_EMAIL]' => $user->email,
-    ];
-    $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
-    return Resp::success(['message' => 'Password reset successfully']);     
-}
-
-
-public function profileUpdateMedia($id, Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'gallery' => 'array',
-        'gallery.*' => 'exists:media,id',
-        'private_gallery' => 'array',
-        'private_gallery.*' => 'exists:media,id',
-        'promo_video' => 'exists:media,id',
-        'description' => 'nullable|string',
-    ]);
-
-    if ($validator->fails()) {
-        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    }
-
-    // Check if escort exists
-    $escort = AuthUser::find($id);
-    if (!$escort) {
-        return Resp::error(['message' => 'Escort not found']);
-    }
-
-    // Update gallery
-    if ($request->has('gallery')) {
-        $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
-
-        // Set is_temp to false for existing gallery media
-        Media::where('escort_id', $id)
-            ->where('type', 'gallery')
-            ->whereIn('id', $galleryIds)
-            ->update(['is_temp' => false]);
-
-        // Delete non-updated gallery media
-        Media::where('escort_id', $id)
-            ->where('type', 'gallery')
-            ->whereNotIn('id', $galleryIds)
-            ->forceDelete();
-    }
-
-    // Update private_gallery
-    if ($request->has('private_gallery')) {
-        $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
-
-        // Set is_temp to false for existing private_gallery media
-        Media::where('escort_id', $id)
-            ->where('type', 'private_gallery')
-            ->whereIn('id', $privateGalleryIds)
-            ->update(['is_temp' => false]);
-
-        // Delete non-updated private_gallery media
-        Media::where('escort_id', $id)
-            ->where('type', 'private_gallery')
-            ->whereNotIn('id', $privateGalleryIds)
-            ->forceDelete();
-    }
-
-    // Update promo_video
-    if ($request->has('promo_video')) {
-        $promoVideoId = $request->input('promo_video');
-
-        // Set is_temp to false for existing promo_video media
-        Media::where('escort_id', $id)
-            ->where('type', 'promo_video')
-            ->where('id', $promoVideoId)
-            ->update(['is_temp' => false]);
-
-        // Delete non-updated promo_video media
-        Media::where('escort_id', $id)
-            ->where('type', 'promo_video')
-            ->where('id', '!=', $promoVideoId)
-            ->forceDelete();
-    }
-
-    // Update description
-    if ($request->has('description')) {
-        $profile = Profile::where('escort_id', $id)->first();
-        if ($profile) {
-            $profile->description = $request->input('description');
-            $profile->save();
-        }
-    }
-
-    // Update is_media flag if all fields are updated
-    if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
-        $profile = Profile::where('escort_id', $id)->first();
-        if ($profile) {
-            $profile->is_media = 1;
-            $profile->save();
-        }
-    }
-
-    return Resp::success(['message' => 'Media updated successfully']);
+  $validator = Validator::make($request->all(), [
+    'old_password' => 'required|string',
+    'new_password' => 'required|string|min:8',
+    'confirm_password' => 'required|same:new_password',
+  ]);
+  if ($validator->fails()) {
+    return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+  }
+  $user = AuthUser::find($id);
+  if(!$user){
+    return Resp::error(['message' => 'User not found']);
+  }
+  $user->password = Hash::make($request->new_password);
+  $user->save();
+  $template = EmailTemplates::where('type','ts_new_password_notification')->first();
+  if(!$template){
+    return Resp::error(['message' => 'Email template not found']);
+  }
+  $templateSubject = $template->subject;
+  $templateBody = $template->content;
+  $recipientEmail = $user->email; // You can pass this via API request
+  $dynamicData = [
+      '[CUSTOMER_NAME]' => $user->username,
+      '[CUSTOMER_EMAIL]' => $user->email,
+  ];
+  $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+  return Resp::success(['message' => 'Password reset successfully']);
 }
 
 public function profileMedia(Request $request)
