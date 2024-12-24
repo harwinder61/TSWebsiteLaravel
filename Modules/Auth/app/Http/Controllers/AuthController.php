@@ -23,6 +23,7 @@ use Google_Client;
 use Modules\Admin\app\Models\EmailTemplates;
 use App\Mail\DynamicEmail;
 use App\Mail\EmailHelper;
+
 class AuthController extends Controller
 {
 
@@ -293,6 +294,7 @@ public function changePassword(Request $request) {
    
     public function login(Request $request)
     {
+   
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
@@ -354,8 +356,20 @@ public function changePassword(Request $request) {
             return Resp::error(['error' => 'Could not create token']);
         }
         JWTAuth::setToken($token);
-
+        $template = EmailTemplates::where('type','flash_email_notification')->first();
+        if(!$template){
+            return Resp::error(['message' => 'Email template not found']);
+        }
+        $templateSubject = $template->subject;
+        $templateBody = $template->content;
+        $recipientEmail = $user->email; // You can pass this via API request
+        $dynamicData = [
+            '[CUSTOMER_NAME]' => $user->username,
+            '[CUSTOMER_EMAIL]' => $user->email,
+        ];
+        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
         return Resp::success(['token' => $token]);
+
     }
 
     

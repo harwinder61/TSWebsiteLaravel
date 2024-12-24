@@ -80,7 +80,10 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/user-delete/{id}',[AdminController::class,'userDelete']);
         Route::post('/ts-spotlight/sort',[AdminController::class,'tsSpotlightSort']);
         Route::get('/send-dynamic-email',[AdminController::class,'sendDynamicEmail']);
-        Route::put('/reset-password',[AdminController::class,'resetPassword']);
+        Route::put('/reset-email/{id}',[AdminController::class,'resetEmail']);
+        Route::put('/reset-password/{id}',[AdminController::class,'resetPassword']);
+        Route::put('/delete-profile/{id}',[AdminController::class,'deleteProfile']);
+        Route::get('/show-profile/{id}',[AdminController::class,'showProfile']);
 
 
     });

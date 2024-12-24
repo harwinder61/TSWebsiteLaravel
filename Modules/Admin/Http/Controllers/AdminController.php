@@ -48,16 +48,38 @@ class AdminController extends Controller
 {
 
 
-
-public function resetPassword(Request $request){
-    $validator = Validator::make($request->all(), [
-        'email' => 'required|email',
-        'password' => 'required|string|min:8',
-    ]);
-    if($validator->fails()){
-        return Resp::error(['message' => $validator->errors()]);
+public function deleteProfile($id,Request $request){
+    $profile = Profile::find($id);
+    if(!$profile){
+        return Resp::error(['message' => 'Profile not found']);
     }
-    $user = User::where('email',$request->email)->first();
+    $profile->delete();
+    
+    return Resp::success(['message' => 'Profile deleted successfully']);
+}
+
+public function showProfile($id){
+    $profile = Profile::find($id);
+    if(!$profile){
+        return Resp::error(['message' => 'Profile not found']);
+    }
+    return Resp::success(['profile' => $profile]);
+}
+
+
+
+public function resetEmail($id,Request $request){
+    $user = User::find($id);
+    if(!$user){
+        return Resp::error(['message' => 'User not found']);
+    }
+    $user->email = $request->email;
+    $user->save();
+    return Resp::success(['message' => 'Email reset successfully']);
+}
+
+public function resetPassword($id,Request $request){
+    $user = User::find($id);
     if(!$user){
         return Resp::error(['message' => 'User not found']);
     }
@@ -66,12 +88,14 @@ public function resetPassword(Request $request){
     return Resp::success(['message' => 'Password reset successfully']);
 }
 
-public function profileUpdateMedia($id,Request $request){
+
+public function profileUpdateMedia($id, Request $request)
+{
     $validator = Validator::make($request->all(), [
-        'gallery' => 'array',                   
-        'gallery.*' => 'exists:media,id',      
-        'private_gallery' => 'array',            
-        'private_gallery.*' => 'exists:media,id', 
+        'gallery' => 'array',
+        'gallery.*' => 'exists:media,id',
+        'private_gallery' => 'array',
+        'private_gallery.*' => 'exists:media,id',
         'promo_video' => 'exists:media,id',
         'description' => 'nullable|string',
     ]);
@@ -86,48 +110,58 @@ public function profileUpdateMedia($id,Request $request){
         return Resp::error(['message' => 'Escort not found']);
     }
 
+    // Update gallery
     if ($request->has('gallery')) {
         $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
-        
+
+        // Set is_temp to false for existing gallery media
         Media::where('escort_id', $id)
             ->where('type', 'gallery')
             ->whereIn('id', $galleryIds)
             ->update(['is_temp' => false]);
-            
+
+        // Delete non-updated gallery media
         Media::where('escort_id', $id)
             ->where('type', 'gallery')
             ->whereNotIn('id', $galleryIds)
             ->forceDelete();
     }
 
+    // Update private_gallery
     if ($request->has('private_gallery')) {
         $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
-        
+
+        // Set is_temp to false for existing private_gallery media
         Media::where('escort_id', $id)
             ->where('type', 'private_gallery')
             ->whereIn('id', $privateGalleryIds)
             ->update(['is_temp' => false]);
 
+        // Delete non-updated private_gallery media
         Media::where('escort_id', $id)
             ->where('type', 'private_gallery')
             ->whereNotIn('id', $privateGalleryIds)
             ->forceDelete();
     }
 
+    // Update promo_video
     if ($request->has('promo_video')) {
         $promoVideoId = $request->input('promo_video');
-        
+
+        // Set is_temp to false for existing promo_video media
         Media::where('escort_id', $id)
             ->where('type', 'promo_video')
             ->where('id', $promoVideoId)
             ->update(['is_temp' => false]);
 
+        // Delete non-updated promo_video media
         Media::where('escort_id', $id)
             ->where('type', 'promo_video')
             ->where('id', '!=', $promoVideoId)
             ->forceDelete();
     }
 
+    // Update description
     if ($request->has('description')) {
         $profile = Profile::where('escort_id', $id)->first();
         if ($profile) {
@@ -136,6 +170,7 @@ public function profileUpdateMedia($id,Request $request){
         }
     }
 
+    // Update is_media flag if all fields are updated
     if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
         $profile = Profile::where('escort_id', $id)->first();
         if ($profile) {
@@ -147,15 +182,26 @@ public function profileUpdateMedia($id,Request $request){
     return Resp::success(['message' => 'Media updated successfully']);
 }
 
-    public function profileMedia(Request $request)
-    {
-        $media = Media::query();
-        if (!is_null($request->query('id'))) {
-            $media = $media->where('id', $request->query('id'));
-        }
-        $media = $media->get();
-        return Resp::success(['media' => $media]);
+public function profileMedia(Request $request)
+{
+    $media = Media::query();
+    if (!is_null($request->query('id'))) {
+        $media = $media->where('id', $request->query('id'));
     }
+    $media = $media->get();
+
+    $gallery = $media->where('type', 'gallery')->values();
+    $privateGallery = $media->where('type', 'private_gallery')->values();
+    $promoVideo = $media->where('type', 'promo_video')->first();
+
+    return Resp::success([
+        'list' => [
+            'gallery' => $gallery,
+            'private_gallery' => $privateGallery,
+            'promo_video' => $promoVideo
+        ]
+    ]);
+}
 
     public function userDelete($id,Request $request){
         die('ok');
@@ -232,19 +278,11 @@ public function profileUpdateMedia($id,Request $request){
             $setting = new Setting();
             $setting->type = 'home_parallax';
         }
-    
-        // Assign media IDs to the setting for mobile and desktop
         $setting->value_mobile = $request->value_mobile;  // Mobile image media ID
         $setting->value_desktop = $request->value_desktop;  // Desktop image media ID
-    
-        // Save the Setting
         $setting->save();
-    
-        // Fetch the actual media objects for mobile and desktop
         $mobileMedia = Media::find($setting->value_mobile);  // Mobile media object
         $desktopMedia = Media::find($setting->value_desktop);  // Desktop media object
-    
-        // Return a success response with the updated setting and media objects
         return Resp::success([
             'message' => 'Parallax images updated successfully',
             'setting' => $setting,
@@ -436,7 +474,8 @@ public function deleteSubscription($id){
             return Resp::success(['emailTemplate' => $emailTemplate]);
         } else {
             $emailTemplates = EmailTemplates::all();
-            return Resp::success(['emailTemplates' => $emailTemplates]);
+            return Resp::success(['emailTemplates' => 
+            $emailTemplates]);
         }
     }
 
