@@ -106,12 +106,13 @@ class EscortController extends Controller
             $verify->passport_image = $userFolder . '/' . $passportImageName;
             $verify->selfie_image = $userFolder . '/' . $selfieImageName;
             $verify->escort_id = $userId;
+            $verify->verified_status = 2;
             $verify->save();
             $profile = $user->profile;
             $profile->verified_status = 2;
             $profile->save();
-            $verify->verified_status = 2;
-            $verify->save();
+            // $verify->verified_status = 2;
+            // $verify->save();
     
             return Resp::success([
                 'message' => 'Verify details saved successfully',
