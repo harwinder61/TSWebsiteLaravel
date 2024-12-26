@@ -14,4 +14,5 @@ class Media extends Model
     public function escort(){
         return $this->belongsTo(BaseProfile::class,'escort_id','id');
     }
+    
 }

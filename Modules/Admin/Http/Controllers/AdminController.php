@@ -189,7 +189,7 @@ class AdminController extends Controller
     }
 
 
-    public function deleteProfile($id, Request $request)
+    public function deleteProfile($id)
     {
         $validator = Validator::make($request->all(), [
             'is_delete' => 'required|boolean'
