@@ -52,16 +52,24 @@ class AdminController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
-            'slug' => 'required|string',
+           
         ]);
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
         $category = ForumCategory::find($id);
+        if(!$category){
+            return Resp::error(['message' => 'Category not found']);
+        }
         $category->name = $request->name;
-        $category->slug = $request->slug;
+
+        $baseSlug = Str::slug($request->name);
+        $randomString = Str::random(16);
+        $slug = $baseSlug . '-' . $randomString;
+
+        $category->slug = $slug;
         $category->save();
-        return Resp::success(['message' => 'Category updated successfully']);
+        return Resp::success(['message' => 'Category updated successfully','category'=> $category]);
     }
 
     public function deleteCategory($id)
