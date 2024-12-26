@@ -33,6 +33,7 @@ use Modules\Admin\app\Models\Forum;
 use Modules\Admin\app\Models\Master;
 use Modules\Admin\app\Models\Verify;
 use Modules\Escort\app\Models\Verify as ModelsVerify;
+use Modules\Escort\app\Models\Profile as BaseProfile;
 use Modules\Admin\app\Models\Comment;
 use Modules\Admin\app\Models\Reminder;
 use Modules\Admin\app\Models\Remindercomment;   
@@ -868,19 +869,22 @@ public function verifiedStatus(Request $request, $id){
         return Resp::error(['message' => $validator->errors()]);
     }
     $verify = ModelsVerify::where('escort_id', $id )->first();
+    
+
     if (!$verify) {
         return Resp::error(['message' => 'Verification record not found']);
     }
     
     if ($request->action == 1) {
         $verify->verified_status = 1;
-        $verify->escort()->update(['verified_status' => $verify->verified_status]);
+        
     } elseif ($request->action == 0) {
         $verify->verified_status = 4;
-        $verify->escort()->update(['verified_status' => $verify->verified_status]);
+       
     }
-    $verify->escort()->update(['verified_status' => $verify->verified_status]);
+    //$verify->escort()->update(['verified_status' => $verify->verified_status]);
     $verify->save();
+    $escort_profile = BaseProfile::where('escort_id', $id)->update(['verified_status' => $verify->verified_status]);
     return Resp::success(['message' => 'Verification status updated successfully']);
 }
 
