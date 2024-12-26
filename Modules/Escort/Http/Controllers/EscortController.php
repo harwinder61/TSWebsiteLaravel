@@ -52,7 +52,10 @@ class EscortController extends Controller
     {
         try {
             $user = auth()->user();
-    
+            $profile = Profile::where('escort_id', $user->id)->first();
+            if(!$profile){
+                return Resp::error(['message' => 'Profile not found']);
+            }
             $validator = Validator::make($request->all(), [
                 'passport_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
                 'selfie_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
@@ -126,7 +129,7 @@ class EscortController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Verification Error: ' . $e->getMessage());
-            return Resp::error(['message' => 'An error occurred while processing your request'], 500);
+            return Resp::error(['message' => 'An error occurred while processing your request','error'=>$e->getMessage()], 500);
         }
     }
     

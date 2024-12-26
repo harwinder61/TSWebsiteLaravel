@@ -597,6 +597,13 @@ public function reminderDone($id){
     public function getForum(Request $request){
         
         $forums = Forum::query();
+        if($request->query('s')){
+            $searchTerm = $request->query('s');
+            $forums->where(function ($query) use ($searchTerm) {
+                $query->where('title', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('description', 'like', '%' . $searchTerm . '%');
+            });
+        }
         if (!is_null($request->query('category'))) {
             $forums->where('category', $request->query('category'));
         }
