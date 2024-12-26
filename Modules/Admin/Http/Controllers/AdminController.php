@@ -1004,118 +1004,156 @@ class AdminController extends Controller
         }
     }
 
-    public function getVarifiacationList(Request $request)
-    {
-        try {
-            // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
-            $query = ModelsVerify::with(['escort', 'user']);
+//    public function getVarifiacationList(Request $request)
+//    {
+//        try {
+//            // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
+//            $query = ModelsVerify::with(['escort', 'user']);
+   
+//            // Filter by verified status if provided
+//            if ($request->has('verified_status')) {
+//                $verifiedStatus = explode(',', $request->query('verified_status'));
+//                $query->whereIn('verified_status', $verifiedStatus);
+//            } else {
+//                // Default to verified statuses 1 and 4 if not provided
+//                $query->whereIn('verified_status', [1,2,3,4]);
+//            }
+   
+//            // Filter by escort name if 's' parameter is provided
+//            if (!is_null($request->query('s'))) {
+//                $query->whereHas('escort', function ($q) use ($request) {
+//                    $q->where('name', 'like', '%' . $request->query('s') . '%');
+//                });
+//            }
+   
+//            // Order by created_at in descending order
+//            $query->orderBy('created_at', 'desc');
+   
+//            // Pagination parameters
+//            $perPage = (int)$request->query('per_page', 10);
+//            $page = (int)$request->query('page', 1);
+//            $offset = ($page - 1) * $perPage;
+   
+//            // Fetch results with pagination
+//            $verifications = $query->offset($offset)->limit($perPage)->get();
+   
+//            // Calculate total results and total pages
+//            $totalResults = $query->count();
+//            $totalPages = ceil($totalResults / $perPage);
+   
+//            // Build pagination response
+//            $pagination = [
+//                'total_results' => $totalResults,
+//                'total_pages' => $totalPages,
+//                'page' => $page,
+//                'page_size' => $perPage,
+//            ];
+   
+//            // Return the successful response with verification list and pagination
+//            return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
+   
+//        } catch (\Exception $e) {
+//            // Return an error if something goes wrong
+//            return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
+//        }
+//    }
 
-            // Filter by verified status if provided
-            if ($request->has('verified_status')) {
-                $verifiedStatus = explode(',', $request->query('verified_status'));
-                $query->whereIn('verified_status', $verifiedStatus);
-            } else {
-                // Default to verified statuses 1 and 4 if not provided
-                $query->whereIn('verified_status', [1, 2, 3, 4]);
-            }
+public function getVarifiacationList(Request $request)
+{
+    try {
+        // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
+        $query = ModelsVerify::with(['escort', 'user']);
 
-            // Filter by escort name if 's' parameter is provided
-            if (!is_null($request->query('s'))) {
-                $query->whereHas('escort', function ($q) use ($request) {
-                    $q->where('name', 'like', '%' . $request->query('s') . '%');
-                });
-            }
-
-            // Order by created_at in descending order
-            $query->orderBy('created_at', 'desc');
-
-            // Pagination parameters
-            $perPage = (int) $request->query('per_page', 10);
-            $page = (int) $request->query('page', 1);
-            $offset = ($page - 1) * $perPage;
-
-            // Fetch results with pagination
-            $verifications = $query->offset($offset)->limit($perPage)->get();
-
-            // Calculate total results and total pages
-            $totalResults = $query->count();
-            $totalPages = ceil($totalResults / $perPage);
-
-            // Build pagination response
-            $pagination = [
-                'total_results' => $totalResults,
-                'total_pages' => $totalPages,
-                'page' => $page,
-                'page_size' => $perPage,
-            ];
-
-            // Return the successful response with verification list and pagination
-            return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
-
-        } catch (\Exception $e) {
-            // Return an error if something goes wrong
-            return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
+        // Filter by verified status if provided
+        if ($request->has('verified_status')) {
+            $verifiedStatus = explode(',', $request->query('verified_status'));
+            $query->whereIn('verified_status', $verifiedStatus);
+        } else {
+            // Default to verified statuses 1 and 4 if not provided
+            $query->whereIn('verified_status', [1, 2, 3, 4]);
         }
-    }
 
-
-    public function createForum(Request $request)
-    {
-        try {
-
-            $validator = Validator::make($request->all(), [
-                'title' => 'required|string',
-                'category' => 'required|string',
-                'description' => 'required|string',
-                'status' => 'required|integer|in:1,2,3',
-                'tags' => 'required|string',
-                'region' => 'required|string',
-            ]);
-            if ($validator->fails()) {
-                return Resp::error(['message' => $validator->errors()]);
-            }
-            $slug = Str::slug($request->input('title'), '-');
-            $slug = $this->genrateForumSlug($slug);
-            $forumData = $validator->validated();
-            $forumData['slug'] = $slug;
-            $forumData['author_id'] = auth()->user()->id;
-            $forum = new Forum();
-            $forum->title = $forumData['title'];
-            $forum->category = $forumData['category'];
-            $forum->description = $forumData['description'];
-            $forum->status = $forumData['status'];
-            $forum->tags = $forumData['tags'];
-            $forum->region = $forumData['region'];
-            $forum->slug = $forumData['slug'];
-            $forum->author_id = $forumData['author_id'];
-            $forum->category_slug = $request->category_slug;
-            $category_data = ForumCategory::where('slug', $request->category_slug)->first();
-            if (!$category_data) {
-                return Resp::error(['message' => 'Category not found']);
-            }
-            $forum->category_id = $category_data->id;
-            $forum->save();
-            return Resp::success([
-                'message' => 'Forum created successfully',
-                'forum' => $forum,
-                'author' => $forum->getAuthor,
-                'slug' => $forum->slug
-            ]);
-        } catch (\Exception $e) {
-            return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
+        // Filter by escort name if 's' parameter is provided
+        if (!is_null($request->query('s'))) {
+            $query->whereHas('escort', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->query('s') . '%');
+            });
         }
-    }
 
-    private function genrateForumSlug($slug)
-    {
-        $baseSlug = $slug;
-        $counter = 1;
-        while (Forum::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter;
-            $counter++;
-        }
-        return $slug;
+        // Order by created_at in descending order
+        $query->orderBy('created_at', 'desc');
+
+        // Pagination parameters
+        $perPage = (int)$request->query('per_page', 10);
+
+        // Use the paginate method to get paginated results
+        $verifications = $query->paginate($perPage);
+
+        // Build pagination response
+        $pagination = [
+            'total_results' => $verifications->total(),
+            'total_pages' => $verifications->lastPage(),
+            'page' => $verifications->currentPage(),
+            'page_size' => $verifications->perPage(),
+        ];
+
+        // Return the successful response with verification list and pagination
+        return Resp::success(['verifications' => $verifications->items(), 'pagination' => $pagination]);
+
+    } catch (\Exception $e) {
+        // Return an error if something goes wrong
+        return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
     }
+}
+
+   
+   
+   public function createForum(Request $request)
+   {
+       $validator = Validator::make($request->all(), [
+           'title' => 'required|string',
+           'category' => 'required|string',
+           'description' => 'required|string',
+           'status' => 'required|integer|in:1,2,3',
+           'tags' => 'required|string',
+           'region' => 'required|string',
+       ]);
+       if ($validator->fails()) {
+           return Resp::error(['message' => $validator->errors()]);
+       }
+       $slug = Str::slug($request->input('title'), '-');
+       $slug = $this->genrateForumSlug($slug);
+       $forumData = $validator->validated();
+       $forumData['slug'] = $slug;
+       $forumData['author_id'] = auth()->user()->id; 
+       $forum = new Forum();
+       $forum->title = $forumData['title'];
+       $forum->category = $forumData['category'];
+       $forum->description = $forumData['description'];
+       $forum->status = $forumData['status'];
+       $forum->tags = $forumData['tags'];
+       $forum->region = $forumData['region'];
+       $forum->slug = $forumData['slug'];
+       $forum->author_id = $forumData['author_id'];
+       $forum->save();
+       return Resp::success([
+           'message' => 'Forum created successfully',
+           'forum' => $forum,
+           'author' => $forum->getAuthor,
+           'slug' => $forum->slug
+       ]);
+   }
+   
+   private function genrateForumSlug($slug)
+   {
+       $baseSlug = $slug;
+       $counter = 1;
+       while (Forum::where('slug', $slug)->exists()) {
+           $slug = $baseSlug . '-' . $counter;
+           $counter++;
+       }
+       return $slug;
+   }
 
     public function userProfile($id, Request $request)
     {
