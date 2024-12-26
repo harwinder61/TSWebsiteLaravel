@@ -179,43 +179,51 @@ class AdminController extends Controller
     }
 
 
-    public function deleteProfile($id, Request $request)
+    public function deleteProfile($id)
     {
-        $validator = Validator::make($request->all(), [
-            'is_delete' => 'required|boolean'
-        ]);
-    
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-    
         $user = AuthUser::find($id);
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
         }
-    
-        // Only delete if is_delete is true
-        if ($request->is_delete) {
-            $user->profile->delete();
-            $user->delete();
-    
-            $template = EmailTemplates::where('type','account_deleted')->first();
-            if(!$template){
-                return Resp::error(['message' => 'Email template not found']);
-            }
-            $templateSubject = $template->subject;
-            $templateBody = $template->content;
-            $recipientEmail = $user->email; // You can pass this via API request
-            $dynamicData = [
-                '[CUSTOMER_NAME]' => $user->username,
-                '[CUSTOMER_EMAIL]' => $user->email,
-            ];
-            $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
-            return Resp::success(['message' => 'Profile deleted successfully']);
-        }
-    
-        return Resp::error(['message' => 'Invalid request']);
+        $user->delete();
+        return Resp::success(['message' => 'User deleted successfully']);
     }
+    // public function deleteProfile($id, Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'is_delete' => 'required|boolean'
+    //     ]);
+    
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    
+    //     $user = AuthUser::find($id);
+    //     if (!$user) {
+    //         return Resp::error(['message' => 'User not found']);
+    //     }
+    
+    //     // Only delete if is_delete is true
+    //     if ($request->is_delete) {
+    //         $user->delete();
+    
+    //         $template = EmailTemplates::where('type','account_deleted')->first();
+    //         if(!$template){
+    //             return Resp::error(['message' => 'Email template not found']);
+    //         }
+    //         $templateSubject = $template->subject;
+    //         $templateBody = $template->content;
+    //         $recipientEmail = $user->email; // You can pass this via API request
+    //         $dynamicData = [
+    //             '[CUSTOMER_NAME]' => $user->username,
+    //             '[CUSTOMER_EMAIL]' => $user->email,
+    //         ];
+    //         $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+    //         return Resp::success(['message' => 'Profile deleted successfully']);
+    //     }
+    
+    //     return Resp::error(['message' => 'Invalid request']);
+    // }
 
 
 public function showProfile($id){
@@ -273,24 +281,44 @@ public function resetPassword($id,Request $request){
 
 public function profileMedia(Request $request)
 {
-    $media = Media::query();
-    if (!is_null($request->query('id'))) {
-        $media = $media->where('id', $request->query('id'));
-    }
-    $media = $media->get();
+    // Start building the media query
+    $mediaQuery = Media::query();
 
+    // If 'id' is provided, filter the media by that 'id'
+    if (!is_null($request->query('id'))) {
+        $mediaQuery = $mediaQuery->where('id', $request->query('id'));
+    }
+
+    // Execute the query and get the result
+    $media = $mediaQuery->with('escort')->get();
+
+    // If no id is provided, return all media in the table
+    if ($media->isEmpty()) {
+        // If no specific media is found, send an empty response or handle as needed
+        return Resp::error(['message' => 'No media found.']);
+    }
+
+    // Separate the media based on 'type'
     $gallery = $media->where('type', 'gallery')->values();
     $privateGallery = $media->where('type', 'private_gallery')->values();
     $promoVideo = $media->where('type', 'promo_video')->first();
-
+    $pagination = [
+        'total_results' => $media->count(),
+        'total_pages' => 1,
+        'page' => 1,
+        'page_size' => $media->count()
+    ];
+    // Return a success response with the media categorized
     return Resp::success([
         'list' => [
             'gallery' => $gallery,
             'private_gallery' => $privateGallery,
-            'promo_video' => $promoVideo
+            'promo_video' => $promoVideo,
+            'pagination' => $pagination
         ]
     ]);
 }
+
 
 public function userDelete($id, Request $request){
     // Find the user by ID
