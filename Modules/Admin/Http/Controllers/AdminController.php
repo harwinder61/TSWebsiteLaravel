@@ -46,7 +46,6 @@ use Modules\Admin\app\Models\Pages;
 use Modules\Admin\app\Models\Setting;
 use App\Mail\EmailHelper;
 use App\Models\Media;
-
 class AdminController extends Controller
 {
    public function editCategory(Request $request,$id){
@@ -179,39 +178,45 @@ class AdminController extends Controller
         return Resp::success(['user'=>$user],'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
     }
 
-public function deleteProfile($id,Request $request){
-    $validator = Validator::make($request->all(), [
-        'is_delete' => 'required|boolean'
-    ]);
 
-if ($validator->fails()) {
-    return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-}
-
-$user = AuthUser::find($id);
-// Only update if is_delete is true
-if ($request->is_delete) {
-    $user->delete_on = now();
-    $user->is_delete = $request->is_delete; 
-    $user->save();
+    public function deleteProfile($id, Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'is_delete' => 'required|boolean'
+        ]);
     
-    $template = EmailTemplates::where('type','account_deleted')->first();
-    if(!$template){
-        return Resp::error(['message' => 'Email template not found']);
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        $user = AuthUser::find($id);
+        if (!$user) {
+            return Resp::error(['message' => 'User not found']);
+        }
+    
+        // Only delete if is_delete is true
+        if ($request->is_delete) {
+            $user->profile->delete();
+            $user->delete();
+    
+            $template = EmailTemplates::where('type','account_deleted')->first();
+            if(!$template){
+                return Resp::error(['message' => 'Email template not found']);
+            }
+            $templateSubject = $template->subject;
+            $templateBody = $template->content;
+            $recipientEmail = $user->email; // You can pass this via API request
+            $dynamicData = [
+                '[CUSTOMER_NAME]' => $user->username,
+                '[CUSTOMER_EMAIL]' => $user->email,
+            ];
+            $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+            return Resp::success(['message' => 'Profile deleted successfully']);
+        }
+    
+        return Resp::error(['message' => 'Invalid request']);
     }
-    $templateSubject = $template->subject;
-    $templateBody = $template->content;
-    $recipientEmail = $user->email; // You can pass this via API request
-    $dynamicData = [
-        '[CUSTOMER_NAME]' => $user->username,
-        '[CUSTOMER_EMAIL]' => $user->email,
-    ];
-    $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
-    return Resp::success(['user'=>$user],'Profile deleted successfully');
-}
 
-    return Resp::error(['message' => 'Invalid request']);
-}
 
 public function showProfile($id){
     $profile = Profile::find($id);
@@ -287,18 +292,28 @@ public function profileMedia(Request $request)
     ]);
 }
 
-    public function userDelete($id,Request $request){
-        die('ok');
-        // $user = User::find($id);
-        // if(!$user){
-        //     return Resp::error(['message' => 'User not found']);
-        // }
-        // if ($user->user_type !== 1 && $user->user_type !== 2) {
-        //     return Resp::error(['message' => 'Only ES or Fan users can be deleted']);
-        // }
-        // $user->delete();
-        // return Resp::success(['message' => 'User deleted successfully']);
+public function userDelete($id, Request $request){
+    // Find the user by ID
+    $user = User::find($id);
+    
+    // Check if user exists
+    if(!$user){
+        return Resp::error(['message' => 'User not found']);
     }
+    
+    // Check if user type is ES or Fan
+    if ($user->user_type !== 1 && $user->user_type !== 2) {
+        return Resp::error(['message' => 'Only ES or Fan users can be deleted']);
+    }
+    
+    // Delete the user
+    $user->delete();
+    
+    // Delete the user's profile (assuming a one-to-one relationship)
+    $user->profile()->delete();
+    
+    return Resp::success(['message' => 'User deleted successfully']);
+}
 
     public function sendEmail(Request $request)
     {
@@ -951,7 +966,7 @@ public function verifiedStatus(Request $request, $id){
        try {
            // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
            $query = ModelsVerify::with(['escort', 'user']);
-           
+   
            // Filter by verified status if provided
            if ($request->has('verified_status')) {
                $verifiedStatus = explode(',', $request->query('verified_status'));
@@ -968,18 +983,21 @@ public function verifiedStatus(Request $request, $id){
                });
            }
    
+           // Order by created_at in descending order
+           $query->orderBy('created_at', 'desc');
+   
            // Pagination parameters
            $perPage = (int)$request->query('per_page', 10);
            $page = (int)$request->query('page', 1);
            $offset = ($page - 1) * $perPage;
-           
+   
            // Fetch results with pagination
            $verifications = $query->offset($offset)->limit($perPage)->get();
-           
+   
            // Calculate total results and total pages
            $totalResults = $query->count();
            $totalPages = ceil($totalResults / $perPage);
-           
+   
            // Build pagination response
            $pagination = [
                'total_results' => $totalResults,
@@ -987,7 +1005,7 @@ public function verifiedStatus(Request $request, $id){
                'page' => $page,
                'page_size' => $perPage,
            ];
-           
+   
            // Return the successful response with verification list and pagination
            return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
    
