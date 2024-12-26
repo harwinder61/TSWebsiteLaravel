@@ -1117,6 +1117,7 @@ public function getVarifiacationList(Request $request)
            'status' => 'required|integer|in:1,2,3',
            'tags' => 'required|string',
            'region' => 'required|string',
+           'category_slug' => 'required',
        ]);
        if ($validator->fails()) {
            return Resp::error(['message' => $validator->errors()]);
@@ -1135,6 +1136,12 @@ public function getVarifiacationList(Request $request)
        $forum->region = $forumData['region'];
        $forum->slug = $forumData['slug'];
        $forum->author_id = $forumData['author_id'];
+       $forum->category_slug = $request->input('category_slug');
+       $category_data=ForumCategory::where('slug', $request->input('category_slug'))->first();
+       if(!($category_data)) {
+        return Resp::error(['message'=> 'Category not found']);
+       }
+       $forum->category_id=$category_data->id;
        $forum->save();
        return Resp::success([
            'message' => 'Forum created successfully',
