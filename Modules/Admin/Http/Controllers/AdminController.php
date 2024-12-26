@@ -49,6 +49,27 @@ use App\Models\Media;
 
 class AdminController extends Controller
 {
+   public function editCategory(Request $request,$id){
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string',
+        'slug' => 'required|string',
+    ]);
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+    $category = ForumCategory::find($id);
+    $category->name = $request->name;
+    $category->slug = $request->slug;
+    $category->save();
+    return Resp::success(['message' => 'Category updated successfully']);
+   }
+
+       public function deleteCategory($id){
+        $category = ForumCategory::find($id);
+        $category->delete();
+        return Resp::success(['message' => 'Category deleted successfully']);
+       }
+
 
         public function profileUpdateMedia($id, Request $request)
         {

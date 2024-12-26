@@ -11,5 +11,5 @@ class ForumCategory extends Model
 
 
     protected $table = 'forum_categories';
-    protected $fillable = ['name','slug'];
+    protected $fillable = ['name','slug','status'];
 }

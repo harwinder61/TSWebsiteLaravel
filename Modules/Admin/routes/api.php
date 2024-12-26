@@ -88,6 +88,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/add-gallery-image',[AdminController::class,'addGalleryImagePath']);
         Route::post('/create-forum-category',[AdminController::class,'createCategory']);
         Route::get('/forum-categories',[AdminController::class,'forumCategories']);
+        Route::post('/delete-category/{id}',[AdminController::class,'deleteCategory']);
+        Route::post('/edit-category/{id}',[AdminController::class,'editCategory']);
     });
 
 
