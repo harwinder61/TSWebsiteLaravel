@@ -308,6 +308,8 @@ public function listReviews($id, Request $request)
             $user = auth()->user();
             $locationType="";
             $subscriptions = EscortSubscription::query();
+
+
             
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
                 ->select('subscriptions.*', 'plans.title as plan_title')
@@ -836,7 +838,11 @@ public function listReviews($id, Request $request)
             'escort.profile.rates',
             'orders'
         ])
-            ->orderBy('created_at', 'desc') // Order in descending order
+
+        //->orderByRaw('CASE WHEN created_mode IS NOT NULL THEN 0 ELSE 1 END, created_at DESC')
+
+
+            ->orderBy('created_at', 'desc')
             ->offset($offset)
             ->limit($perPage)
             ->get();
