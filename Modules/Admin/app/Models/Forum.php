@@ -11,7 +11,11 @@ class Forum extends Model
 {
     use HasFactory;
     protected $table = 'forum';
-    protected $fillable = ['title','category','description','status','tags','region','slug','author_id','is_approved'] ;
+    protected $fillable = [
+        'title','category','description',
+        'status','tags','region','slug',
+        'author_id','is_approved'
+        ,'category_slug'] ;
 
     public function postComments(){
         return $this->hasMany(Comment::class,'forum_id','id');
