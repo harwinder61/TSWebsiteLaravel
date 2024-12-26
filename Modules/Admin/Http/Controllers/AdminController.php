@@ -597,6 +597,13 @@ public function reminderDone($id){
     public function getForum(Request $request){
         
         $forums = Forum::query();
+        if($request->query('s')){
+            $searchTerm = $request->query('s');
+            $forums->where(function ($query) use ($searchTerm) {
+                $query->where('title', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('description', 'like', '%' . $searchTerm . '%');
+            });
+        }
         if (!is_null($request->query('category'))) {
             $forums->where('category', $request->query('category'));
         }
@@ -961,59 +968,108 @@ public function verifiedStatus(Request $request, $id){
     }
    }
 
-   public function getVarifiacationList(Request $request)
-   {
-       try {
-           // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
-           $query = ModelsVerify::with(['escort', 'user']);
+//    public function getVarifiacationList(Request $request)
+//    {
+//        try {
+//            // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
+//            $query = ModelsVerify::with(['escort', 'user']);
    
-           // Filter by verified status if provided
-           if ($request->has('verified_status')) {
-               $verifiedStatus = explode(',', $request->query('verified_status'));
-               $query->whereIn('verified_status', $verifiedStatus);
-           } else {
-               // Default to verified statuses 1 and 4 if not provided
-               $query->whereIn('verified_status', [1,2,3,4]);
-           }
+//            // Filter by verified status if provided
+//            if ($request->has('verified_status')) {
+//                $verifiedStatus = explode(',', $request->query('verified_status'));
+//                $query->whereIn('verified_status', $verifiedStatus);
+//            } else {
+//                // Default to verified statuses 1 and 4 if not provided
+//                $query->whereIn('verified_status', [1,2,3,4]);
+//            }
    
-           // Filter by escort name if 's' parameter is provided
-           if (!is_null($request->query('s'))) {
-               $query->whereHas('escort', function ($q) use ($request) {
-                   $q->where('name', 'like', '%' . $request->query('s') . '%');
-               });
-           }
+//            // Filter by escort name if 's' parameter is provided
+//            if (!is_null($request->query('s'))) {
+//                $query->whereHas('escort', function ($q) use ($request) {
+//                    $q->where('name', 'like', '%' . $request->query('s') . '%');
+//                });
+//            }
    
-           // Order by created_at in descending order
-           $query->orderBy('created_at', 'desc');
+//            // Order by created_at in descending order
+//            $query->orderBy('created_at', 'desc');
    
-           // Pagination parameters
-           $perPage = (int)$request->query('per_page', 10);
-           $page = (int)$request->query('page', 1);
-           $offset = ($page - 1) * $perPage;
+//            // Pagination parameters
+//            $perPage = (int)$request->query('per_page', 10);
+//            $page = (int)$request->query('page', 1);
+//            $offset = ($page - 1) * $perPage;
    
-           // Fetch results with pagination
-           $verifications = $query->offset($offset)->limit($perPage)->get();
+//            // Fetch results with pagination
+//            $verifications = $query->offset($offset)->limit($perPage)->get();
    
-           // Calculate total results and total pages
-           $totalResults = $query->count();
-           $totalPages = ceil($totalResults / $perPage);
+//            // Calculate total results and total pages
+//            $totalResults = $query->count();
+//            $totalPages = ceil($totalResults / $perPage);
    
-           // Build pagination response
-           $pagination = [
-               'total_results' => $totalResults,
-               'total_pages' => $totalPages,
-               'page' => $page,
-               'page_size' => $perPage,
-           ];
+//            // Build pagination response
+//            $pagination = [
+//                'total_results' => $totalResults,
+//                'total_pages' => $totalPages,
+//                'page' => $page,
+//                'page_size' => $perPage,
+//            ];
    
-           // Return the successful response with verification list and pagination
-           return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
+//            // Return the successful response with verification list and pagination
+//            return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
    
-       } catch (\Exception $e) {
-           // Return an error if something goes wrong
-           return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
-       }
-   }
+//        } catch (\Exception $e) {
+//            // Return an error if something goes wrong
+//            return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
+//        }
+//    }
+
+public function getVarifiacationList(Request $request)
+{
+    try {
+        // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
+        $query = ModelsVerify::with(['escort', 'user']);
+
+        // Filter by verified status if provided
+        if ($request->has('verified_status')) {
+            $verifiedStatus = explode(',', $request->query('verified_status'));
+            $query->whereIn('verified_status', $verifiedStatus);
+        } else {
+            // Default to verified statuses 1 and 4 if not provided
+            $query->whereIn('verified_status', [1, 2, 3, 4]);
+        }
+
+        // Filter by escort name if 's' parameter is provided
+        if (!is_null($request->query('s'))) {
+            $query->whereHas('escort', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->query('s') . '%');
+            });
+        }
+
+        // Order by created_at in descending order
+        $query->orderBy('created_at', 'desc');
+
+        // Pagination parameters
+        $perPage = (int)$request->query('per_page', 10);
+
+        // Use the paginate method to get paginated results
+        $verifications = $query->paginate($perPage);
+
+        // Build pagination response
+        $pagination = [
+            'total_results' => $verifications->total(),
+            'total_pages' => $verifications->lastPage(),
+            'page' => $verifications->currentPage(),
+            'page_size' => $verifications->perPage(),
+        ];
+
+        // Return the successful response with verification list and pagination
+        return Resp::success(['verifications' => $verifications->items(), 'pagination' => $pagination]);
+
+    } catch (\Exception $e) {
+        // Return an error if something goes wrong
+        return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
+    }
+}
+
    
    
    public function createForum(Request $request)
