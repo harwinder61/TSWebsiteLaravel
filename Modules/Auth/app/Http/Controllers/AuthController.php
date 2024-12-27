@@ -67,22 +67,9 @@ class AuthController extends Controller
             'user' => $user
         ]);
         $email->send();
-
-        $template = EmailTemplates::where('type','ts_reset_email_confirmations')->first();
-        if(!$template){
-            return Resp::error(['message' => 'Email template not found']);
-        }
-
-        $templateSubject = $template->subject;
-        $templateBody = $template->content;
-        $recipientEmail = $request->input('new_email'); 
-        $dynamicData = [
-            '{{name}}' => $user->username,
-            '{{email}}' => $user->email,
-            '{{link}}' => $user->verification_token,
-        ];
-        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
-
+      EmailHelper::sendDynamicEmail('ts_reset_email_confirmations', 
+      ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email], 
+      $user->email);
         return Resp::success([
             'message' => 'Email changed successfully. Please verify your new email address.'
         ]);
@@ -107,7 +94,9 @@ public function changePassword(Request $request) {
 
     $user->password = Hash::make($request->new_password);
     $user->save();
-    
+    EmailHelper::sendDynamicEmail('ts_new_password_notification', 
+    ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email], 
+    $user->email);
     return Resp::success(['message' => 'Password changed successfully']);
 }
 
@@ -150,8 +139,8 @@ public function changePassword(Request $request) {
         $templateBody = $template->content;
         $recipientEmail = $user->email; // You can pass this via API request
         $dynamicData = [
-            '[CUSTOMER_NAME]' => $user->username,
-            '[CUSTOMER_EMAIL]' => $user->email,
+            '[USER_LOGIN]' => $user->username,
+            '[USER_EMAIL]' => $user->email,
         ];
         $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
         return Resp::success(["current user" => $user], "email verified successfully");
@@ -184,18 +173,9 @@ public function changePassword(Request $request) {
         $user->password = Hash::make($request->password);
         $user->recovery_token = null;
         $user->save();
-        $template = EmailTemplates::where('type','ts_new_password_notification')->first();
-        if(!$template){
-            return Resp::error(['message' => 'Email template not found']);
-        }
-        $templateSubject = $template->subject;
-        $templateBody = $template->content;
-        $recipientEmail = $user->email; // You can pass this via API request
-        $dynamicData = [
-            '[CUSTOMER_NAME]' => $user->username,
-            '[CUSTOMER_EMAIL]' => $user->email,
-        ];
-        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+        EmailHelper::sendDynamicEmail('ts_reset_email_confirmations', 
+        ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email], 
+        $user->email);
         return Resp::success(['message' => 'Password reset successfully']);     
     }
 
@@ -223,60 +203,62 @@ public function changePassword(Request $request) {
    }
 
 
-        public function register(Request $request)
-
-        {
-            $validator = Validator::make($request->all(), [
-                'username' => 'required|string|max:255|unique:users,username',
-                'email' => 'required|string|email|max:255|unique:users,email',
-                'password' => 'required|string|min:8|confirmed',
-                'user_type' => 'required|integer|in:1,2,3',
-                'password_confirmation' => 'required|same:password',
-            ], [
-                'user_type.in' => 'The user type must be either 1 or 2 or 3',
-                'password.confirmed' => 'The password and confirm password do not match',
-            ]);
-
-            if ($validator->fails()) {
-                return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-            }
-
-            $verification_token = Str::random(30);
-
-            $user = AuthUser::create([
-                'username' => $request->username,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'user_type' => $request->user_type,
-                'verification_token' => $verification_token,
-                'email_verified' => false,
-            ]);
-            $email = new Mailer();
-            $email->to($user->email);
-            $email->subject('Test Email');
-            $email->setBodyByTemplate('verify-email',['verification_token' => $verification_token,'user' => $user]);
-            $email->send();
-
-            $user_id = $user->id;
-            $escort = Profile::create([
-                'name' => $user->username,
-                'escort_id' => $user->id,
-
-            ]);
-            $template = EmailTemplates::where('type','flash_email_notification')->first();
-            if(!$template){
-                return Resp::error(['message' => 'Email template not found']);
-            }
-            $templateSubject = $template->subject;
-            $templateBody = $template->content;
-            $recipientEmail = $user->email; // You can pass this via API request
-            $dynamicData = [
-                '[CUSTOMER_NAME]' => $user, //customer name
-                '[CUSTOMER_EMAIL]' => $user->email,
-            ];
-            $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
-            return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
-        }
+   public function register(Request $request)
+   {
+       // Validate the incoming request data
+       $validator = Validator::make($request->all(), [
+           'username' => 'required|string|max:255|unique:users,username',
+           'email' => 'required|string|email|max:255|unique:users,email',
+           'password' => 'required|string|min:8|confirmed',
+           'user_type' => 'required|integer|in:1,2,3',
+           'password_confirmation' => 'required|same:password',
+       ], [
+           'user_type.in' => 'The user type must be either 1 or 2 or 3',
+           'password.confirmed' => 'The password and confirm password do not match',
+       ]);
+   
+       // If validation fails, return field errors
+       if ($validator->fails()) {
+           return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+       }
+   
+       // Generate a verification token
+       $verification_token = Str::random(30);
+   
+       // Create the user record
+       $user = AuthUser::create([
+           'username' => $request->username,
+           'email' => $request->email,
+           'password' => Hash::make($request->password),
+           'user_type' => $request->user_type,
+           'verification_token' => $verification_token,
+           'email_verified' => false,
+       ]);
+   
+       // Send verification email
+       $email = new Mailer();
+       $email->to($user->email);
+       $email->subject('Test Email');
+       $email->setBodyByTemplate('verify-email', ['verification_token' => $verification_token, 'user' => $user]);
+       $email->send();
+   
+       // Create user profile
+       $escort = Profile::create([
+           'name' => $user->username,
+           'escort_id' => $user->id,
+       ]);
+   
+       // One-liner call to send dynamic email
+       EmailHelper::sendDynamicEmail(
+           'ts_reset_email_confirmations',
+           ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],
+           $user->email
+       );
+   
+       // Return success response
+       return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
+   }
+   
     public function registerWithGmail(Request $request)
 
     {
@@ -327,25 +309,96 @@ public function changePassword(Request $request) {
     }
 
    
+    // public function login(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'username' => 'required|string',
+    //         'password' => 'required|string',
+    //     ]);
+
+
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+
+    //     $credentials = $request->only('username', 'password');
+    //     $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+    //     $credentials = [
+    //         $loginType => $request->input('username'),
+    //         'password' => $request->input('password'),
+    //     ];
+
+    //     try {
+    //         if (!$token = JWTAuth::attempt($credentials)) {
+    //             return Resp::error(['error' => 'Unauthorized']);
+    //         }
+    //     } catch (JWTException $e) {
+    //         return Resp::error(['error' => 'Could not create token']);
+    //     }
+        
+
+    //     $user = JWTAuth::user()->load('profile');
+    //     $email_verified=$user->email_verified;
+    //     if(!$email_verified){
+    //         return Resp::error(['error' => 'Email not verified']);
+    //     }
+    //     $profile = [
+    //         'username' => $user->username,
+    //         'email' => $user->email,
+    //         'user_type' => $user->user_type,
+            
+    //     ];
+
+    //     return Resp::success([
+    //         'token' => $token,
+    //         'user' => $user
+    //     ]);
+
+    //     $credentials = $request->only('username', 'password');
+    //     // Determine if the input is an email or username
+    //     $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+    //     $credentials = [
+    //         $loginType => $request->input('username'),
+    //         'password' => $request->input('password'),
+    //     ];
+
+    //     try {
+    //         if (!$token = JWTAuth::attempt($credentials)) {
+
+    //             return Resp::error(['error ' => 'Unauthorized']);
+    //         }
+    //     } catch (JWTException $e) {
+
+    //         return Resp::error(['error' => 'Could not create token']);
+    //     }
+    //     JWTAuth::setToken($token);
+    //     EmailHelper::sendDynamicEmail('Verify_your_new_email_address', 
+    //     ['[CUSTOMER_NAME]' => $user->username, '[CUSTOMER_EMAIL]' => $user->email], 
+    //     $user->email);
+    //     return Resp::success(['token' => $token]);
+    // }
+
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
-
-
+    
+        // Validate the request
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-
+    
+        // Extract credentials
         $credentials = $request->only('username', 'password');
         $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
         $credentials = [
             $loginType => $request->input('username'),
             'password' => $request->input('password'),
         ];
-
+    
+        // Attempt login
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
                 return Resp::error(['error' => 'Unauthorized']);
@@ -353,60 +406,41 @@ public function changePassword(Request $request) {
         } catch (JWTException $e) {
             return Resp::error(['error' => 'Could not create token']);
         }
-        
-
+    
+        // Set the JWT token
+        JWTAuth::setToken($token);
+    
+        // Retrieve the authenticated user
         $user = JWTAuth::user()->load('profile');
-        $email_verified=$user->email_verified;
-        if(!$email_verified){
+    
+        // Check if email is verified
+        if (!$user->email_verified) {
             return Resp::error(['error' => 'Email not verified']);
         }
-        $profile = [
-            'username' => $user->username,
-            'email' => $user->email,
-            'user_type' => $user->user_type,
-            
+    
+        // Prepare dynamic email data
+        $dynamicData = [
+            '[USER_LOGIN]' => $user->username,  // This will replace [USER_LOGIN] with the username
+            '[CUSTOMER_NAME]' => $user->username,
+            '[CUSTOMER_EMAIL]' => $user->email,
         ];
-
+    
+        // Send dynamic email (ensure the template exists in the DB)
+        EmailHelper::sendDynamicEmail(
+            'Verify_your_new_email_address',  // Template type
+            $dynamicData,  // Dynamic data
+            $user->email  // Recipient email
+        );
+    
+        // Return response with token and user info
         return Resp::success([
             'token' => $token,
             'user' => $user
         ]);
-
-        $credentials = $request->only('username', 'password');
-        // Determine if the input is an email or username
-        $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-        $credentials = [
-            $loginType => $request->input('username'),
-            'password' => $request->input('password'),
-        ];
-
-        try {
-            if (!$token = JWTAuth::attempt($credentials)) {
-
-                return Resp::error(['error ' => 'Unauthorized']);
-            }
-        } catch (JWTException $e) {
-
-            return Resp::error(['error' => 'Could not create token']);
-        }
-        JWTAuth::setToken($token);
-        $template = EmailTemplates::where('type','flash_email_notification')->first();
-        if(!$template){
-            return Resp::error(['message' => 'Email template not found']);
-        }
-        $templateSubject = $template->subject;
-        $templateBody = $template->content;
-        $recipientEmail = $user->email; // You can pass this via API request
-        $dynamicData = [
-            '[CUSTOMER_NAME]' => $user->username,
-            '[CUSTOMER_EMAIL]' => $user->email,
-        ];
-        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
-        return Resp::success(['token' => $token]);
-
     }
-
     
+
+
     public function loginWithGmail(Request $request)
     {
         $validator = Validator::make($request->all(), [
