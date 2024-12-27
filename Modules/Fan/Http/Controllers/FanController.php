@@ -59,7 +59,7 @@ class FanController extends Controller
         $page = $request->query('page', 1);
         $offset = ($page - 1) * $perPage;
         $blogs = Blog::with('media')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('created_at', 'desc')
             ->skip($offset)
             ->take($perPage);
         if (!is_null($request->query('status'))) {
@@ -91,8 +91,11 @@ class FanController extends Controller
             'random' => $randomBlogs
         ]);
     }
+
+
+
    public function blog(Request $request){
-    $blogs=Blog::with('media')->orderBy('created_at','asc')->get();
+    $blogs=Blog::with('media')->orderBy('created_at','desc')->get();
     return Resp::success(['list'=>$blogs]);
    }
    
