@@ -261,7 +261,6 @@ public function changePassword(Request $request) {
             $escort = Profile::create([
                 'name' => $user->username,
                 'escort_id' => $user->id,
-
             ]);
             $template = EmailTemplates::where('type','flash_email_notification')->first();
             if(!$template){
@@ -271,11 +270,17 @@ public function changePassword(Request $request) {
             $templateBody = $template->content;
             $recipientEmail = $user->email; // You can pass this via API request
             $dynamicData = [
-                '[CUSTOMER_NAME]' => $user, //customer name
-                '[CUSTOMER_EMAIL]' => $user->email,
+                '[USER_LOGIN]' => $user->username, //customer name
+                '[USER_EMAIL]' => $user->email,
             ];
             $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
             return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
+
+
+
+
+
+
         }
     public function registerWithGmail(Request $request)
 
