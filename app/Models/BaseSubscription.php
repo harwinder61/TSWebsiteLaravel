@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\BaseOrder;
+use App\Models\Media;
 
 class BaseSubscription extends Model
 {
@@ -15,6 +16,10 @@ class BaseSubscription extends Model
 
     public function orders(){
         return $this->belongsTo(BaseOrder::class,'order_id','id');
+    }
+
+    public function media(){
+        return $this->belongsTo(Media::class,'image_id','id');
     }
 
 

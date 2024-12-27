@@ -456,8 +456,11 @@ public function listReviews($id, Request $request)
                 'escort.profile.reviews',
                 'escort.profile.media' ,
                 'escort.profile.rates',
-                'orders'
+                'orders',
+                'media'
             ])
+
+                ->orderByRaw('CASE WHEN created_mode IS NOT NULL THEN 0 ELSE 1 END, created_at DESC')
                 ->offset($offset)
                 ->limit($perPage)
                 ->get();
