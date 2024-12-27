@@ -28,7 +28,7 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
     Route::post('/hide-profile',[EscortController::class,'hideProfile']);   
      Route::put('/orders',[OrderController::class,'updateOrder']);
-    Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
+    // Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
     Route::put('/orders',[OrderController::class,'updateOrder']);
     Route::get('/active-subscription',[EscortController::class,'getActiveSubscription']);
     Route::post('/verify',[EscortController::class,'verify']);
@@ -39,6 +39,8 @@ Route::group(['prefix' => 'escort'],function(){
     Route::patch('/update-latest-subscription',[OrderController::class,'updateLatestEscortSubscription']);
     Route::post('/add-extra-locations',[OrderController::class,'extraLocationsUpdatedOrder']);
     Route::get('reviws-escort-fanlist',[ReviewsController::class,'getEscortFanlist']);
+    
+
     
 });
 });

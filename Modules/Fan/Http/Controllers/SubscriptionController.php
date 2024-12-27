@@ -446,7 +446,7 @@ public function listReviews($id, Request $request)
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
     
-            /*
+            
             $totalCount = $subscriptions->count();
             
             $result = $subscriptions->with([
@@ -461,41 +461,14 @@ public function listReviews($id, Request $request)
                 'media'
             ])
 
-                //->orderByRaw('CASE WHEN created_mode IS NOT NULL THEN 0 ELSE 1 END, created_at DESC')
+                ->orderByRaw('CASE WHEN created_mode IS NOT NULL THEN 0 ELSE 1 END, created_at DESC')
                 ->offset($offset)
                 ->limit($perPage)
                 ->get();
 
-                */
+                
 
-                // Subquery to get the latest created_at for each unique escort_id and plan_code
-            $latestSubscriptions = \DB::table('subscriptions')
-            ->select('escort_id', 'plan_code', \DB::raw('MAX(created_at) as latest_created_at'))
-            ->groupBy('escort_id', 'plan_code');
-
-        // Join the latest subscriptions with the original subscriptions table to get full details
-        $result = $subscriptions->joinSub($latestSubscriptions, 'latest', function($join) {
-                $join->on('subscriptions.escort_id', '=', 'latest.escort_id')
-                     ->on('subscriptions.plan_code', '=', 'latest.plan_code')
-                     ->on('subscriptions.created_at', '=', 'latest.latest_created_at');
-            })
-            ->with([
-                'escort',
-                'escort.profile.county',
-                'escort.profile.city',
-                'escort.profile.region',
-                'escort.profile.reviews',
-                'escort.profile.media',
-                'escort.profile.rates',
-                'orders',
-                'media'
-            ])
-            ->orderBy('subscriptions.created_at', 'desc')
-            ->offset($offset)
-            ->limit($perPage)
-            ->get();
-
-        $totalCount = $result->count(); // Count the total results after applying the limit and offset
+                
 
             foreach ($result as $subscription) {
                 $escort = $subscription->escort;
@@ -541,23 +514,22 @@ public function listReviews($id, Request $request)
         } catch (\Exception $e) {
             return Resp::error(['message' => 'Something went wrong'.$e->getMessage()]);
         }
-    }
+    } 
 
     // public function getAdvertLists(Request $request)
     // {
     //     try {
     //         $user = auth()->user();
-            
     //         $locationType="";
-    //         $s=$request->query('type');
     //         $subscriptions = EscortSubscription::query();
+
+
             
     //         $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
-    //             ->select('subscriptions.*', 'plans.title as plan_title');
-
+    //             ->select('subscriptions.*', 'plans.title as plan_title')
+    //             ->where('subscriptions.end_date','>',now());
     //         if ($request->query('slug')) {
     //             $slug = $request->query('slug');
-
 
     //             $location=Location::where('slug','like','%'.$slug.'%')->first();
     //             $type=$location->type;
@@ -576,14 +548,6 @@ public function listReviews($id, Request $request)
     //                     break;
     //             }
     //         }
-
-    //     $s = $request->query('s');  // Check the value of $s here
-    //         if ($s) {
-    //             $subscriptions->whereHas('escort.profile', function ($query) use ($s) {
-    //                 $query->where('username', 'like', '%' . $s . '%');
-    //             });
-    //         }
-
 
     //         if (!is_null($request->query('county_slug'))) {
     //             $countySlug = $request->query('county_slug');
@@ -605,6 +569,10 @@ public function listReviews($id, Request $request)
 
     //         if (!is_null($request->query('plan_code'))) {
     //             $subscriptions->where('plan_code', $request->query('plan_code'));
+    //         }
+
+    //         if ($request->query('plan_code') == 'P104') {
+    //             $subscriptions->orderBy('sort_order'); // Sort by sort_order if plan_code is P104
     //         }
 
     //         if (!is_null($request->query('escort_id'))) {
@@ -638,21 +606,42 @@ public function listReviews($id, Request $request)
     //         }
     
     //         if (!is_null($request->query('city_id'))) {
-    //             $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
-    //                 $query->where('city_id', $request->query('city_id'));
+                
+
+    //             $subscriptions->where(function ($query) use ($request) {
+    //                 $query->whereHas('escort.profile', function ($query) use ($request) {
+    //                     $query->where('city_id', $request->query('city_id'));
+    //                 })
+    //                 ->orWhere(function ($query) use ($request) {
+    //                     // Check if the city_id exists in the extra_location JSON column
+    //                     $query->whereJsonContains('extra_location', $request->query('city_id'));
+    //                 });
     //             });
+                
+
     //         }
     
     //         if (!is_null($request->query('region_id'))) {
+
     //             $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
     //                 $query->where('region_id', $request->query('region_id'));
+    //             })
+    //             ->orWhere(function ($query) use ($request) {
+    //                 // Check if the city_id exists in the extra_location JSON column
+    //                 $query->whereJsonContains('extra_location', $request->query('region_id'));
     //             });
     //         }
 
     //         if (!is_null($request->query('county_id'))) {
+
     //             $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
     //                 $query->where('county_id', $request->query('county_id'));
+    //             })
+    //             ->orWhere(function ($query) use ($request) {
+    //                 // Check if the city_id exists in the extra_location JSON column
+    //                 $query->whereJsonContains('extra_location', $request->query('county_id'));
     //             });
+
     //         }
 
     //         if (!is_null($request->query('name'))) {
@@ -666,10 +655,9 @@ public function listReviews($id, Request $request)
     //                 $query->where('username', 'like', '%' . $request->query('username') . '%');
     //             });
     //         }
-       
             
-    //         $perPage = (int)$request->query('per_page',10); 
-    //         $page = (int)$request->query('page', 1);
+    //         $perPage = $request->query('per_page',50); 
+    //         $page = $request->query('page', 1);
     //         $offset = ($page - 1) * $perPage;
     
     //         $totalCount = $subscriptions->count();
@@ -682,11 +670,15 @@ public function listReviews($id, Request $request)
     //             'escort.profile.reviews',
     //             'escort.profile.media' ,
     //             'escort.profile.rates',
-    //             'orders'
+    //             'orders',
+    //             'media'
     //         ])
+
+    //             ->orderByRaw('CASE WHEN created_mode IS NOT NULL THEN 0 ELSE 1 END, created_at DESC')
     //             ->offset($offset)
     //             ->limit($perPage)
     //             ->get();
+
 
     //         foreach ($result as $subscription) {
     //             $escort = $subscription->escort;
@@ -726,13 +718,166 @@ public function listReviews($id, Request $request)
 
 
             
-    //             return Resp::success(["list" => $result,'location_type'=>$locationType,'pagination'=>['total_results'=>$totalCount,'total_pages'=>ceil($totalCount/$perPage),'page_number'=>$page,'page_size'=>$perPage,'page'=>(int)$page]]);
+    //             return Resp::success(["list" => $result,'location_type'=>$locationType,'pagination'=>['total_results'=>$totalCount,'total_pages'=>ceil($totalCount/$perPage),'page_number'=>$page,'page_size'=>$perPage]]);
 
     //         // Retrieve subscriptions with related escort and profile
     //     } catch (\Exception $e) {
     //         return Resp::error(['message' => 'Something went wrong'.$e->getMessage()]);
     //     }
     // }
+
+    /*public function getSubscriptions(Request $request)
+{
+    try {
+        $user = auth()->user();
+        $locationType = "";
+        $subscriptions = EscortSubscription::query();
+
+        $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
+            ->select('subscriptions.*', 'plans.title as plan_title')
+            ->where('subscriptions.end_date', '>', now());
+
+        // Check if 'slug' is provided to filter locations
+        if ($request->query('slug')) {
+            $slug = $request->query('slug');
+            $location = Location::where('slug', 'like', '%' . $slug . '%')->first();
+            $type = $location->type;
+            switch ($type) {
+                case 'city':
+                    $locationType = 'city';
+                    $request->merge(['city_id' => $location->id]);
+                    break;
+                case 'county':
+                    $locationType = 'county';
+                    $request->merge(['county_id' => $location->id]);
+                    break;
+                case 'region':
+                    $locationType = 'region';
+                    $request->merge(['region_id' => $location->id]);
+                    break;
+            }
+        }
+
+        // Other filters (county_slug, region_slug, plan_code, etc.)
+        if (!is_null($request->query('county_slug'))) {
+            $countySlug = $request->query('county_slug');
+            $subscriptions->whereHas('escort.profile', function ($query) use ($countySlug) {
+                $query->whereHas('county', function ($q) use ($countySlug) {
+                    $q->where('slug', 'like', '%' . $countySlug . '%');
+                });
+            });
+        }
+
+        if (!is_null($request->query('region_slug'))) {
+            $regionSlug = $request->query('region_slug');
+            $subscriptions->whereHas('escort.profile', function ($query) use ($regionSlug) {
+                $query->whereHas('region', function ($q) use ($regionSlug) {
+                    $q->where('slug', 'like', '%' . $regionSlug . '%');
+                });
+            });
+        }
+
+        // More filters (plan_code, escort_id, ethnicity, etc.)
+        if (!is_null($request->query('plan_code'))) {
+            $subscriptions->where('plan_code', $request->query('plan_code'));
+        }
+
+        if ($request->query('plan_code') == 'P104') {
+            $subscriptions->orderBy('sort_order');
+        }
+
+        // Add more filtering logic here as needed
+
+        // Handle 'status' filter
+        if (!is_null($request->query('status'))) {
+            if ($request->query('status') == 'active') {
+                $subscriptions->where('end_date', '>', now());
+            } elseif ($request->query('status') == 'expired') {
+                $subscriptions->where('end_date', '<', now());
+            }
+        }
+
+        // Pagination logic
+        $perPage = $request->query('per_page', 50);  // Default to 50
+
+        // Check if the plan_code is P105 and override pagination per_page to 30
+        if ($request->query('plan_code') === 'P105') {
+            $perPage = 30; // Limit results to 30 for plan_code P105
+        }
+
+        $page = $request->query('page', 1);
+        $offset = ($page - 1) * $perPage;
+
+        $totalCount = $subscriptions->count();
+
+        // Fetch the subscriptions with the related data
+        $result = $subscriptions->with([
+            'escort',
+            'escort.profile.county',
+            'escort.profile.city',
+            'escort.profile.region',
+            'escort.profile.reviews',
+            'escort.profile.media',
+            'escort.profile.rates',
+            'orders',
+            'media'
+        ])
+            ->orderByRaw('CASE WHEN created_mode IS NOT NULL THEN 0 ELSE 1 END, created_at DESC')
+            ->offset($offset)
+            ->limit($perPage)
+            ->get();
+
+        // Process the results (average ratings, etc.)
+        foreach ($result as $subscription) {
+            $escort = $subscription->escort;
+            $reviews = $escort->profile->reviews ?? [];
+            $totalPhotoAccuracy = 0;
+            $totalService = 0;
+            $totalCleanliness = 0;
+            $totalLocation = 0;
+            $totalValueForMoney = 0;
+            $totalReviews = count($reviews);
+
+            // Calculate average ratings if reviews exist
+            if ($totalReviews > 0) {
+                foreach ($reviews as $review) {
+                    $totalPhotoAccuracy += $review->photo_accuracy;
+                    $totalService += $review->service;
+                    $totalCleanliness += $review->clean_liness;
+                    $totalLocation += $review->location;
+                    $totalValueForMoney += $review->value_for_money;
+                }
+
+                $averageRating = (
+                    $totalPhotoAccuracy +
+                    $totalService +
+                    $totalCleanliness +
+                    $totalLocation +
+                    $totalValueForMoney
+                ) / (5 * $totalReviews);
+
+                $escort->profile->avg_rating = round($averageRating, 2);
+            }
+        }
+
+        return Resp::success([
+            'list' => $result,
+            'location_type' => $locationType,
+            'pagination' => [
+                'total_results' => $totalCount,
+                'total_pages' => ceil($totalCount / $perPage),
+                'page_number' => $page,
+                'page_size' => $perPage
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        return Resp::error(['message' => 'Something went wrong' . $e->getMessage()]);
+    }
+}
+*/
+
+   
 
     public function getAdvertLists(Request $request)
 {
