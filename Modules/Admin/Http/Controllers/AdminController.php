@@ -1151,6 +1151,7 @@ public function getVarifiacationList(Request $request)
        }
        $forum->category_id=$category_data->id;
        $forum->save();
+       $category_data->increment('count');
        return Resp::success([
            'message' => 'Forum created successfully',
            'forum' => $forum,
