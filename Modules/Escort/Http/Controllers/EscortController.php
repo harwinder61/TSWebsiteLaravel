@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\File;
 use App\Models\Plan;
 use App\Models\BaseSubscription;
 use App\Models\BaseReviews;
+use App\Mail\EmailHelper;
 class EscortController extends Controller
 {
     public function __construct()
@@ -33,6 +34,38 @@ class EscortController extends Controller
         $this->middleware(AuthMiddleware::class)->except(['profileViews']);
     } 
  
+    public function deleteProfile(Request $request)
+    {
+
+         $validator = Validator::make($request->all(), [
+            'is_delete' => 'required|boolean'
+        ]);
+
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+
+    $user = auth()->user();
+    // Only update if is_delete is true
+    if ($request->is_delete) {
+        $user->delete_on = now();
+        $user->is_delete = $request->is_delete; 
+        $user->save();
+        $profile = Profile::where('escort_id', $user->id)->first();
+        $profile->delete();
+        EmailHelper::sendDynamicEmail('account_deleted', 
+        ['[USER_LOGIN]' => $user->username, '[CUSTOMER_NAME]' => $user->username, '[CUSTOMER_EMAIL]' => $user->email], 
+        $user->email);
+        
+        return Resp::success(['user'=>$user],'Profile deleted successfully');
+    }
+    
+        return Resp::error(['message' => 'Invalid request']);
+    }
+    
+
+
+
 
     public function featuredTsGirl(Request $request)
     {
@@ -192,29 +225,6 @@ public function profileViews($id, Request $request)
         return Resp::success(['user'=>$user],'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
     }
 
-    public function deleteProfile(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'is_delete' => 'required|boolean'
-        ]);
-
-    if ($validator->fails()) {
-        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    }
-
-    $user = auth()->user();
-    // Only update if is_delete is true
-    if ($request->is_delete) {
-        $user->delete_on = now();
-        $user->is_delete = $request->is_delete; 
-        $user->save();
-        
-        return Resp::success(['user'=>$user],'Profile deleted successfully');
-    }
-    
-        return Resp::error(['message' => 'Invalid request']);
-    }
-    
     public function updateSubscription(Request $request)
 {
     $validator = Validator::make($request->all(), [
