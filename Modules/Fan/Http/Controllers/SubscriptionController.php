@@ -446,8 +446,9 @@ public function listReviews($id, Request $request)
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
     
+            /*
             $totalCount = $subscriptions->count();
-
+            
             $result = $subscriptions->with([
                 'escort',
                 'escort.profile.county',
@@ -460,11 +461,41 @@ public function listReviews($id, Request $request)
                 'media'
             ])
 
-                ->orderByRaw('CASE WHEN created_mode IS NOT NULL THEN 0 ELSE 1 END, created_at DESC')
+                //->orderByRaw('CASE WHEN created_mode IS NOT NULL THEN 0 ELSE 1 END, created_at DESC')
                 ->offset($offset)
                 ->limit($perPage)
                 ->get();
 
+                */
+
+                // Subquery to get the latest created_at for each unique escort_id and plan_code
+            $latestSubscriptions = \DB::table('subscriptions')
+            ->select('escort_id', 'plan_code', \DB::raw('MAX(created_at) as latest_created_at'))
+            ->groupBy('escort_id', 'plan_code');
+
+        // Join the latest subscriptions with the original subscriptions table to get full details
+        $result = $subscriptions->joinSub($latestSubscriptions, 'latest', function($join) {
+                $join->on('subscriptions.escort_id', '=', 'latest.escort_id')
+                     ->on('subscriptions.plan_code', '=', 'latest.plan_code')
+                     ->on('subscriptions.created_at', '=', 'latest.latest_created_at');
+            })
+            ->with([
+                'escort',
+                'escort.profile.county',
+                'escort.profile.city',
+                'escort.profile.region',
+                'escort.profile.reviews',
+                'escort.profile.media',
+                'escort.profile.rates',
+                'orders',
+                'media'
+            ])
+            ->orderBy('subscriptions.created_at', 'desc')
+            ->offset($offset)
+            ->limit($perPage)
+            ->get();
+
+        $totalCount = $result->count(); // Count the total results after applying the limit and offset
 
             foreach ($result as $subscription) {
                 $escort = $subscription->escort;
