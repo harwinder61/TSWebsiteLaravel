@@ -89,9 +89,9 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/forum-categories',[AdminController::class,'forumCategories']);
         Route::post('/delete-category/{id}',[AdminController::class,'deleteCategory']);
         Route::post('/edit-category/{id}',[AdminController::class,'editCategory']);
-
         Route::post('/add-dropdowns/{id}',[AdminController::class,'addDroppableField']);
         Route::post('/remove-dropdowns/{id}',[AdminController::class,'deleteDroppableField']);
+        
     });
 
 
