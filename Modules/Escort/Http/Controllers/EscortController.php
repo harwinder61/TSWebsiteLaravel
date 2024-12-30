@@ -466,6 +466,8 @@ public function profileViews($id, Request $request)
                 'county_id' => $county_id,
                 'is_profile' => true,
                 'description' => $request->input('description'),
+                'is_incall_enabled' => $request->input('is_incall_enabled'),
+                'is_outcall_enabled' => $request->input('is_outcall_enabled'),
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);

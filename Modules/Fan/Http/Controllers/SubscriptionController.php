@@ -441,6 +441,14 @@ public function listReviews($id, Request $request)
                     $query->where('username', 'like', '%' . $request->query('username') . '%');
                 });
             }
+
+
+            $subscriptions->join(
+                \DB::raw('(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription'),
+                'subscriptions.id', '=', 'latest_subscription.max_id'
+            )
+            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
             
             $perPage = $request->query('per_page',50); 
             $page = $request->query('page', 1);
