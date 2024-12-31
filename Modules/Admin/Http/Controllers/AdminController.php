@@ -437,17 +437,38 @@ class AdminController extends Controller
         $id = $request->query('id');
 
         // Fetch the settings with type 'home_parallax', limit to 2 settings if necessary
-        $settings = Setting::where('type', 'home_parallax')
-            ->when($id, fn($query) => $query->where('id', $id))
-            ->take(2)  // Get 2 settings
-            ->get();
+        //$settings = Setting::where('type', 'home_parallax')
+        //    ->when($id, fn($query) => $query->where('id', $id))
+        //    ->take(2)  // Get 2 settings
+        //    ->get();
+        $settings_mobile= Setting::where('key', 'mobile_parallax')->first();
+        if (!$settings_mobile) {
+            return Resp::error(['message' => 'Parallax image not found']);        
+        }
+        $settings_desktop= Setting::where('key', 'desktop_parallax')->first();
+        if (!$settings_desktop) {
+            return Resp::error(['message' => 'Parallax image not found']);        
+        }
+
+        $mobile_image = Media::find($settings_mobile->value);
+        if (!$mobile_image) {
+            return Resp::error(['message' => 'Parallax image not found']);        
+        }
+        $desktop_image = Media::find($settings_desktop->value);
+        if (!$desktop_image) {
+            return Resp::error(['message' => 'Parallax image not found']);        
+        }
+        $settings = [
+            'mobile_image' => $mobile_image,
+            'desktop_image' => $desktop_image
+        ];
 
         // Fetch specific media for value_mobile and value_desktop
-        $settings->each(function ($setting) {
+        //$settings->each(function ($setting) {
             // Load the actual media for mobile and desktop using their respective IDs
-            $setting->mobile_image = Media::find($setting->value_mobile);
-            $setting->desktop_image = Media::find($setting->value_desktop);
-        });
+        //    $setting->mobile_image = Media::find($setting->value_mobile);
+        //    $setting->desktop_image = Media::find($setting->value_desktop);
+        //});
 
         return Resp::success(['settings' => $settings]);
     }
@@ -469,19 +490,26 @@ class AdminController extends Controller
         }
 
         // Fetch or create the Setting with type 'home_parallax'
-        $setting = Setting::where('type', 'home_parallax')->first();
-        if (!$setting) {
-            $setting = new Setting();
-            $setting->type = 'home_parallax';
+        $setting_mobile = Setting::where('key', 'mobile_parallax')->first();
+        $setting_desktop = Setting::where('key', 'desktop_parallax')->first();
+        if (!$setting_mobile) {
+            $setting_mobile = new Setting();
+            $setting_mobile->key = 'mobile_parallax';
         }
-        $setting->value_mobile = $request->value_mobile;  // Mobile image media ID
-        $setting->value_desktop = $request->value_desktop;  // Desktop image media ID
-        $setting->save();
-        $mobileMedia = Media::find($setting->value_mobile);  // Mobile media object
-        $desktopMedia = Media::find($setting->value_desktop);  // Desktop media object
+        if (!$setting_desktop) {
+            $setting_desktop = new Setting();
+            $setting_desktop->key = 'desktop_parallax';
+        }
+        $setting_mobile->value = $request->value_mobile;  // Mobile image media ID
+        $setting_desktop->value = $request->value_desktop;  // Desktop image media ID
+        $setting_mobile->save();
+        $setting_desktop->save();
+        $mobileMedia = Media::find($setting_mobile->value);  // Mobile media object
+        $desktopMedia = Media::find($setting_desktop->value);  // Desktop media object
         return Resp::success([
             'message' => 'Parallax images updated successfully',
-            'setting' => $setting,
+            'setting_mobile' => $setting_mobile,
+            'setting_desktop' => $setting_desktop,
             'mobile_image' => $mobileMedia,  // Return mobile image details
             'desktop_image' => $desktopMedia,  // Return desktop image details
         ]);
@@ -2325,6 +2353,32 @@ public function getVarifiacationList(Request $request)
             ]);
             return Resp::success(['message' => 'Droppable field deleted successfully','data'=>$data]);
 
+        }catch(\Exception $e){
+            return Resp::error(['message'=>$e->getMessage()]);
+        }
+    }
+
+    public function hideSubscription(Request $request,$id){
+        try{
+
+            $subscription=Subscription::find($id);
+            if(!$subscription){
+                return Resp::error([
+                    'error'=>'No subscription found'
+                ]);
+            }
+
+            $updatedData = $subscription->update([
+                'is_hidden'=>1
+            ]);
+            if(!$updatedData){
+                return Resp::error([
+                    'error'=>'Failed to update subscription'
+                ]);
+            }
+
+            $data=Subscription::find($id);
+            return Resp::success(['message' => 'Subscription hidden successfully','data'=>$data]);
         }catch(\Exception $e){
             return Resp::error(['message'=>$e->getMessage()]);
         }
