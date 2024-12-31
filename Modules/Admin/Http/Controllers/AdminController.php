@@ -374,8 +374,8 @@ class AdminController extends Controller
         }
         $desktop_image=Media::find($parallax_desktop->value);
         $settings=[
-            'mobile_parallax'=>$mobile_image,
-            'desktop_parallax'=>$desktop_image
+            'mobile_image'=>$mobile_image,
+            'desktop_image'=>$desktop_image
         ];
         return Resp::success(['settings' => $settings]);
     }
