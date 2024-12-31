@@ -103,5 +103,4 @@ Route::get('/blog/{id?}',[AdminController::class,'getBlog']);
 Route::get('/blog-slug/{slug?}',[AdminController::class,'getBlogBySlug']);
 Route::get('/get-forum',[AdminController::class,'getForum']);
 Route::post('/send-email',[AdminController::class,'sendEmail']);
-
 Route::get('/get-dropdowns',[AdminController::class,'fetchDroppableFields']);

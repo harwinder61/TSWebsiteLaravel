@@ -2028,6 +2028,7 @@ public function getVarifiacationList(Request $request)
     //         'per_page' => (int) $perPage
     //     ]);
     // }
+    
 
     public function getUsers(Request $request)
     {
@@ -2082,6 +2083,7 @@ public function getVarifiacationList(Request $request)
     {
         $users = AuthUser::with('profile')->get();
         return Resp::success(['list' => $users]);
+        
     }
 
     public function getAdminUsers(Request $request)
