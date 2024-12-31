@@ -313,7 +313,8 @@ public function listReviews($id, Request $request)
             
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
                 ->select('subscriptions.*', 'plans.title as plan_title')
-                ->where('subscriptions.end_date','>',now());
+                ->where('subscriptions.end_date','>',now())
+                ->where('subscriptions.is_hidden',0);
             if ($request->query('slug')) {
                 $slug = $request->query('slug');
 
