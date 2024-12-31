@@ -33,7 +33,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/delete-review/{id}',[AdminController::class,'deleteReview']);
         Route::post('/edit-blog/{id}',[AdminController::class,'editBlog']);
         Route::post('/delete-blog/{id}',[AdminController::class,'deleteBlog']);
-        Route::get('/all-advert-users',[AdminController::class,'getAllAdvertUsers']);
+        Route::get('/all-advert-users',[AdminController::class,'getUsers']);
         Route::post('/user',[AdminController::class,'newUser']);
         Route::put('/user/{id}',[AdminController::class,'userProfile']); 
         Route::post('/create-forum',[AdminController::class,'createForum']);
