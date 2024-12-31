@@ -91,6 +91,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/edit-category/{id}',[AdminController::class,'editCategory']);
         Route::post('/add-dropdowns/{id}',[AdminController::class,'addDroppableField']);
         Route::post('/remove-dropdowns/{id}',[AdminController::class,'deleteDroppableField']);
+        Route::get('get-single-page/{id}',[AdminController::class,'getSinglePage']);
         
     });
 

@@ -450,7 +450,7 @@ public function listReviews($id, Request $request)
             )
             ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
             
-            $perPage = $request->query('per_page',50); 
+            $perPage = $request->query('per_page',30); 
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
     

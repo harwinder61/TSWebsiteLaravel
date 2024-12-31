@@ -47,26 +47,33 @@ use Modules\Admin\app\Models\Setting;
 use App\Mail\EmailHelper;
 use App\Models\Media;
 use App\Models\BaseSettings;
+use Modules\Escort\app\Models\Orders;
 class AdminController extends Controller
 {
 
 
+   public function getSinglePage($id){
+    $page = Pages::find($id);
+    if(!$page){
+        return Resp::error(['message' => 'Page not found']);
+    }
+    return Resp::success(['page' => $page]);
+   }
+
     public function userDelete($id, Request $request)
     {
         $user = AuthUser::find($id);
-        
+            
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
         }
-    
-        // Delete media records associated with the user
+        Subscription::where('escort_id', $id)->delete();
+        Orders::where('escort_id', $id)->delete();
+        Profile::where('escort_id', $id)->delete();    
         Media::where('escort_id', $id)->delete();
-    
         $user->delete();
         return Resp::success(['message' => 'User deleted successfully']);
     }
-
-
 
 
     public function editCategory(Request $request, $id)
@@ -486,11 +493,13 @@ class AdminController extends Controller
             'description' => 'required|string',
             'status' => 'required|integer|in:1,0',
             'featured_image' => 'required|integer|exists:media,id',
+         
         ]);
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
         $page = Pages::create($validator->validated());
+        $page->slug = Str::slug($request->title);
         $page->media()->associate(Media::find($request->input('featured_image')));
         $page->save();
         $page->load('media'); // Load the related Media model
