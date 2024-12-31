@@ -459,7 +459,7 @@ class SubscriptionController extends Controller
             )
                 ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
 
-            $perPage = $request->query('per_page', 30);
+            $perPage = $request->query('per_page',18);
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
 
