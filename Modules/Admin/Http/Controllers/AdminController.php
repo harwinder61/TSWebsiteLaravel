@@ -53,19 +53,18 @@ class AdminController extends Controller
     public function userDelete($id, Request $request)
     {
         $user = AuthUser::find($id);
-        
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
         }
-    
-        // Delete media records associated with the user
-        Media::where('escort_id', $id)->delete();
-    
-        $user->delete();
-        return Resp::success(['message' => 'User deleted successfully']);
+        try {
+            Media::where('id', $id)->delete();
+            $user->delete();
+            return Resp::success(['message' => 'User deleted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error deleting user: ' . $e->getMessage());
+            return Resp::error(['message' => 'Error deleting user']);
+        }
     }
-
-
 
 
     public function editCategory(Request $request, $id)
