@@ -117,7 +117,7 @@ class AdminController extends Controller
             'private_gallery' => 'array',
             'private_gallery.*' => 'exists:media,id',
             'promo_video' => 'exists:media,id',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:10000',
         ]);
 
         // Return validation errors if any
