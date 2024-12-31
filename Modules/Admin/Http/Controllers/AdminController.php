@@ -48,6 +48,7 @@ use App\Mail\EmailHelper;
 use App\Models\Media;
 use App\Models\BaseSettings;
 use Modules\Escort\app\Models\Orders;
+
 class AdminController extends Controller
 {
 
@@ -71,6 +72,7 @@ class AdminController extends Controller
         Orders::where('escort_id', $id)->delete();
         Profile::where('escort_id', $id)->delete();    
         Media::where('escort_id', $id)->delete();
+        ModelsVerify::where('escort_id', $id)->delete();
         $user->delete();
         return Resp::success(['message' => 'User deleted successfully']);
     }
@@ -107,7 +109,6 @@ class AdminController extends Controller
         return Resp::success(['message' => 'Category deleted successfully']);
     }
 
-
     public function profileUpdateMedia($id, Request $request)
     {
         // Validate the input
@@ -119,83 +120,168 @@ class AdminController extends Controller
             'promo_video' => 'exists:media,id',
             'description' => 'nullable|string',
         ]);
-
-        // Return validation errors if any
+    
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-
+    
         // Find the profile
         $user = Profile::find($id);
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
         }
-
+    
         // Update gallery and private gallery
         if ($request->has('gallery')) {
             $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
-
+    
             Media::where('escort_id', $user->id)
                 ->where('type', 'gallery')
                 ->whereIn('id', $galleryIds)
                 ->update(['is_temp' => false]);
-
+    
             Media::where('escort_id', $user->id)
                 ->where('type', 'gallery')
                 ->whereNotIn('id', $galleryIds)
                 ->forceDelete();
         }
-
+    
         if ($request->has('private_gallery')) {
             $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
-
+    
             Media::where('escort_id', $user->id)
                 ->where('type', 'private_gallery')
                 ->whereIn('id', $privateGalleryIds)
                 ->update(['is_temp' => false]);
-
+    
             Media::where('escort_id', $user->id)
                 ->where('type', 'private_gallery')
                 ->whereNotIn('id', $privateGalleryIds)
                 ->forceDelete();
         }
-
+    
         // Update promo video
         if ($request->has('promo_video')) {
             $promoVideoId = $request->input('promo_video');
-
+    
             Media::where('escort_id', $user->id)
                 ->where('type', 'promo_video')
                 ->where('id', $promoVideoId)
                 ->update(['is_temp' => false]);
-
+    
             Media::where('escort_id', $user->id)
                 ->where('type', 'promo_video')
                 ->where('id', '!=', $promoVideoId)
                 ->forceDelete();
         }
-
+    
         // Update description
-        if ($request->has('description')) {
-            $profile = Profile::where('escort_id', $user->id)->first();
-            if ($profile) {
-                $profile->description = $request->input('description');
-                $profile->save();
-            }
+        if ($request->input('description')) {
+            $user->description = $request->input('description');
+            $user->save();
         }
-
-        // Check if all fields are present and update is_media
+    
+        // Update is_media
         if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
-            $profile = Profile::where('escort_id', $user->id)->first();
-            if ($profile) {
-                $profile->is_media = 1;
-                $profile->save();
-            }
+            $user->is_media = 1;
+            $user->save();
         }
-
-        // Return success message
+    
         return Resp::success(['message' => 'Media updated successfully']);
     }
+
+
+
+
+//     public function profileUpdateMedia($id, Request $request)
+// {
+//     // Validate the input
+//     $validator = Validator::make($request->all(), [
+//         'gallery' => 'array',
+//         'gallery.*' => 'exists:media,id',
+//         'private_gallery' => 'array',
+//         'private_gallery.*' => 'exists:media,id',
+//         'promo_video' => 'exists:media,id',
+//         'description' => 'nullable|string',
+//     ]);
+
+
+//     if ($validator->fails()) {
+//         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+//     }
+
+//     // Find the profile
+//     $user = Profile::find($id);
+//     if (!$user) {
+//         return Resp::error(['message' => 'User not found']);
+//     }
+
+//     // Update gallery and private gallery
+//     if ($request->has('gallery')) {
+//         $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
+
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'gallery')
+//             ->whereIn('id', $galleryIds)
+//             ->update(['is_temp' => false]);
+
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'gallery')
+//             ->whereNotIn('id', $galleryIds)
+//             ->forceDelete();
+//     }
+
+//     if ($request->has('private_gallery')) {
+//         $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
+
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'private_gallery')
+//             ->whereIn('id', $privateGalleryIds)
+//             ->update(['is_temp' => false]);
+
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'private_gallery')
+//             ->whereNotIn('id', $privateGalleryIds)
+//             ->forceDelete();
+//     }
+
+//     // Update promo video
+//     if ($request->has('promo_video')) {
+//         $promoVideoId = $request->input('promo_video');
+
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'promo_video')
+//             ->where('id', $promoVideoId)
+//             ->update(['is_temp' => false]);
+
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'promo_video')
+//             ->where('id', '!=', $promoVideoId)
+//             ->forceDelete();
+//     }
+
+//     // Update description
+//     if ($request->input('description')) {
+//         $profile = Profile::where('escort_id',$id)->first();
+//         if ($profile) {
+//             $profile->description = $request->input('description');
+//             $profile->save();
+//         }
+//     }
+
+//     // Check if all fields are present and update is_media
+// // Check if all fields are present and update is_media
+// if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
+//     $profile = Profile::where('escort_id',$id)->first();
+//     if ($profile) {
+//         $profile->is_media = 1;
+//         $profile->save();
+//     }
+// }
+    
+//     return Resp::success(['message' => 'Media updated successfully']);
+// }
+
     public function hideProfile($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -351,17 +437,38 @@ class AdminController extends Controller
         $id = $request->query('id');
 
         // Fetch the settings with type 'home_parallax', limit to 2 settings if necessary
-        $settings = Setting::where('type', 'home_parallax')
-            ->when($id, fn($query) => $query->where('id', $id))
-            ->take(2)  // Get 2 settings
-            ->get();
+        //$settings = Setting::where('type', 'home_parallax')
+        //    ->when($id, fn($query) => $query->where('id', $id))
+        //    ->take(2)  // Get 2 settings
+        //    ->get();
+        $settings_mobile= Setting::where('key', 'mobile_parallax')->first();
+        if (!$settings_mobile) {
+            return Resp::error(['message' => 'Parallax image not found']);        
+        }
+        $settings_desktop= Setting::where('key', 'desktop_parallax')->first();
+        if (!$settings_desktop) {
+            return Resp::error(['message' => 'Parallax image not found']);        
+        }
+
+        $mobile_image = Media::find($settings_mobile->value);
+        if (!$mobile_image) {
+            return Resp::error(['message' => 'Parallax image not found']);        
+        }
+        $desktop_image = Media::find($settings_desktop->value);
+        if (!$desktop_image) {
+            return Resp::error(['message' => 'Parallax image not found']);        
+        }
+        $settings = [
+            'mobile_image' => $mobile_image,
+            'desktop_image' => $desktop_image
+        ];
 
         // Fetch specific media for value_mobile and value_desktop
-        $settings->each(function ($setting) {
+        //$settings->each(function ($setting) {
             // Load the actual media for mobile and desktop using their respective IDs
-            $setting->mobile_image = Media::find($setting->value_mobile);
-            $setting->desktop_image = Media::find($setting->value_desktop);
-        });
+        //    $setting->mobile_image = Media::find($setting->value_mobile);
+        //    $setting->desktop_image = Media::find($setting->value_desktop);
+        //});
 
         return Resp::success(['settings' => $settings]);
     }
@@ -383,19 +490,26 @@ class AdminController extends Controller
         }
 
         // Fetch or create the Setting with type 'home_parallax'
-        $setting = Setting::where('type', 'home_parallax')->first();
-        if (!$setting) {
-            $setting = new Setting();
-            $setting->type = 'home_parallax';
+        $setting_mobile = Setting::where('key', 'mobile_parallax')->first();
+        $setting_desktop = Setting::where('key', 'desktop_parallax')->first();
+        if (!$setting_mobile) {
+            $setting_mobile = new Setting();
+            $setting_mobile->key = 'mobile_parallax';
         }
-        $setting->value_mobile = $request->value_mobile;  // Mobile image media ID
-        $setting->value_desktop = $request->value_desktop;  // Desktop image media ID
-        $setting->save();
-        $mobileMedia = Media::find($setting->value_mobile);  // Mobile media object
-        $desktopMedia = Media::find($setting->value_desktop);  // Desktop media object
+        if (!$setting_desktop) {
+            $setting_desktop = new Setting();
+            $setting_desktop->key = 'desktop_parallax';
+        }
+        $setting_mobile->value = $request->value_mobile;  // Mobile image media ID
+        $setting_desktop->value = $request->value_desktop;  // Desktop image media ID
+        $setting_mobile->save();
+        $setting_desktop->save();
+        $mobileMedia = Media::find($setting_mobile->value);  // Mobile media object
+        $desktopMedia = Media::find($setting_desktop->value);  // Desktop media object
         return Resp::success([
             'message' => 'Parallax images updated successfully',
-            'setting' => $setting,
+            'setting_mobile' => $setting_mobile,
+            'setting_desktop' => $setting_desktop,
             'mobile_image' => $mobileMedia,  // Return mobile image details
             'desktop_image' => $desktopMedia,  // Return desktop image details
         ]);
@@ -1116,11 +1230,6 @@ public function getVarifiacationList(Request $request)
     }
 }
 
-
-
-
-
-   
    
    public function createForum(Request $request)
    {
@@ -1873,15 +1982,63 @@ public function getVarifiacationList(Request $request)
     }
 
 
+    // public function getUsers(Request $request)
+    // {
+    //     $user_type = $request->query('user_type');
+    //     $search = $request->query('s');
+    //     $page = $request->query('page', 1);
+    //     $perPage = $request->query('per_page', 10);
+
+    //     $users = AuthUser::query()
+    //         ->select('users.*') // Select all fields from users table
+    //         ->when($user_type, function ($query) use ($user_type) {
+    //             $userTypes = explode(',', $user_type); // Split the comma-separated string into an array
+    //             return $query->whereIn('users.user_type', $userTypes);
+    //         })
+    //         // Left join with subscriptions to preserve all users
+    //         ->leftJoin('subscriptions', 'users.id', '=', 'subscriptions.escort_id')
+    //         // Select subscription fields with distinct prefixes
+    //         ->selectRaw('subscriptions.id as subscription_id,
+    //                     subscriptions.status as subscription_status,
+    //                     subscriptions.plan_code,
+    //                     subscriptions.start_date,
+    //                     subscriptions.end_date')
+
+    //         ->orderBy('users.id', 'desc'); // Add this line to order results in descending order
+
+    //     // Add search filter
+    //     if ($search) {
+    //         $users->where(function ($query) use ($search) {
+    //             $query->where('email', 'like', '%' . $search . '%')
+    //                 ->orWhere('username', 'like', '%' . $search . '%');
+    //         });
+    //     }
+
+    //     // Pagination
+    //     $totalCount = $users->count();
+
+    //     $result = $users->offset(($page - 1) * $perPage)
+    //         ->limit($perPage)
+    //         ->get();
+
+    //     return Resp::success([
+    //         'list' => $result,
+    //         'total_count' => $totalCount,
+    //         'page' => (int) $page,
+    //         'per_page' => (int) $perPage
+    //     ]);
+    // }
+
     public function getUsers(Request $request)
     {
         $user_type = $request->query('user_type');
         $search = $request->query('s');
         $page = $request->query('page', 1);
         $perPage = $request->query('per_page', 10);
-
+    
         $users = AuthUser::query()
             ->select('users.*') // Select all fields from users table
+            ->where('user_type', '<>', 3) // Exclude user type 3
             ->when($user_type, function ($query) use ($user_type) {
                 $userTypes = explode(',', $user_type); // Split the comma-separated string into an array
                 return $query->whereIn('users.user_type', $userTypes);
@@ -1894,9 +2051,9 @@ public function getVarifiacationList(Request $request)
                         subscriptions.plan_code,
                         subscriptions.start_date,
                         subscriptions.end_date')
-
+    
             ->orderBy('users.id', 'desc'); // Add this line to order results in descending order
-
+    
         // Add search filter
         if ($search) {
             $users->where(function ($query) use ($search) {
@@ -1904,14 +2061,14 @@ public function getVarifiacationList(Request $request)
                     ->orWhere('username', 'like', '%' . $search . '%');
             });
         }
-
+    
         // Pagination
         $totalCount = $users->count();
-
+    
         $result = $users->offset(($page - 1) * $perPage)
             ->limit($perPage)
             ->get();
-
+    
         return Resp::success([
             'list' => $result,
             'total_count' => $totalCount,
@@ -1919,6 +2076,7 @@ public function getVarifiacationList(Request $request)
             'per_page' => (int) $perPage
         ]);
     }
+
 
     public function getLiveAdvertsUsers(Request $request)
     {
