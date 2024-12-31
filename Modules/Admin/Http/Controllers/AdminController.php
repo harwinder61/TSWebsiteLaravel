@@ -2142,8 +2142,10 @@ public function getVarifiacationList(Request $request)
             $data->key=$data->key;
             $values = $data->value ? $data->value : []; // Decode existing values or initialize as empty array
             
-            $combined_values = array_merge($values, $request->value); // Merge the arrays
-            
+            //$combined_values = array_merge($values, $request->value); // Merge the arrays
+            // Merge the arrays and remove duplicates
+            $combined_values = array_unique(array_merge($values, $request->value)); // Remove duplicates
+
             $data->update([
                 'key' => $data->key,
                 'value' => $combined_values // Store the combined values back as JSON
@@ -2177,6 +2179,7 @@ public function getVarifiacationList(Request $request)
             $data->key=$data->key;
             $values = $data->value ? $data->value : []; // Decode existing values or initialize as empty array
             $combined_values = array_diff($values, $request->value); // Merge the arrays
+            $combined_values = array_values($combined_values);
             $data->update([
                 'key' => $data->key,
                 'value' => $combined_values // Store the combined values back as JSON
