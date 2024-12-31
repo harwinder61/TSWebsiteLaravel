@@ -351,18 +351,32 @@ class AdminController extends Controller
         $id = $request->query('id');
 
         // Fetch the settings with type 'home_parallax', limit to 2 settings if necessary
-        $settings = Setting::where('type', 'home_parallax')
-            ->when($id, fn($query) => $query->where('id', $id))
-            ->take(2)  // Get 2 settings
-            ->get();
+        //$settings = Setting::where('type', 'home_parallax')
+        //    ->when($id, fn($query) => $query->where('id', $id))
+        //    ->take(2)  // Get 2 settings
+        //    ->get();
 
         // Fetch specific media for value_mobile and value_desktop
-        $settings->each(function ($setting) {
+        //$settings->each(function ($setting) {
             // Load the actual media for mobile and desktop using their respective IDs
-            $setting->mobile_image = Media::find($setting->value_mobile);
-            $setting->desktop_image = Media::find($setting->value_desktop);
-        });
+            //$setting->mobile_image = Media::find($setting->value_mobile);
+            //$setting->desktop_image = Media::find($setting->value_desktop);
+        //});
 
+        $parallax_mobile=Setting::where('key','mobile_parallax')->first();
+        if (!$parallax_mobile) {
+            return Resp::error(['message'=> 'Parallax image not found']);
+        }
+        $mobile_image=Media::find($parallax_mobile->value);
+        $parallax_desktop=Setting::where('key','desktop_parallax')->first();
+        if (!$parallax_desktop) {
+            return Resp::error(['message'=> 'Parallax image not found']);
+        }
+        $desktop_image=Media::find($parallax_desktop->value);
+        $settings=[
+            'mobile_image'=>$mobile_image,
+            'desktop_image'=>$desktop_image
+        ];
         return Resp::success(['settings' => $settings]);
     }
 
@@ -383,19 +397,26 @@ class AdminController extends Controller
         }
 
         // Fetch or create the Setting with type 'home_parallax'
-        $setting = Setting::where('type', 'home_parallax')->first();
-        if (!$setting) {
-            $setting = new Setting();
-            $setting->type = 'home_parallax';
+        $setting_mobile_parallax = Setting::where('key', 'mobile_parallax')->first();
+        $setting_desktop_parallax = Setting::where('key', 'desktop_parallax')->first();
+        if (!$setting_mobile_parallax) {
+            $setting_mobile_parallax = new Setting();
+            $setting_mobile_parallax->key = 'mobile_parallax';
         }
-        $setting->value_mobile = $request->value_mobile;  // Mobile image media ID
-        $setting->value_desktop = $request->value_desktop;  // Desktop image media ID
-        $setting->save();
-        $mobileMedia = Media::find($setting->value_mobile);  // Mobile media object
-        $desktopMedia = Media::find($setting->value_desktop);  // Desktop media object
+        if(!$setting_desktop_parallax){
+            $setting_desktop_parallax = new Setting();
+            $setting_desktop_parallax->key = 'desktop_parallax';
+        }
+        $setting_mobile_parallax->value = $request->value_mobile;  // Mobile image media ID
+        $setting_desktop_parallax->value = $request->value_desktop;  // Desktop image media ID
+        $setting_mobile_parallax->save();
+        $setting_desktop_parallax->save();
+        $mobileMedia = Media::find($setting_mobile_parallax->value);  // Mobile media object
+        $desktopMedia = Media::find($setting_desktop_parallax->value);  // Desktop media object
         return Resp::success([
             'message' => 'Parallax images updated successfully',
-            'setting' => $setting,
+            'setting_mobile' => $setting_mobile_parallax,
+            'setting_desktop' => $setting_desktop_parallax,
             'mobile_image' => $mobileMedia,  // Return mobile image details
             'desktop_image' => $desktopMedia,  // Return desktop image details
         ]);
