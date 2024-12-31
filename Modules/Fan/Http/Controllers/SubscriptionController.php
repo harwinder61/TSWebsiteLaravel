@@ -316,8 +316,7 @@ class SubscriptionController extends Controller
 
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
                 ->select('subscriptions.*', 'plans.title as plan_title')
-                ->where('subscriptions.end_date','>',now())
-                ->where('subscriptions.is_hidden',0);
+                ->where('subscriptions.end_date', '>', now());
             if ($request->query('slug')) {
                 $slug = $request->query('slug');
 
@@ -380,8 +379,6 @@ class SubscriptionController extends Controller
                     $query->where('escort_id', $request->query('escort_id'));
                 });
             }
-
-
 
 
             if (!is_null($request->query('cock_size'))) {
