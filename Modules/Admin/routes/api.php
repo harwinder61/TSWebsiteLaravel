@@ -97,6 +97,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
 
 
 });
+Route::get('get-single-page/{id}',[AdminController::class,'getSinglePage']);
 Route::get('/get-parallax-image',[AdminController::class,'getParallaxImage']);
 Route::get('/blog/{id?}',[AdminController::class,'getBlog']);
 Route::get('/blog-slug/{slug?}',[AdminController::class,'getBlogBySlug']);
