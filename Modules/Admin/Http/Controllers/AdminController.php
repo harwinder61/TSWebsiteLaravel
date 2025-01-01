@@ -49,12 +49,13 @@ use App\Models\Media;
 use App\Models\BaseSettings;
 use Modules\Escort\app\Models\Orders;
 
+
 class AdminController extends Controller
 {
 
 
-   public function getSinglePage($id){
-    $page = Pages::find($id);
+   public function getSinglePage( Request $request){
+    $page = Pages::where('slug', $request->query('slug'))->first();
     if(!$page){
         return Resp::error(['message' => 'Page not found']);
     }
@@ -585,19 +586,46 @@ class AdminController extends Controller
             'title' => 'required|string',
             'description' => 'required|string',
             'status' => 'required|integer|in:1,0',
-            'featured_image' => 'required|integer|exists:media,id',
-         
+            'featured_image' => 'integer|exists:media,id',
         ]);
+        
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
+        
+        // Create the page without the slug for now
         $page = Pages::create($validator->validated());
-        $page->slug = Str::slug($request->title);
+        
+        // Generate the initial slug from the title
+        $slug = Str::slug($request->title);
+    
+        // Check if the slug already exists and modify it to be unique
+        $originalSlug = $slug;
+        $counter = 1;
+    
+        // Keep checking for existence of the slug, appending a number until it's unique
+        while (Pages::where('slug', $slug)->exists()) {
+            // Increment the counter and append to the original slug
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+    
+        // Assign the unique slug to the page
+        $page->slug = $slug;
+        
+        // Associate the featured image
         $page->media()->associate(Media::find($request->input('featured_image')));
+        
+        // Save the page
         $page->save();
-        $page->load('media'); // Load the related Media model
+        
+        // Load related media
+        $page->load('media');
+        
         return Resp::success(['message' => 'Page created successfully', 'page' => $page]);
     }
+    
+    
 
 
     public function media(Request $request)
@@ -2086,32 +2114,60 @@ public function getVarifiacationList(Request $request)
         
     }
 
+    // public function getAdminUsers(Request $request)
+    // {
+    //     $perPage = $request->query('per_page', 10); // Default to 10 items per page
+    //     $page = $request->query('page', 1); // Default to page 1
+    //     $offset = ($page - 1) * $perPage;
+
+    //     $users = AuthUser::where('user_type', 3)
+    //         ->when($request->query('email'), function ($query, $email) {
+    //             $query->where('email', 'like', '%' . $email . '%');
+    //         })
+    //         ->when($request->query('username'), function ($query, $username) {
+    //             $query->where('username', 'like', '%' . $username . '%');
+    //         })
+    //         ->offset($offset)
+    //         ->limit($perPage)
+    //         ->get();
+
+    //     $totalCount = AuthUser::where('user_type', 3)->count();
+
+    //     return Resp::success([
+    //         'list' => $users,
+    //         'total_count' => $totalCount,
+    //         'page' => (int) $page,
+    //         'per_page' => $perPage
+    //     ]);
+    // }
+
     public function getAdminUsers(Request $request)
-    {
-        $perPage = $request->query('per_page', 10); // Default to 10 items per page
-        $page = $request->query('page', 1); // Default to page 1
-        $offset = ($page - 1) * $perPage;
+{
+    $perPage = $request->query('per_page', 10); // Default to 10 items per page
+    $page = $request->query('page', 1); // Default to page 1
+    $offset = ($page - 1) * $perPage;
 
-        $users = AuthUser::where('user_type', 3)
-            ->when($request->query('email'), function ($query, $email) {
-                $query->where('email', 'like', '%' . $email . '%');
-            })
-            ->when($request->query('username'), function ($query, $username) {
-                $query->where('username', 'like', '%' . $username . '%');
-            })
-            ->offset($offset)
-            ->limit($perPage)
-            ->get();
+    $users = AuthUser::where('user_type', 3)
+        ->when($request->query('email'), function ($query, $email) {
+            $query->where('email', 'like', '%' . $email . '%');
+        })
+        ->when($request->query('username'), function ($query, $username) {
+            $query->where('username', 'like', '%' . $username . '%');
+        })
+        ->distinct('username') // Retrieve unique usernames
+        ->offset($offset)
+        ->limit($perPage)
+        ->get();
 
-        $totalCount = AuthUser::where('user_type', 3)->count();
+    $totalCount = AuthUser::where('user_type', 3)->distinct('username')->count();
 
-        return Resp::success([
-            'list' => $users,
-            'total_count' => $totalCount,
-            'page' => (int) $page,
-            'per_page' => $perPage
-        ]);
-    }
+    return Resp::success([
+        'list' => $users,
+        'total_count' => $totalCount,
+        'page' => (int) $page,
+        'per_page' => $perPage
+    ]);
+}
 
 
     public function getUserPermissions($id, Request $request)
@@ -2386,5 +2442,30 @@ public function getVarifiacationList(Request $request)
         }
     }
 
+    public function showSubscription(Request $request,$id){
+        try{
+
+            $subscription=Subscription::find($id);
+            if(!$subscription){
+                return Resp::error([
+                    'error'=>'No subscription found'
+                ]);
+            }
+
+            $updatedData = $subscription->update([
+                'is_hidden'=>0
+            ]);
+            if(!$updatedData){
+                return Resp::error([
+                    'error'=>'Failed to update subscription'
+                ]);
+            }
+
+            $data=Subscription::find($id);
+            return Resp::success(['message' => 'Subscription hidden successfully','data'=>$data]);
+        }catch(\Exception $e){
+            return Resp::error(['message'=>$e->getMessage()]);
+        }
+    }
 
 }

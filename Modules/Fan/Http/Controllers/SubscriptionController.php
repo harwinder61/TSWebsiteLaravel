@@ -316,7 +316,8 @@ class SubscriptionController extends Controller
 
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
                 ->select('subscriptions.*', 'plans.title as plan_title')
-                ->where('subscriptions.end_date', '>', now());
+                ->where('subscriptions.end_date', '>', now())
+                ->where('subscriptions.is_hidden', 0);
             if ($request->query('slug')) {
                 $slug = $request->query('slug');
 
@@ -672,7 +673,7 @@ class SubscriptionController extends Controller
                 });
             }
 
-            $perPage = $request->query('per_page',50); 
+            $perPage = $request->query('per_page',15); 
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
 
