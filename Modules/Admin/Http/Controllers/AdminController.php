@@ -53,8 +53,8 @@ class AdminController extends Controller
 {
 
 
-   public function getSinglePage($id){
-    $page = Pages::find($id);
+   public function getSinglePage( Request $request){
+    $page = Pages::where('slug', $request->query('slug'))->first();
     if(!$page){
         return Resp::error(['message' => 'Page not found']);
     }
@@ -585,19 +585,46 @@ class AdminController extends Controller
             'title' => 'required|string',
             'description' => 'required|string',
             'status' => 'required|integer|in:1,0',
-            'featured_image' => 'required|integer|exists:media,id',
-         
+            'featured_image' => 'integer|exists:media,id',
         ]);
+        
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
+        
+        // Create the page without the slug for now
         $page = Pages::create($validator->validated());
-        $page->slug = Str::slug($request->title);
+        
+        // Generate the initial slug from the title
+        $slug = Str::slug($request->title);
+    
+        // Check if the slug already exists and modify it to be unique
+        $originalSlug = $slug;
+        $counter = 1;
+    
+        // Keep checking for existence of the slug, appending a number until it's unique
+        while (Pages::where('slug', $slug)->exists()) {
+            // Increment the counter and append to the original slug
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+    
+        // Assign the unique slug to the page
+        $page->slug = $slug;
+        
+        // Associate the featured image
         $page->media()->associate(Media::find($request->input('featured_image')));
+        
+        // Save the page
         $page->save();
-        $page->load('media'); // Load the related Media model
+        
+        // Load related media
+        $page->load('media');
+        
         return Resp::success(['message' => 'Page created successfully', 'page' => $page]);
     }
+    
+    
 
 
     public function media(Request $request)

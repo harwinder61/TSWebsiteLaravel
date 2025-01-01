@@ -468,6 +468,13 @@ public function profileViews($id, Request $request)
                 'description' => $request->input('description'),
                 'is_incall_enabled' => $request->input('is_incall_enabled'),
                 'is_outcall_enabled' => $request->input('is_outcall_enabled'),
+                'has_onlyfans' => $request->input('has_onlyfans'),
+                'has_manyvids' => $request->input('has_manyvids'),
+                'has_fancentro' => $request->input('has_fancentro'),
+                'onlyfans_handle' => $request->input('onlyfans_handle'),
+                'manyvids_handle' => $request->input('manyvids_handle'),
+                'fancentro_handle' => $request->input('fancentro_handle'),
+                'country_code' => $request->input('country_code'),
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);

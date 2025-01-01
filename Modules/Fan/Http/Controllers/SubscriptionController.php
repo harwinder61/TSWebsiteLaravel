@@ -674,7 +674,7 @@ class SubscriptionController extends Controller
                 });
             }
 
-            $perPage = $request->query('per_page',50); 
+            $perPage = $request->query('per_page',15); 
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
 

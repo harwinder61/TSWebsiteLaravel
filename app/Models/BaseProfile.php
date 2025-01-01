@@ -71,6 +71,7 @@ class BaseProfile extends Model
         'description',
         'rates'
         
+        
     ];
 
     protected $casts = [
