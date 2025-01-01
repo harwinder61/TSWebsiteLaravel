@@ -452,7 +452,7 @@ class SubscriptionController extends Controller
 
             $subscriptions->join(
                 \DB::raw('(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-                as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription'),
+                as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription'),
                 'subscriptions.id',
                 '=',
                 'latest_subscription.max_id'
