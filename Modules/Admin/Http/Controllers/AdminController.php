@@ -2080,7 +2080,7 @@ public function getVarifiacationList(Request $request)
                         subscriptions.plan_code,
                         subscriptions.start_date,
                         subscriptions.end_date')
-    
+            ->distinct('username') // <--- Added this line to show only one username
             ->orderBy('users.id', 'desc'); // Add this line to order results in descending order
     
         // Add search filter
@@ -2105,7 +2105,6 @@ public function getVarifiacationList(Request $request)
             'per_page' => (int) $perPage
         ]);
     }
-
 
     public function getLiveAdvertsUsers(Request $request)
     {
