@@ -15,6 +15,10 @@ class BaseSettings extends Model
         'value' => 'json'
     ];
 
+    public function media(){
+        return $this->belongsTo(Media::class,'value','id');
+    }
+
     
 
     

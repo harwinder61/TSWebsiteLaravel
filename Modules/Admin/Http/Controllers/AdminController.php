@@ -2468,4 +2468,54 @@ public function getVarifiacationList(Request $request)
         }
     }
 
+
+    public function updateHomeImages(Request $request){
+        try{
+
+
+            $valiadtor=Validator::make($request->all(),[
+                'image_id'=> 'required|exists:media,id',
+                'key'=>'required|exists:settings,key',
+            ]);
+            if($valiadtor->fails()){
+                return Resp::error([$valiadtor->errors()]);
+            }
+            
+            $data=BaseSettings::with('media')->where('key','=',$request->key)->first();
+            if(!$data){
+                return Resp::error([
+                    'error'=>'No Advert Image found!'
+                ]);
+            }
+            $updatedData=$data->update([
+                'value'=>$request->image_id
+            ]);
+            
+            return Resp::success(['message' => 'Home page images updated successfully','data'=>$data]);
+        }catch(\Exception $e){
+            return Resp::error(['message'=>$e->getMessage()]);
+        }
+    }
+
+    public function getHomeImages(Request $request){
+        try{
+            $slug= $request->query('key');
+            if(!$slug){
+                return Resp::error([
+                    'error'=>'No slug found!'
+                ]);
+            }
+            $data=BaseSettings::where('key','=',$slug)->first();
+            $data->load('media');
+            if(!$data){
+                return Resp::error([
+                    'error'=>'No Advert Images found!'
+                ]);
+            }
+            return Resp::success(['data'=>$data]);
+        }catch(\Exception $e){
+            return Resp::error(['message'=>$e->getMessage()]);
+        }
+    }
+
 }
