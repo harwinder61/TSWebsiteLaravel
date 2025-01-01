@@ -552,5 +552,8 @@ public function changePassword(Request $request) {
         return view('emailTemplates.email-verify-succesfully');
     }
    
+    
+
+    
 
 }

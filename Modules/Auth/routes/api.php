@@ -17,6 +17,8 @@ Route::get('verification-token',[AuthController::class,'verificationToken']);
 Route::post('verify-email-token',[AuthController::class,'verificationEmailToken']);
 Route::post('change-password',[AuthController::class,'changePassword']);
 Route::post('reset-old-email',[AuthController::class,'resetOldEmail']);
+Route::post('login-with-gmail', [AuthController::class, 'loginWithGmail']);
+Route::post('register-with-gmail', [AuthController::class, 'registerWithGmail']);
 
 
 

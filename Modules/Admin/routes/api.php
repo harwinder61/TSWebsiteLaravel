@@ -94,8 +94,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('get-single-page/{id}',[AdminController::class,'getSinglePage']);
         Route::post('/hide-subscription/{id}',[AdminController::class,'hideSubscription']);
         Route::post('/show-subscription/{id}',[AdminController::class,'showSubscription']);
-        
-        
+        Route::post('/update-home-advert-images',[AdminController::class,'updateHomeImages']);
     });
 
 
@@ -111,3 +110,4 @@ Route::get('/forum-categories',[AdminController::class,'forumCategories']);
 Route::post('/post-comment',[AdminController::class,'postComment']);
 Route::get('/get-forum-post/{id}',[AdminController::class,'getForumPost']);
 Route::post('/create-forum',[AdminController::class,'createForum']);
+Route::get('/get-home-advert-images',[AdminController::class,'getHomeImages']);
