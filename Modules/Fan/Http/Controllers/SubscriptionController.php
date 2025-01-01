@@ -126,58 +126,58 @@ class SubscriptionController extends Controller
         $escortId = $request->query('escort_id');
         $fanId = $request->query('fan_id');
         $verifiedStatus = $request->query('verified_status'); // New filter parameter
-
+    
         // Start building the query for reviews
-        $reviewsQuery = BaseReviews::with('user') // Relationship with user
+        $reviewsQuery = BaseReviews::with('user', 'escort', 'fan') // Relationship with user and escort
             ->orderBy('created_at', 'desc') // Order by created_at descending
             ->offset($offset)
             ->limit($perPage);
-
+    
         // Apply filters based on query parameters
         if ($statuses) {
             $statuses = explode(',', $statuses); // Convert comma-separated string to array
             $reviewsQuery->whereIn('status', $statuses);
         }
-
+    
         if ($s) {
             $reviewsQuery->whereHas('user', function ($query) use ($s) {
                 $query->where('username', 'like', '%' . $s . '%');
             });
         }
-
+    
         if ($filter === '0') {
             $reviewsQuery->where('avg_rating', '<', 3); // avg_rating < 3
         } elseif ($filter === '1') {
             $reviewsQuery->where('avg_rating', '>=', 3); // avg_rating >= 3
         }
-
+    
         if ($escortId) {
             $reviewsQuery->where('escort_id', $escortId); // Filter by escort ID
         }
-
+    
         if ($fanId) {
             $reviewsQuery->where('user_id', $fanId); // Filter by fan ID
         }
-
+    
         // Apply the new verified_status filter if provided
         if ($verifiedStatus !== null) {
             $reviewsQuery->where('verified_status', $verifiedStatus); // Filter by verified_status
         }
-
+    
         // Get the filtered reviews
         $reviews = $reviewsQuery->get()->map(function ($review) {
             $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
             return $review;
         });
-
+    
         // Get the total count of filtered reviews for pagination
         $totalResults = $reviewsQuery->count();
         $totalPages = ceil($totalResults / $perPage);
-
+    
         // Calculate the total average rating of the reviews
         $totalRatings = $reviews->sum('avg_rating');
         $averageRating = $reviews->count() > 0 ? $totalRatings / $reviews->count() : 0;
-
+    
         // Pagination response
         $pagination = [
             'total_results' => $totalResults,
@@ -186,11 +186,10 @@ class SubscriptionController extends Controller
             'page_size' => $perPage,
             'average_rating' => $averageRating,
         ];
-
+    
         // Return response with reviews and pagination data
         return Resp::success(['reviews' => $reviews->values(), 'pagination' => $pagination]);
     }
-
 
 
 
@@ -453,7 +452,7 @@ class SubscriptionController extends Controller
 
             $subscriptions->join(
                 \DB::raw('(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-                as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription'),
+                as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription'),
                 'subscriptions.id',
                 '=',
                 'latest_subscription.max_id'
