@@ -94,6 +94,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('get-single-page/{id}',[AdminController::class,'getSinglePage']);
         Route::post('/hide-subscription/{id}',[AdminController::class,'hideSubscription']);
         Route::post('/show-subscription/{id}',[AdminController::class,'showSubscription']);
+        
+        
     });
 
 
