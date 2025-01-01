@@ -16,6 +16,7 @@ Route::middleware(['jwt_auth:fan'])->group(function(){
     Route::post('/change-username',[FanController::class,'changeUsername']);
     Route::post('/add-view-count',[FanController::class,'addViewCount']);
     Route::post('/profile-views/{id}',[fanController::class,'profileViews']);
+    
 
 });
 });
@@ -28,3 +29,7 @@ Route::get('/list-reviews/{id?}',[SubscriptionController::class,'listReviews']);
 Route::get('/all-blog-list',[FanController::class,'allBlogList']);
 Route::get('all-list-reviews',[SubscriptionController::class,'getAllListReviews']);
 Route::get('advert-list',[SubscriptionController::class,'getAdvertLists']);
+Route::get('all-user-list',[SubscriptionController::class,'getAllUserList']);
+Route::get('/dynamic-pages-list',[FanController::class,'getDynamicPagesList']);
+
+

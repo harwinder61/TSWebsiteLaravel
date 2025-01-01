@@ -5,6 +5,7 @@
         "This file is @generated automatically"
     ],
     "content-hash": "333d29218dce81db20c47c26a3b04b0e",
+    "content-hash": "333d29218dce81db20c47c26a3b04b0e",
     "packages": [
         {
             "name": "bensampo/laravel-enum",
@@ -886,16 +887,16 @@
         },
         {
             "name": "google/apiclient",
-            "version": "v2.18.2",
+            "version": "v2.18.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-api-php-client.git",
-                "reference": "d8d201ba8a189a3cd7fb34e4da569f2ed440eee7"
+                "reference": "3f6cb1a970fe2d210823a79de8d5dbae405a9616"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-api-php-client/zipball/d8d201ba8a189a3cd7fb34e4da569f2ed440eee7",
-                "reference": "d8d201ba8a189a3cd7fb34e4da569f2ed440eee7",
+                "url": "https://api.github.com/repos/googleapis/google-api-php-client/zipball/3f6cb1a970fe2d210823a79de8d5dbae405a9616",
+                "reference": "3f6cb1a970fe2d210823a79de8d5dbae405a9616",
                 "shasum": ""
             },
             "require": {
@@ -949,22 +950,22 @@
             ],
             "support": {
                 "issues": "https://github.com/googleapis/google-api-php-client/issues",
-                "source": "https://github.com/googleapis/google-api-php-client/tree/v2.18.2"
+                "source": "https://github.com/googleapis/google-api-php-client/tree/v2.18.1"
             },
-            "time": "2024-12-16T22:52:40+00:00"
+            "time": "2024-11-24T13:21:03+00:00"
         },
         {
             "name": "google/apiclient-services",
-            "version": "v0.388.0",
+            "version": "v0.384.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-api-php-client-services.git",
-                "reference": "89b7126578e0aaf6d5584d6ef7c7af165766c850"
+                "reference": "fcb190bb02cea2c939e67867bf9122fd8d02c351"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-api-php-client-services/zipball/89b7126578e0aaf6d5584d6ef7c7af165766c850",
-                "reference": "89b7126578e0aaf6d5584d6ef7c7af165766c850",
+                "url": "https://api.github.com/repos/googleapis/google-api-php-client-services/zipball/fcb190bb02cea2c939e67867bf9122fd8d02c351",
+                "reference": "fcb190bb02cea2c939e67867bf9122fd8d02c351",
                 "shasum": ""
             },
             "require": {
@@ -993,32 +994,31 @@
             ],
             "support": {
                 "issues": "https://github.com/googleapis/google-api-php-client-services/issues",
-                "source": "https://github.com/googleapis/google-api-php-client-services/tree/v0.388.0"
+                "source": "https://github.com/googleapis/google-api-php-client-services/tree/v0.384.0"
             },
-            "time": "2024-12-21T01:06:13+00:00"
+            "time": "2024-11-27T01:08:46+00:00"
         },
         {
             "name": "google/auth",
-            "version": "v1.45.0",
+            "version": "v1.44.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-auth-library-php.git",
-                "reference": "cfcb93162341ed5022fa976e621f0fa2b05ba6ad"
+                "reference": "5670e56307d7a2eac931f677c0e59a4f8abb2e43"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-auth-library-php/zipball/cfcb93162341ed5022fa976e621f0fa2b05ba6ad",
-                "reference": "cfcb93162341ed5022fa976e621f0fa2b05ba6ad",
+                "url": "https://api.github.com/repos/googleapis/google-auth-library-php/zipball/5670e56307d7a2eac931f677c0e59a4f8abb2e43",
+                "reference": "5670e56307d7a2eac931f677c0e59a4f8abb2e43",
                 "shasum": ""
             },
             "require": {
                 "firebase/php-jwt": "^6.0",
                 "guzzlehttp/guzzle": "^7.4.5",
                 "guzzlehttp/psr7": "^2.4.5",
-                "php": "^8.0",
+                "php": "^8.1",
                 "psr/cache": "^2.0||^3.0",
-                "psr/http-message": "^1.1||^2.0",
-                "psr/log": "^3.0"
+                "psr/http-message": "^1.1||^2.0"
             },
             "require-dev": {
                 "guzzlehttp/promises": "^2.0",
@@ -1054,9 +1054,9 @@
             "support": {
                 "docs": "https://googleapis.github.io/google-auth-library-php/main/",
                 "issues": "https://github.com/googleapis/google-auth-library-php/issues",
-                "source": "https://github.com/googleapis/google-auth-library-php/tree/v1.45.0"
+                "source": "https://github.com/googleapis/google-auth-library-php/tree/v1.44.0"
             },
-            "time": "2024-12-11T02:10:48+00:00"
+            "time": "2024-12-04T15:34:58+00:00"
         },
         {
             "name": "graham-campbell/result-type",
@@ -2507,16 +2507,16 @@
         },
         {
             "name": "monolog/monolog",
-            "version": "3.7.0",
+            "version": "3.8.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Seldaek/monolog.git",
-                "reference": "f4393b648b78a5408747de94fca38beb5f7e9ef8"
+                "reference": "32e515fdc02cdafbe4593e30a9350d486b125b67"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/f4393b648b78a5408747de94fca38beb5f7e9ef8",
-                "reference": "f4393b648b78a5408747de94fca38beb5f7e9ef8",
+                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/32e515fdc02cdafbe4593e30a9350d486b125b67",
+                "reference": "32e515fdc02cdafbe4593e30a9350d486b125b67",
                 "shasum": ""
             },
             "require": {
@@ -2536,12 +2536,14 @@
                 "guzzlehttp/psr7": "^2.2",
                 "mongodb/mongodb": "^1.8",
                 "php-amqplib/php-amqplib": "~2.4 || ^3",
-                "phpstan/phpstan": "^1.9",
-                "phpstan/phpstan-deprecation-rules": "^1.0",
-                "phpstan/phpstan-strict-rules": "^1.4",
-                "phpunit/phpunit": "^10.5.17",
+                "php-console/php-console": "^3.1.8",
+                "phpstan/phpstan": "^2",
+                "phpstan/phpstan-deprecation-rules": "^2",
+                "phpstan/phpstan-strict-rules": "^2",
+                "phpunit/phpunit": "^10.5.17 || ^11.0.7",
                 "predis/predis": "^1.1 || ^2",
-                "ruflin/elastica": "^7",
+                "rollbar/rollbar": "^4.0",
+                "ruflin/elastica": "^7 || ^8",
                 "symfony/mailer": "^5.4 || ^6",
                 "symfony/mime": "^5.4 || ^6"
             },
@@ -2592,7 +2594,7 @@
             ],
             "support": {
                 "issues": "https://github.com/Seldaek/monolog/issues",
-                "source": "https://github.com/Seldaek/monolog/tree/3.7.0"
+                "source": "https://github.com/Seldaek/monolog/tree/3.8.0"
             },
             "funding": [
                 {
@@ -2604,7 +2606,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-06-28T09:40:51+00:00"
+            "time": "2024-11-12T13:57:08+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -3289,16 +3291,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "3.0.43",
+            "version": "3.0.42",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "709ec107af3cb2f385b9617be72af8cf62441d02"
+                "reference": "db92f1b1987b12b13f248fe76c3a52cadb67bb98"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/709ec107af3cb2f385b9617be72af8cf62441d02",
-                "reference": "709ec107af3cb2f385b9617be72af8cf62441d02",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/db92f1b1987b12b13f248fe76c3a52cadb67bb98",
+                "reference": "db92f1b1987b12b13f248fe76c3a52cadb67bb98",
                 "shasum": ""
             },
             "require": {
@@ -3379,7 +3381,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.43"
+                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.42"
             },
             "funding": [
                 {
@@ -3395,7 +3397,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-12-14T21:12:59+00:00"
+            "time": "2024-09-16T03:06:04+00:00"
         },
         {
             "name": "psr/cache",

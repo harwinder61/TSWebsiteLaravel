@@ -12,7 +12,7 @@ use App\Models\Location;
 class Profile extends BaseProfile
 {
     public function rates(){
-        return $this->hasMany(ProfileRates::class,'escort_id','id');
+        return $this->hasMany(ProfileRates::class,'escort_id','escort_id');
     }
 
 

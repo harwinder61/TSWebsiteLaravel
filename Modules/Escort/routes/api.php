@@ -28,14 +28,23 @@ Route::group(['prefix' => 'escort'],function(){
     Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
     Route::post('/hide-profile',[EscortController::class,'hideProfile']);   
      Route::put('/orders',[OrderController::class,'updateOrder']);
-    Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
+    // Route::post('/delete-profile',[EscortController::class,'deleteProfile']);
     Route::put('/orders',[OrderController::class,'updateOrder']);
     Route::get('/active-subscription',[EscortController::class,'getActiveSubscription']);
     Route::post('/verify',[EscortController::class,'verify']);
+    Route::get('/get-verify',[EscortController::class,'getVerify']);
     Route::get('/featured-ts-girl',[EscortController::class,'featuredTsGirl']);
-});
-});
+    Route::get('/previous-subscriptions',[OrderController::class,'getEscortPreviousSubscriptions']);
+    Route::get('/latest-subscription',[OrderController::class,'getLatestEscortSubscription']);
+    Route::patch('/update-latest-subscription',[OrderController::class,'updateLatestEscortSubscription']);
+    Route::post('/add-extra-locations',[OrderController::class,'extraLocationsUpdatedOrder']);
+    Route::get('reviws-escort-fanlist',[ReviewsController::class,'getEscortFanlist']);
+    
+    
 
+    
+});
+});
 Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
 Route::get('/locations/countries',[MasterController::class,'countries']);
 Route::get('/locations/regions',[MasterController::class,'regions']);
@@ -47,6 +56,7 @@ Route::post('/inquiry-form',[EscortController::class,'inquiryForm']);
 Route::get('/escort-profile-id/{id}',[EscortController::class,'getEscortProfile']);
 Route::get('/get-all-media',[MediaController::class,'getAllMedia']);
 Route::get('/search/header',[OrderController::class,'getLocationAndSubscriptions']);
+Route::post('/location-id-to-name',[OrderController::class,'locationIdsToLocationNames']);
 
 
 

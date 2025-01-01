@@ -69,6 +69,9 @@ class BaseProfile extends Model
         'is_profile',
         'is_media',
         'description',
+        'rates'
+        
+        
     ];
 
     protected $casts = [
