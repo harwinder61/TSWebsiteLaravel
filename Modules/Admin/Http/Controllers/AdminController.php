@@ -49,6 +49,7 @@ use App\Models\Media;
 use App\Models\BaseSettings;
 use Modules\Escort\app\Models\Orders;
 
+
 class AdminController extends Controller
 {
 
@@ -2441,5 +2442,30 @@ public function getVarifiacationList(Request $request)
         }
     }
 
+    public function showSubscription(Request $request,$id){
+        try{
+
+            $subscription=Subscription::find($id);
+            if(!$subscription){
+                return Resp::error([
+                    'error'=>'No subscription found'
+                ]);
+            }
+
+            $updatedData = $subscription->update([
+                'is_hidden'=>0
+            ]);
+            if(!$updatedData){
+                return Resp::error([
+                    'error'=>'Failed to update subscription'
+                ]);
+            }
+
+            $data=Subscription::find($id);
+            return Resp::success(['message' => 'Subscription hidden successfully','data'=>$data]);
+        }catch(\Exception $e){
+            return Resp::error(['message'=>$e->getMessage()]);
+        }
+    }
 
 }

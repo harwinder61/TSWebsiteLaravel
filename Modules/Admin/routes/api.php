@@ -93,6 +93,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/remove-dropdowns/{id}',[AdminController::class,'deleteDroppableField']);
         Route::get('get-single-page/{id}',[AdminController::class,'getSinglePage']);
         Route::post('/hide-subscription/{id}',[AdminController::class,'hideSubscription']);
+        Route::post('/show-subscription/{id}',[AdminController::class,'showSubscription']);
     });
 
 
@@ -104,3 +105,7 @@ Route::get('/blog-slug/{slug?}',[AdminController::class,'getBlogBySlug']);
 Route::get('/get-forum',[AdminController::class,'getForum']);
 Route::post('/send-email',[AdminController::class,'sendEmail']);
 Route::get('/get-dropdowns',[AdminController::class,'fetchDroppableFields']);
+Route::get('/forum-categories',[AdminController::class,'forumCategories']);
+Route::post('/post-comment',[AdminController::class,'postComment']);
+Route::get('/get-forum-post/{id}',[AdminController::class,'getForumPost']);
+Route::post('/create-forum',[AdminController::class,'createForum']);
