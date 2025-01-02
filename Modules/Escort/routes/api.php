@@ -41,6 +41,7 @@ Route::group(['prefix' => 'escort'],function(){
     Route::get('reviws-escort-fanlist',[ReviewsController::class,'getEscortFanlist']);
     
     
+    
 
     
 });

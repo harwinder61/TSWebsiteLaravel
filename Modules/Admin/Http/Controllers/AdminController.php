@@ -55,6 +55,9 @@ class AdminController extends Controller
 {
 
 
+
+    
+
     public function getAllUsers(Request $request)
     {
         $user_type = $request->query('user_type');
@@ -454,27 +457,21 @@ class AdminController extends Controller
     
 //     return Resp::success(['message' => 'Media updated successfully']);
 // }
+public function hideProfile($id, Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'is_hidden' => 'required|boolean'
+    ]);
 
-    public function hideProfile($id, Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'is_hidden' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-        $user = AuthUser::find($id);
-        if ($request->is_hidden) {
-            $user->is_hidden = $request->is_hidden;
-            $user->save();
-
-            return Resp::success(['message' => 'Profile hidden successfully']);
-        }
-
-        return Resp::success(['user' => $user], 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
+    $user = AuthUser::find($id);
+    $user->is_hidden = $request->is_hidden ? 1 : 0; // Update is_hidden to 1 if true, 0 if false
+    $user->save();
 
+    return Resp::success(['message' => 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully']);
+}
 
     public function deleteProfile($id)
     {
