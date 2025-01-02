@@ -1228,8 +1228,8 @@ public function getVarifiacationList(Request $request)
 
         // Filter by verified status if provided
         if ($request->has('verified_status')) {
-            //$verifiedStatus = explode(',', $request->query('verified_status'));
-            $verifiedStatus = $request->query('verified_status');
+            $verifiedStatus = explode(',', $request->query('verified_status'));
+            //$verifiedStatus = $request->query('verified_status');
             $query->whereIn('verified_status', $verifiedStatus);
         } else {
             // Default to verified statuses 1 and 4 if not provided
