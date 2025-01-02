@@ -559,7 +559,7 @@ public function getVarifiacationList(Request $request)
     {
         $media = Media::query();
         if (!is_null($request->query('id'))) {
-            $media = $media->where('id', $request->query('id'));
+            $media = $media->where('escort_id', $request->query('id'));
         }
         $media = $media->get();
 
