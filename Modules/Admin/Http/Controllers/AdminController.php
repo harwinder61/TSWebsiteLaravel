@@ -47,12 +47,146 @@ use Modules\Admin\app\Models\Setting;
 use App\Mail\EmailHelper;
 use App\Models\Media;
 use App\Models\BaseSettings;
+use Google\Service\Walletobjects\Pagination;
 use Modules\Escort\app\Models\Orders;
 
 
 class AdminController extends Controller
 {
 
+
+    public function getAllUsers(Request $request)
+    {
+        // die('ok');
+        $user_type = $request->query('user_type');
+        $role = $request->query('role');
+        $s = $request->query('s'); 
+        $is_deleted = $request->query('is_deleted');
+        $page = $request->query('page', 1);
+        $perPage = $request->query('per_page', 10);
+    
+        if ($page == -1) {
+            $users = AuthUser::query()
+                ->when($user_type == 1, function ($query) use ($user_type) {
+                    $query->where('user_type', 1);
+                })
+                ->when(in_array($user_type, [2, 3]), function ($query) use ($user_type) {
+                    $query->whereIn('user_type', [2, 3]);
+                })
+                ->when($role, function ($query) use ($role) {
+                    $query->where('role', $role);
+                })
+                ->when($s, function ($query) use ($s) {
+                    $query->where(function ($query) use ($s) {
+                        $query->where('username', 'like', '%' . $s . '%')
+                            ->orWhere('email', 'like', '%' . $s . '%');
+                    });
+                })
+                ->when($is_deleted, function ($query) use ($is_deleted) {
+                    $query->where('is_deleted', $is_deleted);
+                })
+                ->orderBy('id', 'desc')
+                ->get();
+    
+            return Resp::success([
+                'users' => $users,
+            ]);
+        } else {
+            $totalResults = AuthUser::count();
+            $totalPages = ceil($totalResults / $perPage);
+    
+            // Check if page is valid
+            if ($page < 1 || $page > $totalPages) {
+                return Resp::measege('Invalid page number', 400);
+            }
+    
+            $offset = ($page - 1) * $perPage;
+    
+            $users = AuthUser::query()
+                ->when($user_type == 1, function ($query) use ($user_type) {
+                    $query->where('user_type', 1);
+                })
+                ->when(in_array($user_type, [2, 3]), function ($query) use ($user_type) {
+                    $query->whereIn('user_type', [2, 3]);
+                })
+                ->when($role, function ($query) use ($role) {
+                    $query->where('role', $role);
+                })
+                ->when($s, function ($query) use ($s) {
+                    $query->where(function ($query) use ($s) {
+                        $query->where('username', 'like', '%' . $s . '%')
+                            ->orWhere('email', 'like', '%' . $s . '%');
+                    });
+                })
+                ->when($is_deleted, function ($query) use ($is_deleted) {
+                    $query->where('is_deleted', $is_deleted);
+                })
+                ->orderBy('id', 'desc')
+                ->skip($offset)
+                ->take($perPage)
+                ->get();
+    
+            return Resp::success([
+                'users' => $users,
+                'pagination' => [
+                    'total_results' => $totalResults,
+                    'total_pages' => $totalPages,
+                    'page' => $page,
+                    'per_page' => $perPage
+                ]
+            ]);
+        }
+    }
+    
+public function getVarifiacationList(Request $request)
+{
+    try {
+        // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
+        $query = ModelsVerify::with(['escort', 'user']);
+        $s = $request->query('s');
+        if($s){
+            $query->whereHas('escort', function ($q) use ($s) {
+                $q->where('name', 'like', '%' . $s . '%');
+            });
+        }
+
+        // Filter by verified status if provided
+        if ($request->has('verified_status')) {
+            $verifiedStatus = explode(',', $request->query('verified_status'));
+            //$verifiedStatus = $request->query('verified_status');
+            $query->whereIn('verified_status', $verifiedStatus);
+        } else {
+            // Default to verified statuses 1 and 4 if not provided
+            $query->whereIn('verified_status', [1, 2, 3, 4]);
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        // Pagination parameters
+        $perPage = (int)$request->query('per_page', 10);
+
+        // Use the paginate method to get paginated results
+        $verifications = $query->paginate($perPage);
+
+        // Adjust the total_results based on the actual number of records for the current page
+        $totalResults = $verifications->count();
+
+        // Build pagination response
+        $pagination = [
+            'total_results' => $totalResults, // Show the actual number of records on this page
+            'total_pages' => $verifications->lastPage(),
+            'page' => $verifications->currentPage(),
+            'page_size' => $verifications->perPage(),
+        ];
+
+        // Return the successful response with verification list and pagination
+        return Resp::success(['verifications' => $verifications->items(), 'pagination' => $pagination]);
+
+    } catch (\Exception $e) {
+        // Return an error if something goes wrong
+        return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
+    }
+}
 
    public function getSinglePage( Request $request){
     $page = Pages::where('slug', $request->query('slug'))->first();
@@ -110,9 +244,11 @@ class AdminController extends Controller
         return Resp::success(['message' => 'Category deleted successfully']);
     }
 
-    public function profileUpdateMedia($id, Request $request)
+    public function profileUpdateMedia($escort_id, Request $request)
     {
-        // Validate the input
+        try{
+
+            // Validate the input
         $validator = Validator::make($request->all(), [
             'gallery' => 'array',
             'gallery.*' => 'exists:media,id',
@@ -127,7 +263,7 @@ class AdminController extends Controller
         }
     
         // Find the profile
-        $user = Profile::find($id);
+        $user = Profile::where('escort_id', $id)->first();
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
         }
@@ -187,8 +323,19 @@ class AdminController extends Controller
             $user->is_media = 1;
             $user->save();
         }
+
+        $media=Media::where('escort_id', $id)->first();
+        if(!$media){
+            return Resp::error(['message' => 'Media not found']);
+        }
+        $user->load('media');
+
     
-        return Resp::success(['message' => 'Media updated successfully']);
+        return Resp::success(['message' => 'Media updated successfully','media'=>$media,'profile'=>$user]);
+
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }
     }
 
 
@@ -1207,56 +1354,6 @@ class AdminController extends Controller
 //        }
 //    }
 
-public function getVarifiacationList(Request $request)
-{
-    try {
-        // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
-        $query = ModelsVerify::with(['escort', 'user']);
-
-        // Filter by verified status if provided
-        if ($request->has('verified_status')) {
-            $verifiedStatus = explode(',', $request->query('verified_status'));
-            $query->whereIn('verified_status', $verifiedStatus);
-        } else {
-            // Default to verified statuses 1 and 4 if not provided
-            $query->whereIn('verified_status', [1, 2, 3, 4]);
-        }
-
-        // Filter by escort name if 's' parameter is provided
-        if (!is_null($request->query('s'))) {
-            $query->whereHas('escort', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->query('s') . '%');
-            });
-        }
-
-        // Order by created_at in descending order
-        $query->orderBy('created_at', 'desc');
-
-        // Pagination parameters
-        $perPage = (int)$request->query('per_page', 10);
-
-        // Use the paginate method to get paginated results
-        $verifications = $query->paginate($perPage);
-
-        // Adjust the total_results based on the actual number of records for the current page
-        $totalResults = $verifications->count();
-
-        // Build pagination response
-        $pagination = [
-            'total_results' => $totalResults, // Show the actual number of records on this page
-            'total_pages' => $verifications->lastPage(),
-            'page' => $verifications->currentPage(),
-            'page_size' => $verifications->perPage(),
-        ];
-
-        // Return the successful response with verification list and pagination
-        return Resp::success(['verifications' => $verifications->items(), 'pagination' => $pagination]);
-
-    } catch (\Exception $e) {
-        // Return an error if something goes wrong
-        return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
-    }
-}
 
    
    public function createForum(Request $request)
@@ -2080,7 +2177,7 @@ public function getVarifiacationList(Request $request)
                         subscriptions.plan_code,
                         subscriptions.start_date,
                         subscriptions.end_date')
-            ->distinct('username') // <--- Added this line to show only one username
+            ->distinct('users.username') // <--- Added this line to show only one username
             ->orderBy('users.id', 'desc'); // Add this line to order results in descending order
     
         // Add search filter

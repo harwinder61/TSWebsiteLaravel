@@ -12,7 +12,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::put('/update-profile/{id}',[AdminController::class,'updateProfile']);
         Route::get('/fans',[FanController::class,'getFans']);
         Route::get('/escorts',[EscortController::class,'getEscorts']);
-        Route::get('/users',[AdminController::class,'getUsers']);
+        Route::get('/users',[AdminController::class,'getAllUsers']);
         Route::get('/profile/{id}',[AdminController::class,'getProfile']);
         Route::get('/inquiries',[AdminController::class,'inquiryFormList']);
         Route::get('/recent-signups',[AdminController::class,'recentSignups']);
@@ -73,7 +73,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/email-template-status/{id}',[AdminController::class,'emailTemplateStatus']);
         Route::put('/parallax-image',[AdminController::class,'parallaxImage']);
         Route::post('/update-media/{id}',[AdminController::class,'updateMedia']);
-        Route::put('/profile-update-media/{id}',[AdminController::class,'profileUpdateMedia']);
+        Route::put('/profile-update-media/{escort_id}',[AdminController::class,'profileUpdateMedia']);
         Route::get('/profile-media',[AdminController::class,'profileMedia']);
         Route::post('/delete-media',[AdminController::class,'deleteMedia']);
         Route::post('/user-delete/{id}',[AdminController::class,'userDelete']);
@@ -95,6 +95,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/hide-subscription/{id}',[AdminController::class,'hideSubscription']);
         Route::post('/show-subscription/{id}',[AdminController::class,'showSubscription']);
         Route::post('/update-home-advert-images',[AdminController::class,'updateHomeImages']);
+        Route::get('/admin-get-users',[AdminController::class,'adminGetUsers']);
     });
 
 
