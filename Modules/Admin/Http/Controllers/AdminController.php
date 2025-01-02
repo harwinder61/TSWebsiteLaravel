@@ -155,56 +155,64 @@ class AdminController extends Controller
         }
     }
     
-public function getVarifiacationList(Request $request)
-{
-    try {
-        // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
-        $query = ModelsVerify::with(['escort', 'user']);
-        $s = $request->query('s');
-        if($s){
-            $query->whereHas('escort', function ($q) use ($s) {
-                $q->where('name', 'like', '%' . $s . '%');
+    public function getVarifiacationList(Request $request)
+    {
+        try {
+            // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
+            $query = ModelsVerify::with(['escort', 'user']);
+    
+            // Apply filters for 'verified_status'
+            if ($request->has('verified_status')) {
+                $verifiedStatus = explode(',', $request->query('verified_status'));
+                $query->whereIn('verified_status', $verifiedStatus);
+            } else {
+                // Default to verified statuses 1, 2, 3, 4 if not provided
+                $query->whereIn('verified_status', [1, 2, 3, 4]);
+            }
+    
+            // Search filter
+            $s = $request->query('s');
+            if ($s) {
+                $query->whereHas('user', function ($query) use ($s) {
+                    $query->where('username', 'like', '%' . $s . '%')
+                        ->orWhere('email', 'like', '%' . $s . '%');
+                });
+            }
+    
+            // Additional filter using the 'another_filter' parameter
+            $query->when($request->has('another_filter'), function ($query) use ($request) {
+                $query->where('another_column', $request->query('another_filter'));
             });
+    
+            // Order by created_at in descending order
+            $query->orderBy('created_at', 'desc');
+    
+            // Pagination parameters
+            $perPage = (int)$request->query('per_page', 10);
+    
+            // Use the paginate method to get paginated results
+            $verifications = $query->paginate($perPage);
+    
+            // Adjust the total_results based on the actual number of records for the current page
+            $totalResults = $verifications->count();
+    
+            // Build pagination response
+            $pagination = [
+                'total_results' => $totalResults, // Show the actual number of records on this page
+                'total_pages' => $verifications->lastPage(),
+                'page' => $verifications->currentPage(),
+                'page_size' => $verifications->perPage(),
+            ];
+    
+            // Return the successful response with verification list and pagination
+            return Resp::success(['verifications' => $verifications->items(), 'pagination' => $pagination]);
+    
+        } catch (\Exception $e) {
+            // Return an error if something goes wrong
+            return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
         }
-
-        // Filter by verified status if provided
-        if ($request->has('verified_status')) {
-            $verifiedStatus = explode(',', $request->query('verified_status'));
-            //$verifiedStatus = $request->query('verified_status');
-            $query->whereIn('verified_status', $verifiedStatus);
-        } else {
-            // Default to verified statuses 1 and 4 if not provided
-            $query->whereIn('verified_status', [1, 2, 3, 4]);
-        }
-
-        $query->orderBy('created_at', 'desc');
-
-        // Pagination parameters
-        $perPage = (int)$request->query('per_page', 10);
-
-        // Use the paginate method to get paginated results
-        $verifications = $query->paginate($perPage);
-
-        // Adjust the total_results based on the actual number of records for the current page
-        $totalResults = $verifications->count();
-
-        // Build pagination response
-        $pagination = [
-            'total_results' => $totalResults, // Show the actual number of records on this page
-            'total_pages' => $verifications->lastPage(),
-            'page' => $verifications->currentPage(),
-            'page_size' => $verifications->perPage(),
-        ];
-
-        // Return the successful response with verification list and pagination
-        return Resp::success(['verifications' => $verifications->items(), 'pagination' => $pagination]);
-
-    } catch (\Exception $e) {
-        // Return an error if something goes wrong
-        return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
     }
-}
-
+    
    public function getSinglePage( Request $request){
     $page = Pages::where('slug', $request->query('slug'))->first();
     if(!$page){
@@ -1914,6 +1922,8 @@ public function getVarifiacationList(Request $request)
         return Resp::success(['details' => $updated_plan]);
     }
 
+
+
     public function getPlan($id, Request $request)
     {
 
@@ -2023,6 +2033,12 @@ public function getVarifiacationList(Request $request)
         if (!$updated) {
             return Resp::error(['error' => 'Failed to update profile'], 500);
         }
+        if ($updated) {
+            $profile->is_profile = 1;
+            $profile->save();
+        } else {
+            return Resp::error(['error' => 'Failed to update profile'], 500);
+        }
         // Find the updated escort profile
         //$data = Profile::where('escort_id', $user_id)->get();
         $profile_data = Profile::where('escort_id', $user_id)->first();
@@ -2107,6 +2123,7 @@ public function getVarifiacationList(Request $request)
                 }
             }
         }
+        
         $profile_data = Profile::where('escort_id', $user_id)->first();
         $profile_data->rates;
         return Resp::success(['details' => $profile_data]);
