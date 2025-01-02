@@ -73,7 +73,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/email-template-status/{id}',[AdminController::class,'emailTemplateStatus']);
         Route::put('/parallax-image',[AdminController::class,'parallaxImage']);
         Route::post('/update-media/{id}',[AdminController::class,'updateMedia']);
-        Route::put('/profile-update-media/{escort_id}',[AdminController::class,'profileUpdateMedia']);
+        Route::put('/profile-update-media/{id}',[AdminController::class,'profileUpdateMedia']);
         Route::get('/profile-media',[AdminController::class,'profileMedia']);
         Route::post('/delete-media',[AdminController::class,'deleteMedia']);
         Route::post('/user-delete/{id}',[AdminController::class,'userDelete']);
