@@ -567,7 +567,7 @@ class AdminController extends Controller
     {
         $media = Media::query();
         if (!is_null($request->query('id'))) {
-            $media = $media->where('id', $request->query('id'));
+            $media = $media->where('escort_id', $request->query('id'));
         }
         $media = $media->get();
 
@@ -1059,6 +1059,10 @@ class AdminController extends Controller
 
     public function addComment($id, Request $request)
     {
+        $currentUser = auth()->user();
+        if (!$currentUser) {
+            return Resp::error(['Error' => 'Unauthorized'],'Please login to add comment',401);
+        }
         $validator = Validator::make($request->all(), [
             'comment' => 'required|string',
             'parent_comment_id' => 'nullable|exists:comment,id'
@@ -1298,6 +1302,10 @@ class AdminController extends Controller
 
     public function postComment(Request $request)
     {
+        $currentUser=auth()->user();
+        if(!$currentUser){
+            return Resp::error(['Error' => 'Unauthorized'],'Please login to continue',401);
+        }
         $validator = Validator::make($request->all(), [
             'comment' => 'required|string',
             'forum_id' => 'required|exists:forum,id',
@@ -1383,6 +1391,11 @@ class AdminController extends Controller
    
    public function createForum(Request $request)
    {
+
+        $currentUser=auth()->user();
+        if(!$currentUser){
+            return Resp::error(['Error' => 'Unauthenticated'],'Please login to continue',401);
+        }
        $validator = Validator::make($request->all(), [
            'title' => 'required|string',
            'category' => 'required|string',

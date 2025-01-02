@@ -112,3 +112,4 @@ Route::post('/post-comment',[AdminController::class,'postComment']);
 Route::get('/get-forum-post/{id}',[AdminController::class,'getForumPost']);
 Route::post('/create-forum',[AdminController::class,'createForum']);
 Route::get('/get-home-advert-images',[AdminController::class,'getHomeImages']);
+Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
