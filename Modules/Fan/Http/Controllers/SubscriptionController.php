@@ -449,12 +449,22 @@ class SubscriptionController extends Controller
                 });
             }
 
+            $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($byPlanOrder) {
+                $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+            }else{
+                $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+            }
 
-            $subscriptions->join(
-                \DB::raw('(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-                as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription'),
+
+            
+
+            $subscriptions->join(                                                                                                                                                   
+                \DB::raw($rawSubQuary),
                 'subscriptions.id',
-                '=',
+                '=',                                                                                                                                                                                                                                                                                                                                                                                    
                 'latest_subscription.max_id'
             )
                 ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');

@@ -110,7 +110,7 @@ class AdminController extends Controller
         return Resp::success(['message' => 'Category deleted successfully']);
     }
 
-    public function profileUpdateMedia($id, Request $request)
+    public function profileUpdateMedia($escort_id, Request $request)
     {
         // Validate the input
         $validator = Validator::make($request->all(), [
@@ -127,7 +127,7 @@ class AdminController extends Controller
         }
     
         // Find the profile
-        $user = Profile::find($id);
+        $user = Profile::where('escort_id',$escort_id)->first();
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
         }
@@ -2080,7 +2080,7 @@ public function getVarifiacationList(Request $request)
                         subscriptions.plan_code,
                         subscriptions.start_date,
                         subscriptions.end_date')
-            ->distinct('username') // <--- Added this line to show only one username
+            ->distinct('users.username') // <--- Added this line to show only one username
             ->orderBy('users.id', 'desc'); // Add this line to order results in descending order
     
         // Add search filter
