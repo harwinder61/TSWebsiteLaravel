@@ -112,7 +112,9 @@ class AdminController extends Controller
 
     public function profileUpdateMedia($escort_id, Request $request)
     {
-        // Validate the input
+        try{
+
+            // Validate the input
         $validator = Validator::make($request->all(), [
             'gallery' => 'array',
             'gallery.*' => 'exists:media,id',
@@ -127,7 +129,7 @@ class AdminController extends Controller
         }
     
         // Find the profile
-        $user = Profile::where('escort_id',$escort_id)->first();
+        $user = Profile::where('escort_id', $id)->first();
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
         }
@@ -187,8 +189,19 @@ class AdminController extends Controller
             $user->is_media = 1;
             $user->save();
         }
+
+        $media=Media::where('escort_id', $id)->first();
+        if(!$media){
+            return Resp::error(['message' => 'Media not found']);
+        }
+        $user->load('media');
+
     
-        return Resp::success(['message' => 'Media updated successfully']);
+        return Resp::success(['message' => 'Media updated successfully','media'=>$media,'profile'=>$user]);
+
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }
     }
 
 
@@ -1216,6 +1229,7 @@ public function getVarifiacationList(Request $request)
         // Filter by verified status if provided
         if ($request->has('verified_status')) {
             $verifiedStatus = explode(',', $request->query('verified_status'));
+            //$verifiedStatus = $request->query('verified_status');
             $query->whereIn('verified_status', $verifiedStatus);
         } else {
             // Default to verified statuses 1 and 4 if not provided
