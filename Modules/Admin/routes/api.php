@@ -120,3 +120,5 @@ Route::get('/test-command', function () {
     // Optionally, return the output of the command
     return 'Command executed successfully: ' . Artisan::output();
 });
+
+Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
