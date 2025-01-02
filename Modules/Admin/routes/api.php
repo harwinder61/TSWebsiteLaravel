@@ -12,7 +12,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::put('/update-profile/{id}',[AdminController::class,'updateProfile']);
         Route::get('/fans',[FanController::class,'getFans']);
         Route::get('/escorts',[EscortController::class,'getEscorts']);
-        Route::get('/users',[AdminController::class,'getUsers']);
+        Route::get('/users',[AdminController::class,'getAllUsers']);
         Route::get('/profile/{id}',[AdminController::class,'getProfile']);
         Route::get('/inquiries',[AdminController::class,'inquiryFormList']);
         Route::get('/recent-signups',[AdminController::class,'recentSignups']);
@@ -95,6 +95,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/hide-subscription/{id}',[AdminController::class,'hideSubscription']);
         Route::post('/show-subscription/{id}',[AdminController::class,'showSubscription']);
         Route::post('/update-home-advert-images',[AdminController::class,'updateHomeImages']);
+        Route::get('/admin-get-users',[AdminController::class,'adminGetUsers']);
     });
 
 

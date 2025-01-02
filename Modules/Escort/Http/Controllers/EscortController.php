@@ -347,10 +347,12 @@ public function profileViews($id, Request $request)
         $media = Media::where('escort_id', $user->id)->get();
         if ($profile) {
             $profile = Profile::where('escort_id', $user->id)->first();
+            $profile->rates;
             return Resp::success([
                 'id' => $user->id,
                 'profile' => $profile,
-                'media' => $media
+                'media' => $media,
+                'rates' => $profile->rates
             ]);
         }
         return Resp::error(['message' => 'No active subscription found'], 404);
@@ -382,6 +384,7 @@ public function profileViews($id, Request $request)
     {
         $user = auth()->user();
         $profile_data = $user->profile;
+        $profile_data->rates;
         // $profile_data = Profile::find($user->id);
 
         if (!$profile_data) {
