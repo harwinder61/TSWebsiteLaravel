@@ -57,11 +57,12 @@ class AdminController extends Controller
 
     public function getAllUsers(Request $request)
     {
-        // die('ok');
         $user_type = $request->query('user_type');
         $role = $request->query('role');
         $s = $request->query('s'); 
         $is_deleted = $request->query('is_deleted');
+        $id = $request->query('id');
+        $ids = $request->query('ids'); // added this line
         $page = $request->query('page', 1);
         $perPage = $request->query('per_page', 10);
     
@@ -85,6 +86,14 @@ class AdminController extends Controller
                 ->when($is_deleted, function ($query) use ($is_deleted) {
                     $query->where('is_deleted', $is_deleted);
                 })
+                ->when($id, function ($query) use ($id) {
+                    $query->where('id', $id);
+                })
+                ->when($ids, function ($query) use ($ids) {
+                    $ids = explode(',', $ids);
+                    $query->whereIn('id', $ids);
+                })
+    
                 ->orderBy('id', 'desc')
                 ->get();
     
@@ -97,7 +106,7 @@ class AdminController extends Controller
     
             // Check if page is valid
             if ($page < 1 || $page > $totalPages) {
-                return Resp::measege('Invalid page number', 400);
+                return Resp::message('Invalid page number', 400);
             }
     
             $offset = ($page - 1) * $perPage;
@@ -121,6 +130,14 @@ class AdminController extends Controller
                 ->when($is_deleted, function ($query) use ($is_deleted) {
                     $query->where('is_deleted', $is_deleted);
                 })
+                ->when($id, function ($query) use ($id) {
+                    $query->where('id', $id);
+                })
+                ->when($ids, function ($query) use ($ids) {
+                    $ids = explode(',', $ids);
+                    $query->whereIn('id', $ids);
+                })
+    
                 ->orderBy('id', 'desc')
                 ->skip($offset)
                 ->take($perPage)
@@ -244,7 +261,7 @@ public function getVarifiacationList(Request $request)
         return Resp::success(['message' => 'Category deleted successfully']);
     }
 
-    public function profileUpdateMedia($escort_id, Request $request)
+    public function profileUpdateMedia($id, Request $request)
     {
         try{
 
