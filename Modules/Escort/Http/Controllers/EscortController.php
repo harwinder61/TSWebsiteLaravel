@@ -380,7 +380,11 @@ class EscortController extends Controller
         $user = auth()->user();
         $profile_data = $user->profile;
         $profile_data->rates;
+        
+        
+
         // $profile_data = Profile::find($user->id);
+        
 
         if (!$profile_data) {
 
@@ -438,6 +442,7 @@ class EscortController extends Controller
                 'date_of_birth' => $request->input('date_of_birth'),
                 'orientation' => $request->input('orientation'),
                 'ethnicity' => $request->input('ethnicity'),
+                'nationality' => $request->input('nationality'),
                 'height' => $request->input('height'),
                 'weight' => $request->input('weight'),
                 'hair' => $request->input('hair'),

@@ -69,7 +69,8 @@ class BaseProfile extends Model
         'is_profile',
         'is_media',
         'description',
-        'rates'
+        'rates',
+        'nationality',
         
         
     ];
@@ -92,6 +93,8 @@ class BaseProfile extends Model
         'date_of_birth' => 'required|string',
         //'orientation'=>'required|in:'.implode(',',Orientation::getValues()),
         //'ethnicity'=>'required|in:'.implode(',',Ethnicity::getValues()),
+        'ethnicity' => 'required',
+        //'nationality' => 'required',
         'height'=>'required|integer',
         'weight'=>'required|integer',
         //'hair'=>'required|in:'.implode(',',Hair::getValues()),
@@ -102,8 +105,8 @@ class BaseProfile extends Model
         //'body'=>'required|in:'.implode(',',Body::getValues()),
         //'cock_size'=>'required|in:'.implode(',',CockSize::getValues()),
         //'languages'=>'required|in:'.implode(',',Languages::getValues()),
-        'languages' => 'required|array',
-        'languages.*' => 'in:'.implode(',', Languages::getValues()),
+        'languages' => 'required',
+        //'languages.*' => 'in:'.implode(',', Languages::getValues()),
         'offer_services_to'=>'required|array',
         'offer_services_to.*'=>'in:'.implode(',',OfferServicesTo::getValues()),
         'has_twitter' => 'boolean|nullable',
@@ -116,8 +119,8 @@ class BaseProfile extends Model
         'tiktok_handle' => 'required_if:has_tiktok,1|string|nullable',
         'is_incall_enabled' => 'required|boolean',
         'is_outcall_enabled' => 'required|boolean',
-        'extra_services' => 'required|array',
-        'extra_services.*.key'=>'in:'.implode(',',ExtraServices::getKeys()),
+        'extra_services' => 'required',
+        //'extra_services.*.key'=>'in:'.implode(',',ExtraServices::getKeys()),
         'description' => 'nullable|string',
         'city_id' => [
             'required',

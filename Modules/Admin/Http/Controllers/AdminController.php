@@ -2012,6 +2012,7 @@ public function hideProfile($id, Request $request)
             'date_of_birth' => $request->input('date_of_birth'),
             'orientation' => $request->input('orientation'),
             'ethnicity' => $request->input('ethnicity'),
+            'nationality' => $request->input('nationality'),
             'height' => $request->input('height'),
             'weight' => $request->input('weight'),
             'hair' => $request->input('hair'),
