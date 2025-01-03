@@ -55,6 +55,11 @@ class AdminController extends Controller
 {
 
 
+    public function getExpiredSubscriptions()
+    {
+        $expiredSubscriptions = BaseSubscription::where('status', 'expired')->get();
+        return Resp::success(['expiredSubscriptions' => $expiredSubscriptions]);
+    }
 
     
 

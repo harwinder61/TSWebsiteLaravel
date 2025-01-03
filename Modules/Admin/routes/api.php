@@ -117,9 +117,15 @@ Route::get('/test-command', function () {
     // Call the Artisan command
     Artisan::call('app:scheduled-emails');  // This will execute the command
     
-    // Optionally, return the output of the command
-    return 'Command executed successfully: ' . Artisan::output();
+    // Get the output of the command
+    $output = Artisan::output();
+
+    // Return the expired subscriptions in the response
+    return response()->json([
+        'message' => 'Command executed successfully.',
+        'expired_subscriptions' => json_decode($output)  // Display expired subscriptions as JSON
+    ]);
 });
-Route::post('/send-expiration-email/{escort_id}', [AdminController::class, 'sendExpirationEmail']);
+
 
 Route::post('/add-comment/{id}',[AdminController::class,'addComment']);

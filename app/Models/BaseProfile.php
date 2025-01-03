@@ -143,6 +143,9 @@ class BaseProfile extends Model
         ->where('is_temp', 0);
     
     }
+    public function subscriptions(){
+        return $this->hasMany(BaseSubscription::class,'escort_id','escort_id');
+    }
 
 
 }

@@ -22,5 +22,18 @@ class BaseSubscription extends Model
         return $this->belongsTo(Media::class,'image_id','id');
     }
 
+    public function escort()
+    {
+        return $this->belongsTo(BaseProfile::class, 'escort_id', 'id');
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'escort_id', 'id');
+    }
+
+    public function profile()
+    {
+        return $this->belongsTo(BaseProfile::class, 'escort_id', 'id');
+    }
 
 }

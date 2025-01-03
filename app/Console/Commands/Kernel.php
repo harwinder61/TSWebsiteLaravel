@@ -10,10 +10,13 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         ScheduledEmails::class,  // Register the command here
     ];
+// app/Console/Kernel.php
 
-    protected function schedule(Schedule $schedule)
-    {
-        // Example of scheduling the command to run daily at 2:00 AM
-        $schedule->command('app:scheduled-emails')->dailyAt('02:00');
-    }
+protected function schedule(Schedule $schedule)
+{
+    // Schedule your command to run daily (or at whatever interval you need)
+    $schedule->command('app:scheduled-emails')->daily();
+}
+
+
 }
