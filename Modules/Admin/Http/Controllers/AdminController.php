@@ -68,14 +68,14 @@ class AdminController extends Controller
         $ids = $request->query('ids'); // added this line
         $page = $request->query('page', 1);
         $perPage = $request->query('per_page', 10);
-    
+        
         if ($page == -1) {
             $users = AuthUser::query()
                 ->when($user_type == 1, function ($query) use ($user_type) {
                     $query->where('user_type', 1);
                 })
-                ->when(in_array($user_type, [2, 3]), function ($query) use ($user_type) {
-                    $query->whereIn('user_type', [2, 3]);
+                ->when(in_array($user_type, [2]), function ($query) use ($user_type) {
+                    $query->whereIn('user_type', [2]);
                 })
                 ->when($role, function ($query) use ($role) {
                     $query->where('role', $role);
@@ -96,30 +96,30 @@ class AdminController extends Controller
                     $ids = explode(',', $ids);
                     $query->whereIn('id', $ids);
                 })
-    
+                ->where('user_type', '<>', 3) // exclude users with user_type = 3
                 ->orderBy('id', 'desc')
                 ->get();
-    
+        
             return Resp::success([
                 'users' => $users,
             ]);
         } else {
-            $totalResults = AuthUser::count();
+            $totalResults = AuthUser::where('user_type', '<>', 3)->count(); // exclude users with user_type = 3 from count
             $totalPages = ceil($totalResults / $perPage);
-    
+        
             // Check if page is valid
             if ($page < 1 || $page > $totalPages) {
                 return Resp::message('Invalid page number', 400);
             }
-    
+        
             $offset = ($page - 1) * $perPage;
-    
+        
             $users = AuthUser::query()
                 ->when($user_type == 1, function ($query) use ($user_type) {
                     $query->where('user_type', 1);
                 })
-                ->when(in_array($user_type, [2, 3]), function ($query) use ($user_type) {
-                    $query->whereIn('user_type', [2, 3]);
+                ->when(in_array($user_type, [2]), function ($query) use ($user_type) {
+                    $query->whereIn('user_type', [2]);
                 })
                 ->when($role, function ($query) use ($role) {
                     $query->where('role', $role);
@@ -140,12 +140,12 @@ class AdminController extends Controller
                     $ids = explode(',', $ids);
                     $query->whereIn('id', $ids);
                 })
-    
+                ->where('user_type', '<>', 3) // exclude users with user_type = 3
                 ->orderBy('id', 'desc')
                 ->skip($offset)
                 ->take($perPage)
                 ->get();
-    
+        
             return Resp::success([
                 'users' => $users,
                 'pagination' => [

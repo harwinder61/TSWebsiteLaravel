@@ -7,7 +7,7 @@ use App\Models\BaseSubscription;
 use App\Models\User;
 use App\Mail\EmailHelper;
 use App\Services\Resp;
-
+use Illuminate\Console\Scheduling\Schedule;
 
 
 class ScheduledEmails extends Command
@@ -24,33 +24,48 @@ class ScheduledEmails extends Command
     }
 
     // Command logic// Command logic
-    public function handle()
-    {
-        $expiredSubscriptions = BaseSubscription::where('end_date', '<=', now()->subHours(24))
-            ->where('status', 'active')
-            ->get();
+  // Command logic
+public function handle()
+{
+    // Get subscriptions that expired within the last 24 hours or are expiring tomorrow
+    $expiredSubscriptions = BaseSubscription::where(function($query) {
+        // Subscriptions that expired within the last 24 hours
+        $query->where('end_date', '<=', now()->subHours(24))
+            ->where('status', 'active');
+    })->orWhere(function($query) {
+        // Subscriptions that are expiring tomorrow
+        $query->whereDate('end_date', '=', now()->addDay()->toDateString())
+            ->where('status', 'active');
+    })->get();
     
-        foreach ($expiredSubscriptions as $subscription) {
-            // Send an email to the user with the expired subscription
-            $this->sendExpirationEmail($subscription->escort_id);
+    foreach ($expiredSubscriptions as $subscription) {
+        // Send an email to the user with the expired subscription  
+        $this->sendExpirationEmail($subscription->escort_id);
     
-            // Update the subscription status to 'expired'
-            $subscription->status = 'expired';
-            $subscription->save();
-        }
-    
-        // Log the expired subscriptions
-        Log::info('Expired subscriptions:', $expiredSubscriptions);
+        // Update the subscription status to 'expired'
+        $subscription->status = 'expired';
+        $subscription->save();
     }
-    
-    // New method to send an email to the user with the expired subscription
-    private function sendExpirationEmail($escortId)
-    {
-        $user = User::find($escortId);
-        $email = $user->email;
-        EmailHelper::sendDynamicEmail('subscription_expired', 
-        ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email], 
-        $user->email);
-        return Resp::success(['message' => 'Subscription expired successfully']);
-    }
+
+    // Log the expired subscriptions
+    Log::info('Expired or soon-to-expire subscriptions:', $expiredSubscriptions);
+}
+
+// New method to send an email to the user with the expired subscription
+private function sendExpirationEmail($escortId)
+{
+    $user = User::find($escortId);
+    $email = $user->email;
+    EmailHelper::sendDynamicEmail('subscription_expired', 
+    ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email], 
+    $user->email);
+    return Resp::success(['message' => 'Subscription expired successfully']);
+}
+protected function schedule(Schedule $schedule)
+{
+    // Schedule the command to run daily or as needed
+    $schedule->command('app:scheduled-emails')->daily();
+}
+
+
 }
