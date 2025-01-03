@@ -1,5 +1,5 @@
 <?php
-
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Modules\Admin\Http\Controllers\AdminController;
 use Modules\Admin\Http\Controllers\FanController;
@@ -109,7 +109,17 @@ Route::post('/send-email',[AdminController::class,'sendEmail']);
 Route::get('/get-dropdowns',[AdminController::class,'fetchDroppableFields']);
 Route::get('/forum-categories',[AdminController::class,'forumCategories']);
 Route::post('/post-comment',[AdminController::class,'postComment']);
-Route::get('/get-forum-post/{id}',[AdminController::class,'getForumPost']);
+Route::get('/get-forum-post/{id}',[AdminController::class,'getForumPost']); 
 Route::post('/create-forum',[AdminController::class,'createForum']);
 Route::get('/get-home-advert-images',[AdminController::class,'getHomeImages']);
+Route::get('/get-path',[AdminController::class,'getPath']);
+Route::get('/test-command', function () {
+    // Call the Artisan command
+    Artisan::call('app:scheduled-emails');  // This will execute the command
+    
+    // Optionally, return the output of the command
+    return 'Command executed successfully: ' . Artisan::output();
+});
+Route::post('/send-expiration-email/{escort_id}', [AdminController::class, 'sendExpirationEmail']);
+
 Route::post('/add-comment/{id}',[AdminController::class,'addComment']);

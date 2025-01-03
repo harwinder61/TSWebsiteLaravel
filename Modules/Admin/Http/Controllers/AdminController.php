@@ -55,6 +55,9 @@ class AdminController extends Controller
 {
 
 
+
+    
+
     public function getAllUsers(Request $request)
     {
         $user_type = $request->query('user_type');
@@ -65,14 +68,14 @@ class AdminController extends Controller
         $ids = $request->query('ids'); // added this line
         $page = $request->query('page', 1);
         $perPage = $request->query('per_page', 10);
-    
+        
         if ($page == -1) {
             $users = AuthUser::query()
                 ->when($user_type == 1, function ($query) use ($user_type) {
                     $query->where('user_type', 1);
                 })
-                ->when(in_array($user_type, [2, 3]), function ($query) use ($user_type) {
-                    $query->whereIn('user_type', [2, 3]);
+                ->when(in_array($user_type, [2]), function ($query) use ($user_type) {
+                    $query->whereIn('user_type', [2]);
                 })
                 ->when($role, function ($query) use ($role) {
                     $query->where('role', $role);
@@ -93,30 +96,30 @@ class AdminController extends Controller
                     $ids = explode(',', $ids);
                     $query->whereIn('id', $ids);
                 })
-    
+                ->where('user_type', '<>', 3) // exclude users with user_type = 3
                 ->orderBy('id', 'desc')
                 ->get();
-    
+        
             return Resp::success([
                 'users' => $users,
             ]);
         } else {
-            $totalResults = AuthUser::count();
+            $totalResults = AuthUser::where('user_type', '<>', 3)->count(); // exclude users with user_type = 3 from count
             $totalPages = ceil($totalResults / $perPage);
-    
+        
             // Check if page is valid
             if ($page < 1 || $page > $totalPages) {
                 return Resp::message('Invalid page number', 400);
             }
-    
+        
             $offset = ($page - 1) * $perPage;
-    
+        
             $users = AuthUser::query()
                 ->when($user_type == 1, function ($query) use ($user_type) {
                     $query->where('user_type', 1);
                 })
-                ->when(in_array($user_type, [2, 3]), function ($query) use ($user_type) {
-                    $query->whereIn('user_type', [2, 3]);
+                ->when(in_array($user_type, [2]), function ($query) use ($user_type) {
+                    $query->whereIn('user_type', [2]);
                 })
                 ->when($role, function ($query) use ($role) {
                     $query->where('role', $role);
@@ -137,12 +140,12 @@ class AdminController extends Controller
                     $ids = explode(',', $ids);
                     $query->whereIn('id', $ids);
                 })
-    
+                ->where('user_type', '<>', 3) // exclude users with user_type = 3
                 ->orderBy('id', 'desc')
                 ->skip($offset)
                 ->take($perPage)
                 ->get();
-    
+        
             return Resp::success([
                 'users' => $users,
                 'pagination' => [
@@ -454,27 +457,21 @@ class AdminController extends Controller
     
 //     return Resp::success(['message' => 'Media updated successfully']);
 // }
+public function hideProfile($id, Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'is_hidden' => 'required|boolean'
+    ]);
 
-    public function hideProfile($id, Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'is_hidden' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-        $user = AuthUser::find($id);
-        if ($request->is_hidden) {
-            $user->is_hidden = $request->is_hidden;
-            $user->save();
-
-            return Resp::success(['message' => 'Profile hidden successfully']);
-        }
-
-        return Resp::success(['user' => $user], 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
+    $user = AuthUser::find($id);
+    $user->is_hidden = $request->is_hidden ? 1 : 0; // Update is_hidden to 1 if true, 0 if false
+    $user->save();
 
+    return Resp::success(['message' => 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully']);
+}
 
     public function deleteProfile($id)
     {

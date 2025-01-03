@@ -183,26 +183,21 @@ class EscortController extends Controller
         ]);
     }
 
-public function profileViews($id, Request $request)
-{
-    $user = auth()->user();
-    if ($user->user_type != 1) {    
-        return Resp::error(['message' => 'Unauthorized user not a fan']);
+    public function profileViews($id, Request $request)
+    {
+        $user = auth()->user();
+        $profile = AuthUser::where('id', $id)
+                           ->with('profile')
+                           ->first();
+    
+        if (!$profile || !$profile->profile) {
+            return Resp::error(['message' => 'User not found or profile not found']);
+        }
+    
+        $profile->profile->increment('profile_views');
+    
+        return Resp::success(['message' => 'Profile views updated successfully']);
     }
-
-    $profile = AuthUser::where('id', $id)
-                       ->where('user_type', 2)
-                       ->with('profile')
-                       ->first();
-
-    if (!$profile || !$profile->profile) {
-        return Resp::error(['message' => 'User is not an escort or profile not found']);
-    }
-
-    $profile->profile->increment('profile_views');
-
-    return Resp::success(['message' => 'Profile views updated successfully']);
-}
 
 
     public function hideProfile(Request $request)

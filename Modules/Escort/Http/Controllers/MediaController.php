@@ -40,7 +40,7 @@ class MediaController extends Controller
     {
         $slug=$request->input('upload_type') || $request->query('upload_type');
         $is_temp=$request->input('is_temp');
-        print_r($slug);
+        // print_r($slug);
         Log::info('advert slug passed');
         if($slug == 'advert'){
             Log::info('advert slug passed');
