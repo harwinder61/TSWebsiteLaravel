@@ -380,11 +380,7 @@ class EscortController extends Controller
         $user = auth()->user();
         $profile_data = $user->profile;
         $profile_data->rates;
-        $profile_data->city;
-
-        $profile_data->county;
-
-        $profile_data->region;
+        
         
 
         // $profile_data = Profile::find($user->id);
