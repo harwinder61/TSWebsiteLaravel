@@ -16,6 +16,7 @@ return new class extends Migration
             [
                 'type' => 'ts_reset_email_confirmations',
                 'subject' => 'Email Verification',
+                'title' => 'Transbunnies Email Reset Notification',
                 'content' => '<p>Hello [USER_LOGIN],</p>
 <p> </p>
 <p>Welcome to Transbunnies.com!</p>
@@ -29,10 +30,10 @@ return new class extends Migration
                 'updated_at' => now(),
             ],
 
-
             [
                 'type' => 'ts_new_password_notification',
                 'subject' => 'Email Verification',
+                'title' => 'Transbunnies New Password Notification',
                 'content' => '<p>Hello [USER_LOGIN],</p>
 <p>As requested, your password has been changed on Transbunnies.com.</p>
 <p>If you did not change it, please <a href="[NOTIFY_URL]">click here to notify our team.</a></p>
@@ -42,21 +43,20 @@ return new class extends Migration
                 'updated_at' => now(),
             ],
 
-
             [
                 'type' => 'new_order',
                 'subject' => 'New customer order',
+                'title' => 'New Order',
                 'content' => '<p>You’ve received the following order from [CUSTOMER_NAME]:</p>',
                 'status' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
 
-
-
             [
                 'type' => 'flash_email_notification',
                 'subject' => 'Welcome to Ts',
+                'title' => 'Flash Email Confirmation',
                 'content' => '<p>Hello [USER_LOGIN],</p>
 <p>Welcome to Transbunnies, please click <a href="[VERIFY_EMAIL_LINK]" target="_blank">here</a> to verify your email.</p>
 <p>Then take full advantage with your TS classfields, TS Competitions, and much more.</p>
@@ -71,8 +71,16 @@ return new class extends Migration
 
             [
                 'type' => 'subscription_expired',
-                'subject' => 'Subcription Expired',
-                'content' => '<p>Your subscription has expired. Please <a href="[SUBSCRIPTION_URL]">click here</a> to renew your subscription.</p>',
+                'subject' => 'Subscription Expired',
+                'title' => 'Subscription Expired',
+                'content' => '<p>Hello, [User Login]!</p>
+<p>Your [Ad Name] Ad will expire in 24hrs, <a href="[Renew URL]">renew it now</a>, or purchase another <a href="[Login URL]">type of Ad</a>.</p>
+
+<p> </p>
+<p>Regards,</p>
+<p>Team Transbunnies</p>
+<p><strong>THE PLACE TO BE IN!</strong></p>
+',
                 'status' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -81,9 +89,9 @@ return new class extends Migration
             [
                 'type' => '24_hours_before_ad_expiry_notification',
                 'subject' => 'Oh no! Just 24hr before your Ad expires',
-                'content' => '<p><p>Hello, [USER_LOGIN]!</p>
+                'title' => '24hrs Ad Expiry Notification',
+                'content' => '<p>Hello, [USER_LOGIN]!</p>
 <p>Your [ADVERT_NAME] Ad will expire in 24hrs, <a href="[RENEW_URL]">renew it now</a>, or purchase another <a href="[LOGIN_URL]">type of Ad</a>.</p>
-
 <p> </p>
 <p>Regards,</p>
 <p>Team Transbunnies</p>
@@ -94,11 +102,10 @@ return new class extends Migration
                 'updated_at' => now(),
             ],
 
-
-
             [
                 'type' => '4_weeks_of_profile_inactivity_notification',
                 'subject' => '4 weeks of profile inactivity',
+                'title' => '4 Weeks of Profile Inactivity Notification',
                 'content' => '<p>Hello, <?=$user_login?>!</p>
 <p> </p>
 <p>We have not heard from you for a while, <a href="<?php echo $login_link;?>">click here</a> to update your profile and purchase an Ad. If you have not signed into your account for 12 weeks, your profile will be deleted automatically, and you will have to re-register.</p>
@@ -112,12 +119,10 @@ return new class extends Migration
                 'updated_at' => now(),
             ],
 
-
-
-
             [
                 'type' => 'Great_news!_you_are_step_away_to_place_your_free_featured_ad',
                 'subject' => 'Great news! You are step away to place your free featured ad',
+                'title' => 'Great News! You Are a Step Away to Place Your FREE Featured Ad',
                 'content' => '<p>Hello, [USER_LOGIN]!</p>
 <p>You are close to placing your FREE Advert on Transbunnies! <a href="[UNCORAGING_URL]">Click here</a> to take advantage.</p>
 <p> </p>
@@ -130,11 +135,10 @@ return new class extends Migration
                 'updated_at' => now(),
             ],
 
-
-
             [
                 'type' => 'Verify_your_new_email_address',
                 'subject' => 'Verify your new email address',
+                'title' => 'Transbunnies New Email Verification',
                 'content' => '<p>Hello, [USER_LOGIN],</p>
 <p> </p>
 <p>As requested, this email address will now be used to log in on Transbunnies.com once it is verified.</p>
@@ -151,10 +155,10 @@ return new class extends Migration
                 'updated_at' => now(),
             ],
 
-
             [
                 'type' => 'account_deleted',
                 'subject' => 'Your Profile is Deleted',
+                'title' => 'Account Deleted',
                 'content' => '<p>Hello, [USER_LOGIN],</p>
 <p> </p>
 <p>As requested, your profile is now deleted on transbunnies.com.</p>
@@ -172,9 +176,6 @@ return new class extends Migration
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-
-
-
         ]);
     }
 
