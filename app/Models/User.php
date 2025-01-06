@@ -29,6 +29,8 @@ class User extends Authenticatable
         'verification_token',
         'firstname',
         'lastname',
+        'last_active_at',
+        
     ];
     protected $casts=[
         'user_type'=>'integer',

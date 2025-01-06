@@ -55,6 +55,94 @@ class AdminController extends Controller
 {
 
 
+
+public function addLocation(Request $request){
+
+    try{
+        $type=$request->type;
+    if($type == 'region'){
+        $location = Location::create([
+            'name' => $request->region,
+            'type' => 'region',
+            'parent_id'=>null,
+            'slug'=>Str::slug($request->region),
+        ]);
+        return Resp::success(['message' => 'Region added successfully' , 'location' => $location]);
+    }else if($type == 'county'){
+
+        $region = Location::create([
+            'name' => $request->region,
+            'type' => 'region',
+            'parent_id'=>null,
+            'slug'=>Str::slug($request->region),
+        ]);
+        if(!$region){
+            return Resp::error(['message' => 'Region not found']);
+        }
+        
+        $location = Location::create([
+            'name' => $request->county,
+            'type' => 'county',
+            'parent_id'=>$region->id,
+            'slug'=>Str::slug($request->county),
+        ]);
+        return Resp::success(['message' => 'County added successfully' , 'location' => $location]);
+    }else if($type == 'city'){
+        $region = Location::create([
+            'name' => $request->region,
+            'type' => 'region',
+            'parent_id'=>null,
+            'slug'=>Str::slug($request->region),
+        ]);
+        if(!$region){
+            return Resp::error(['message' => 'Region not found']);
+        }
+
+        $county = Location::create([
+            'name' => $request->county,
+            'type' => 'county',
+            'parent_id'=>$region->id,
+            'slug'=>Str::slug($request->county),
+        ]);
+        if(!$county){
+            return Resp::error(['message' => 'County not found']);
+        }
+        $location = Location::create([
+            'name' => $request->city,
+            'type' => 'city',
+            'parent_id'=>$county->id,
+            'slug'=>Str::slug($request->city),
+        ]);
+        return Resp::success(['message' => 'State added successfully' , 'location' => $location]);
+    }
+    // $location = Location::create([
+    //     'region' => $request->region,
+    //     'country' => $request->country,
+    //     'city' => $request->city,
+    //     'state' => $request->state,
+    //     'zip' => $request->zip,
+    //     'latitude' => $request->latitude,
+    //     'longitude' => $request->longitude,
+    //     'status' => $request->status,
+     
+    // ]);
+    //return Resp::success(['message' => 'Location added successfully' , 'location' => $location]);
+
+    }catch(\Exception $e){
+        return Resp::error(['message' => 'Something went wrong' , 'error' => $e->getMessage()]);
+    }
+}
+
+
+
+
+public function deleteLocation($id , Request $request){
+    $location = Location::find($id);
+    $location->delete();
+    return Resp::success(['message' => 'Location deleted successfully' , 'location' => $location]);
+}
+
+
     public function getExpiredSubscriptions()
     {
         $expiredSubscriptions = BaseSubscription::where('status', 'expired')->get();
