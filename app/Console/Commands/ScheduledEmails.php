@@ -9,6 +9,7 @@ use App\Mail\EmailHelper;
 use App\Services\Resp;
 use Carbon\Carbon;
 use App\Models\BaseProfile;
+use App\Models\Plan;
 
 class ScheduledEmails extends Command
 {
@@ -137,6 +138,7 @@ public function handle()
         ->with('profile')
         ->with('user')
         ->where('status', 'ACTIVE')
+        
         ->get();
 
     Log::error('Expired Subscription TOTAL : '.$expiredSubscriptions->count());
@@ -154,7 +156,7 @@ public function handle()
             Log::error('ERROR  WHILE SENDING EMAIL: '.$count.' >>> '.$subscription->escort_id .' >>> '.$th->getMessage());
         }
         
-        $subscription->is_24_hours = 1;
+        $subscription->is_24__hours = 1;
         $subscription->save();
     
         // Update subscription status to 'expired'
