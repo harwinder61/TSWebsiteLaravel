@@ -5,6 +5,8 @@ use App\Mail\DynamicEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Modules\Admin\app\Models\EmailTemplates;
+use App\Models\User;
+use Carbon\Carbon;
 
 class EmailHelper
 {
@@ -48,6 +50,13 @@ class EmailHelper
         Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
     
         return "Email sent successfully!";
+    }
+
+    public static function updateLastActiveAt($user_id)
+    {
+        $user = User::find($user_id);
+        $user->last_active_at = Carbon::now();
+        $user->save();
     }
 }
 

@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Modules\Admin\Http\Controllers\AdminController;
 use Modules\Admin\Http\Controllers\FanController;
 use Modules\Admin\Http\Controllers\EscortController;
+use App\Models\User;
+use Carbon\Carbon;
 
 Route::middleware(['jwt_auth:admin'])->group(function(){
     Route::group(['prefix'=>'admin'],function(){
@@ -96,6 +98,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/show-subscription/{id}',[AdminController::class,'showSubscription']);
         Route::post('/update-home-advert-images',[AdminController::class,'updateHomeImages']);
         Route::get('/admin-get-users',[AdminController::class,'adminGetUsers']);
+        Route::post('/locations/delete/{id}',[AdminController::class,'deleteLocation']);
+        Route::post('/location/add',[AdminController::class,'addLocation']);
     });
 
 
@@ -115,7 +119,8 @@ Route::get('/get-home-advert-images',[AdminController::class,'getHomeImages']);
 Route::get('/get-path',[AdminController::class,'getPath']);
 Route::get('/test-command', function () {
     // Call the Artisan command
-    Artisan::call('app:scheduled-emails');  // This will execute the command
+    Artisan::call('app:scheduled-emails'); 
+     // This will execute the command
     
     // Get the output of the command
     $output = Artisan::output();
@@ -125,7 +130,14 @@ Route::get('/test-command', function () {
         'message' => 'Command executed successfully.',
         'expired_subscriptions' => json_decode($output)  // Display expired subscriptions as JSON
     ]);
+}
+);
+Route::get('/get-last-active-at',function(){
+  Artisan::call('app:scheduled-emails');
+  return response()->json([
+    'message' => 'Command executed successfully.',
+    'expired_subscriptions' => 'expired_subscriptions'  // Display expired subscriptions as JSON
+  ]);
 });
-
 
 Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
