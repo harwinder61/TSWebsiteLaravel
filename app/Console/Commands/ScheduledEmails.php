@@ -9,6 +9,7 @@ use App\Mail\EmailHelper;
 use App\Services\Resp;
 use Carbon\Carbon;
 use App\Models\BaseProfile;
+use App\Models\Plan;
 
 class ScheduledEmails extends Command
 {
@@ -130,7 +131,6 @@ public function handle()
     $now = Carbon::now();
     $nextDay = $now->addDay();   
     $nextDate = $nextDay->format('Y-m-d');
-
     // Get expired subscriptions
     $expiredSubscriptions = BaseSubscription::where('end_date', '=', $nextDate)
         ->with('escort')
@@ -154,7 +154,7 @@ public function handle()
             Log::error('ERROR  WHILE SENDING EMAIL: '.$count.' >>> '.$subscription->escort_id .' >>> '.$th->getMessage());
         }
         
-        $subscription->is_24_hours = 1;
+        $subscription->is_24__hours = 1;
         $subscription->save();
     
         // Update subscription status to 'expired'
@@ -180,4 +180,32 @@ private function sendExpirationEmail($subscription)
         Log::error('Escort or user is null for subscription ' . $subscription->id);
         return Resp::error(['message' => 'Failed to send expiration email']);
     }
-}}
+}
+public function updateLastActiveAt($user_id)
+{
+    $user = User::find($user_id);
+    $user->last_active_at = Carbon::now();
+    $user->save();
+}
+
+
+public function sendInactivityEmails()
+{
+    $inactiveUsers = User::where(function ($query) {
+        $query->where('last_active_at', '<', Carbon::now()->subDays(28)->startOfDay())
+              ->orWhereNull('last_active_at');
+    })->get();
+
+    Log::info('Found ' . count($inactiveUsers) . ' inactive users');
+
+    foreach ($inactiveUsers as $user) {
+        Log::info('Sending email to user ' . $user->id . ' with email ' . $user->email);
+        EmailHelper::sendDynamicEmail('4 weeks of profile inactivity',
+        ['[User Login]' => $user->username, '[User Email]' => $user->email],
+        $user->email);
+        $this->updateLastActiveAt($user->id);
+        $user->save();
+    }
+}
+
+}

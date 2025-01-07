@@ -23,6 +23,7 @@ use Google_Client;
 use Modules\Admin\app\Models\EmailTemplates;
 use App\Mail\DynamicEmail;
 use App\Mail\EmailHelper;
+use Carbon\Carbon;
 class AuthController extends Controller
 {
 
@@ -233,6 +234,7 @@ public function changePassword(Request $request) {
            'user_type' => $request->user_type,
            'verification_token' => $verification_token,
            'email_verified' => false,
+           'last_active_at' => Carbon::now(),
        ]);
    
        // Send verification email
@@ -258,7 +260,9 @@ public function changePassword(Request $request) {
        // Return success response
        return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
    }
-   
+
+
+
     public function registerWithGmail(Request $request)
 
     {
