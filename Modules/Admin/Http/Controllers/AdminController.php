@@ -103,11 +103,8 @@ public function addLocation(Request $request){
         ]);
         return Resp::success(['message' => 'City added successfully' , 'location' => $location]);
     }
-<<<<<<< HEAD
-=======
 
     return Resp::success(['message' => 'Please enter a valid location type']);
->>>>>>> c1c9193e76d33d1a2eabd90428add1067098179e
 
     }catch(\Exception $e){
         return Resp::error(['message' => 'Something went wrong' , 'error' => $e->getMessage()]);
