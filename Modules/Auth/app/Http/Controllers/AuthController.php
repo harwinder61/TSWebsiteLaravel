@@ -300,6 +300,13 @@ public function changePassword(Request $request) {
                 'escort_id' => $user->id,
     
             ]);
+
+            // One-liner call to send dynamic email
+             EmailHelper::sendDynamicEmail(
+            'ts_reset_email_confirmations',
+            ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],
+            $user->email
+            );
             return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
             
         } else{
