@@ -70,12 +70,7 @@ public function addLocation(Request $request){
         return Resp::success(['message' => 'Region added successfully' , 'location' => $location]);
     }else if($type == 'county'){
 
-        $region = Location::create([
-            'name' => $request->region,
-            'type' => 'region',
-            'parent_id'=>null,
-            'slug'=>Str::slug($request->region),
-        ]);
+        $region = Location::where('type', 'region')->where('id', $request->region)->first();
         if(!$region){
             return Resp::error(['message' => 'Region not found']);
         }
@@ -88,22 +83,15 @@ public function addLocation(Request $request){
         ]);
         return Resp::success(['message' => 'County added successfully' , 'location' => $location]);
     }else if($type == 'city'){
-        $region = Location::create([
-            'name' => $request->region,
-            'type' => 'region',
-            'parent_id'=>null,
-            'slug'=>Str::slug($request->region),
-        ]);
+        $region = Location::where('type', 'region')->where('id', $request->region)->first();
         if(!$region){
             return Resp::error(['message' => 'Region not found']);
         }
 
-        $county = Location::create([
-            'name' => $request->county,
-            'type' => 'county',
-            'parent_id'=>$region->id,
-            'slug'=>Str::slug($request->county),
-        ]);
+        $county = Location::where('type', 'county')
+                            ->where('id', $request->county)
+                            ->where('parent_id',$region->id)
+                            ->first();
         if(!$county){
             return Resp::error(['message' => 'County not found']);
         }
@@ -113,20 +101,10 @@ public function addLocation(Request $request){
             'parent_id'=>$county->id,
             'slug'=>Str::slug($request->city),
         ]);
-        return Resp::success(['message' => 'State added successfully' , 'location' => $location]);
+        return Resp::success(['message' => 'City added successfully' , 'location' => $location]);
     }
-    // $location = Location::create([
-    //     'region' => $request->region,
-    //     'country' => $request->country,
-    //     'city' => $request->city,
-    //     'state' => $request->state,
-    //     'zip' => $request->zip,
-    //     'latitude' => $request->latitude,
-    //     'longitude' => $request->longitude,
-    //     'status' => $request->status,
-     
-    // ]);
-    //return Resp::success(['message' => 'Location added successfully' , 'location' => $location]);
+
+    return Resp::success(['message' => 'Please enter a valid location type']);
 
     }catch(\Exception $e){
         return Resp::error(['message' => 'Something went wrong' , 'error' => $e->getMessage()]);
