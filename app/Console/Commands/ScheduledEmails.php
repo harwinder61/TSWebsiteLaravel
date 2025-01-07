@@ -190,11 +190,55 @@ private function sendExpirationEmail($subscription)
 
 
 
+// public function sendInactivityEmails()
+// {
+//     // Fetch users who haven't been active for the last 28 days or have no last active timestamp.
+//     $inactiveUsers = User::where(function ($query) {
+//         $query->where('last_active_at', '<', Carbon::now()->subDays(28)->startOfDay())
+//               ->orWhereNull('last_active_at');
+//     })
+//     ->where('drop_mail', 0)
+//     ->get();
+    
+//     // Log how many inactive users were found.
+//     Log::info('Found ' . $inactiveUsers->count() . ' inactive users');
+
+//     $count = 1;
+
+//     // Loop through all inactive users to send them emails.
+//     foreach ($inactiveUsers as $user) {
+//         // Log which user will receive the email.
+//         Log::info('Sending email to user ' . $count.' >>> '.$user->id . ' with email ' . $user->email);
+
+//         try {
+//             // Send the inactivity email to the user.
+//             EmailHelper::sendDynamicEmail('4 weeks of profile inactivity',
+//                 ['[User Login]' => $user->username, '[User Email]' => $user->email],
+//                 $user->email);
+//             Log::info('Email sent to: ' . $user->email);
+//         } catch (\Exception $e) {
+//             Log::error('Failed to send email to ' . $user->email . ': ' . $e->getMessage());
+//         }
+
+//         Log::info('Updating last_active_at for user ' . $user->id . ' to: ' . Carbon::now()->subDays(29));
+//         $this->updateLastActiveAt($user->id);
+
+
+//         $user->drop_mail = 1;
+//         if($user->last_active_at == null){
+//             $user->last_active_at = Carbon::now()->subDays(29);
+//         }
+//         $user->save(); 
+
+//         $count++;  
+//     }
+// }
+
 public function sendInactivityEmails()
 {
     // Fetch users who haven't been active for the last 28 days or have no last active timestamp.
     $inactiveUsers = User::where(function ($query) {
-        $query->where('last_active_at', '<', Carbon::now()->subDays(28)->startOfDay())
+        $query->where('last_active_at', Carbon::now()->subDays(28)->startOfDay())
               ->orWhereNull('last_active_at');
     })
     ->where('drop_mail', 0)
@@ -216,30 +260,21 @@ public function sendInactivityEmails()
                 ['[User Login]' => $user->username, '[User Email]' => $user->email],
                 $user->email);
             Log::info('Email sent to: ' . $user->email);
+
+            // Update last_active_at to current time after sending email
+            $user->last_active_at = Carbon::now();
+            $user->drop_mail = 1;
+            $user->save(); 
+
+            Log::info('Updated last_active_at for user ' . $user->id . ' to: ' . $user->last_active_at);
         } catch (\Exception $e) {
             Log::error('Failed to send email to ' . $user->email . ': ' . $e->getMessage());
         }
-
-        Log::info('Updating last_active_at for user ' . $user->id . ' to: ' . Carbon::now()->subDays(29));
-        $this->updateLastActiveAt($user->id);
-
-
-        $user->drop_mail = 1;
-        if($user->last_active_at == null){
-            $user->last_active_at = Carbon::now()->subDays(29);
-        }
-        $user->save(); 
 
         $count++;  
     }
 }
 
-// public function updateLastActiveAt($user_id)
-// {
-//     $user = User::find($user_id);
-//     $user->last_active_at = Carbon::now();
-//     $user->save();
-// }
 
 }
 
