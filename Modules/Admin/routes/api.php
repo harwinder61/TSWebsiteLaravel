@@ -6,7 +6,10 @@ use Modules\Admin\Http\Controllers\FanController;
 use Modules\Admin\Http\Controllers\EscortController;
 use App\Models\User;
 use Carbon\Carbon;
-
+use Modules\Auth\app\Http\Controllers\AuthController;
+use App\Console\Commands\updateLastActiveAt;
+use App\Console\Commands\sendInactivityEmails;
+use App\Console\Commands\ScheduledEmails;
 Route::middleware(['jwt_auth:admin'])->group(function(){
     Route::group(['prefix'=>'admin'],function(){
         Route::post('/plan/{plan_code}',[AdminController::class,'updatePlan']);
@@ -120,24 +123,21 @@ Route::get('/get-path',[AdminController::class,'getPath']);
 Route::get('/test-command', function () {
     // Call the Artisan command
     Artisan::call('app:scheduled-emails'); 
-     // This will execute the command
-    
-    // Get the output of the command
     $output = Artisan::output();
-
-    // Return the expired subscriptions in the response
     return response()->json([
         'message' => 'Command executed successfully.',
-        'expired_subscriptions' => json_decode($output)  // Display expired subscriptions as JSON
+        'expired_subscriptions' => json_decode($output)  
     ]);
 }
 );
 Route::get('/get-last-active-at',function(){
   Artisan::call('app:scheduled-emails');
+  $output = Artisan::output();
   return response()->json([
     'message' => 'Command executed successfully.',
-    'expired_subscriptions' => 'expired_subscriptions'  // Display expired subscriptions as JSON
+    'mail_sent' => json_decode($output) 
   ]);
 });
 
 Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
+Route::get('/send-inactivity-emails', [AuthController::class, 'sendInactivityEmails']);
