@@ -45,6 +45,7 @@ class EmailHelper
         // Replace dynamic data in the subject and body
         $subject = str_replace(array_keys($dynamicData), array_values($dynamicData), $emailTemplate->subject);
         $body = str_replace(array_keys($dynamicData), array_values($dynamicData), $emailTemplate->content);
+        
     
         // Send the email to the recipient
         Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));

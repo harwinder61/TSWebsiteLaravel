@@ -294,8 +294,9 @@ public function changePassword(Request $request) {
                 'email' => $email,
                 'user_type' => $request->user_type,
                 'password' => 'defaultPassword',
-                'email_verified' => true,
-                'signin_mode' => 'google_sso'
+                'email_verified' => false,
+                'signin_mode' => 'google_sso',
+                'verification_token' => $verification_token,
             ]);
    
             $user_id = $user->id;
@@ -308,7 +309,11 @@ public function changePassword(Request $request) {
             // One-liner call to send dynamic email
              EmailHelper::sendDynamicEmail(
             'ts_reset_email_confirmations',
-            ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],
+            [
+                '[USER_LOGIN]' => $user->username, 
+                '[USER_EMAIL]' => $user->email,
+                '[VERIFIED_EMAIL_LINK]'=>env('WEBAPP_URL')."/account-verification?token=".$verification_token,
+            ],
             $user->email
             );
             return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
