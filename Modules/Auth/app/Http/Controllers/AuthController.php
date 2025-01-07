@@ -24,6 +24,9 @@ use Modules\Admin\app\Models\EmailTemplates;
 use App\Mail\DynamicEmail;
 use App\Mail\EmailHelper;
 use Carbon\Carbon;
+use App\Console\Commands\ScheduledEmails;
+use App\Models\User;
+
 class AuthController extends Controller
 {
 
@@ -32,6 +35,152 @@ class AuthController extends Controller
         $this->middleware(AuthMiddleware::class)->except(['register','loginWithGmail','registerWithGmail',  'login', 'verifyEmail', 'verificationEmailToken', 'recoverPassword','resetPassword']);
     }
 
+    // public function login(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'username' => 'required|string',
+    //         'password' => 'required|string',
+    //     ]);
+    
+    //     // Validate the request
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    
+    //     // Extract credentials
+    //     $credentials = $request->only('username', 'password');
+    //     $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+    //     $credentials = [
+    //         $loginType => $request->input('username'),
+    //         'password' => $request->input('password'),
+    //     ];
+    
+    //     // Attempt login
+    //     try {
+    //         if (!$token = JWTAuth::attempt($credentials)) {
+    //             return Resp::error(['error' => 'Unauthorized']);
+    //         }
+    //     } catch (JWTException $e) {
+    //         return Resp::error(['error' => 'Could not create token']);
+    //     }
+    
+    //     // Set the JWT token
+    //     JWTAuth::setToken($token);
+    
+    //     // Retrieve the authenticated user
+    //     $user = JWTAuth::user()->load('profile');
+    
+    //     // Check if email is verified
+    //     if (!$user->email_verified) {
+    //         return Resp::error(['error' => 'Email not verified']);
+    //     }
+    
+    //     // Prepare dynamic email data
+    //     $dynamicData = [
+    //         '[USER_LOGIN]' => $user->username,
+    //         '[CUSTOMER_NAME]' => $user->username,
+    //         '[CUSTOMER_EMAIL]' => $user->email,
+    //     ];
+    
+    //     // Send dynamic email (ensure the template exists in the DB)
+    //     EmailHelper::sendDynamicEmail(
+    //         'Verify_your_new_email_address',
+    //         $dynamicData,
+    //         $user->email
+    //     );
+
+
+    //     $scheduledEmails = new ScheduledEmails();
+    //     // Update last_active_at when the user logs in
+    //     // $scheduledEmails->updateLastActiveAt($user->id);
+    
+    //     // Call inactivity email logic for the user if applicable
+    //     $scheduledEmails->sendInactivityEmails();
+    
+    //     // Return response with token and user info
+    //     return Resp::success([
+    //         'token' => $token,
+    //         'user' => $user
+    //     ]);
+    // }
+
+    // Login Method
+public function login(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'username' => 'required|string',
+        'password' => 'required|string',
+    ]);
+
+    // Validate the request
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+
+    // Extract credentials
+    $credentials = $request->only('username', 'password');
+    $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+    $credentials = [
+        $loginType => $request->input('username'),
+        'password' => $request->input('password'),
+    ];
+
+    // Attempt login
+    try {
+        if (!$token = JWTAuth::attempt($credentials)) {
+            return Resp::error(['error' => 'Unauthorized']);
+        }
+    } catch (JWTException $e) {
+        return Resp::error(['error' => 'Could not create token']);
+    }
+
+    // Set the JWT token
+    JWTAuth::setToken($token);
+
+    // Retrieve the authenticated user
+    $user = JWTAuth::user()->load('profile');
+
+    // Check if email is verified
+    if (!$user->email_verified) {
+        return Resp::error(['error' => 'Email not verified']);
+    }
+
+    // Prepare dynamic email data
+    $dynamicData = [
+        '[USER_LOGIN]' => $user->username,
+        '[CUSTOMER_NAME]' => $user->username,
+        '[CUSTOMER_EMAIL]' => $user->email,
+    ];
+
+    // Send dynamic email (ensure the template exists in the DB)
+    try {
+        EmailHelper::sendDynamicEmail(
+            'Verify_your_new_email_address',
+            $dynamicData,
+            $user->email
+        );
+        Log::info('Verification email sent to: ' . $user->email);
+    } catch (\Exception $e) {
+        Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
+    }
+
+    // Update the `last_active_at` timestamp when the user logs in
+    // $user->last_active_at = Carbon::now();
+    // $user->save();
+    // Log::info('Updated last_active_at for user ' . $user->id . ' to ' . $user->last_active_at);
+
+    // Call inactivity email logic for all inactive users
+    Log::info('Calling sendInactivityEmails for all inactive users');
+    $scheduledEmails = new ScheduledEmails();
+    $scheduledEmails->sendInactivityEmails();
+
+    return Resp::success([
+        'message' => 'Email sent successfully',
+        'token' => $token,
+        'user' => $user
+    ]);
+}
+    
 
     public function resetOldEmail(Request $request) {
         $validator = Validator::make($request->all(), [
@@ -381,68 +530,82 @@ public function changePassword(Request $request) {
     //     $user->email);
     //     return Resp::success(['token' => $token]);
     // }
+    // //// akkkkkkkk////////
 
-    public function login(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'username' => 'required|string',
-            'password' => 'required|string',
-        ]);
-    
-        // Validate the request
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-    
-        // Extract credentials
-        $credentials = $request->only('username', 'password');
-        $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-        $credentials = [
-            $loginType => $request->input('username'),
-            'password' => $request->input('password'),
-        ];
-    
-        // Attempt login
-        try {
-            if (!$token = JWTAuth::attempt($credentials)) {
-                return Resp::error(['error' => 'Unauthorized']);
-            }
-        } catch (JWTException $e) {
-            return Resp::error(['error' => 'Could not create token']);
-        }
-    
-        // Set the JWT token
-        JWTAuth::setToken($token);
-    
-        // Retrieve the authenticated user
-        $user = JWTAuth::user()->load('profile');
-    
-        // Check if email is verified
-        if (!$user->email_verified) {
-            return Resp::error(['error' => 'Email not verified']);
-        }
-    
-        // Prepare dynamic email data
-        $dynamicData = [
-            '[USER_LOGIN]' => $user->username,  // This will replace [USER_LOGIN] with the username
-            '[CUSTOMER_NAME]' => $user->username,
-            '[CUSTOMER_EMAIL]' => $user->email,
-        ];
-    
-        // Send dynamic email (ensure the template exists in the DB)
-        EmailHelper::sendDynamicEmail(
-            'Verify_your_new_email_address',  // Template type
-            $dynamicData,  // Dynamic data
-            $user->email  // Recipient email
-        );
-    
-        // Return response with token and user info
-        return Resp::success([
-            'token' => $token,
-            'user' => $user
-        ]);
-    }
-    
+ 
+
+//     public function login(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'username' => 'required|string',
+//         'password' => 'required|string',
+//     ]);
+
+//     // Validate the request
+//     if ($validator->fails()) {
+//         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+//     }
+
+//     // Extract credentials
+//     $credentials = $request->only('username', 'password');
+//     $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+//     $credentials = [
+//         $loginType => $request->input('username'),
+//         'password' => $request->input('password'),
+//     ];
+
+//     // Attempt login
+//     try {
+//         if (!$token = JWTAuth::attempt($credentials)) {
+//             return Resp::error(['error' => 'Unauthorized']);
+//         }
+//     } catch (JWTException $e) {
+//         return Resp::error(['error' => 'Could not create token']);
+//     }
+
+//     // Set the JWT token
+//     JWTAuth::setToken($token);
+
+//     // Retrieve the authenticated user
+//     $user = JWTAuth::user()->load('profile');
+
+//     // Check if email is verified
+//     if (!$user->email_verified) {
+//         return Resp::error(['error' => 'Email not verified']);
+//     }
+
+//     // Check if user has been inactive for 28 days or more and hasn't received the email
+//     if ($user->last_active_at && Carbon::parse($user->last_active_at)->lt(Carbon::now()->subDays(28)) && $user->drop_mail == 0) {
+//         // Prepare dynamic email data
+//         $dynamicData = [
+//             '[USER_LOGIN]' => $user->username,  // This will replace [USER_LOGIN] with the username
+//             '[CUSTOMER_NAME]' => $user->username,
+//             '[CUSTOMER_EMAIL]' => $user->email,
+//         ];
+
+//         // Send dynamic email (ensure the template exists in the DB)
+//         EmailHelper::sendDynamicEmail(
+//             'Verify_your_new_email_address',  // Template type
+//             $dynamicData,  // Dynamic data
+//             $user->email  // Recipient email
+//         );
+
+//         // Update drop_mail to 1 to ensure the email is only sent once
+//         $user->drop_mail = 1;
+//         $user->save();
+//     }
+
+//     // Update last_active_at to the current time when the user logs in
+//     $user->last_active_at = Carbon::now();
+//     $user->save();
+
+//     // Return response with token and user info
+//     return Resp::success([
+//         'token' => $token,
+//         'user' => $user
+//     ]);
+// }
+
 
 
     public function loginWithGmail(Request $request)

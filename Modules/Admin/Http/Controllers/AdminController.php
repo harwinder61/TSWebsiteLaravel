@@ -115,26 +115,11 @@ public function addLocation(Request $request){
         ]);
         return Resp::success(['message' => 'State added successfully' , 'location' => $location]);
     }
-    // $location = Location::create([
-    //     'region' => $request->region,
-    //     'country' => $request->country,
-    //     'city' => $request->city,
-    //     'state' => $request->state,
-    //     'zip' => $request->zip,
-    //     'latitude' => $request->latitude,
-    //     'longitude' => $request->longitude,
-    //     'status' => $request->status,
-     
-    // ]);
-    //return Resp::success(['message' => 'Location added successfully' , 'location' => $location]);
 
     }catch(\Exception $e){
         return Resp::error(['message' => 'Something went wrong' , 'error' => $e->getMessage()]);
     }
 }
-
-
-
 
 public function deleteLocation($id , Request $request){
     $location = Location::find($id);
