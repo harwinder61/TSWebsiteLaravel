@@ -49,9 +49,9 @@ class DynamicEmail extends Mailable
                 //  'subject' => $this->subject,
                 'title' => $this->subject,
                 'body' => $this->body,
-                'mime' => 'text/html', // Set the content type to HTML for email clients that don't support Blade views.
+                'mime' => 'text/html', 
             ],
-            );
+        );
     }
 
     /**
@@ -69,6 +69,11 @@ class DynamicEmail extends Mailable
                 'title' => $this->subject,
                 'body' => $this->body,
                 'mime' => 'text/html',
+                'plan_code' => session('plan_code'),
+                'start_date' => session('start_date'),
+                'end_date' => session('end_date'),
+                'price' => session('price'),
+                'total' => session('total'),
             ]);
             
             

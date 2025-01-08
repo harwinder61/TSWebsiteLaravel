@@ -24,6 +24,7 @@ use App\Models\Media;
 use App\Models\Location;
 use App\Mail\EmailHelper;
 use Modules\Admin\app\Models\EmailTemplates;
+use App\Models\User;
 
 
 
@@ -43,6 +44,8 @@ class OrderController extends Controller
         if($request->input('image_id')){
             $image_id=$request->input('image_id');
         }
+        
+        
         
         $validator = Validator::make($request->all(), [
             'plan_code' => 'required|string|exists:plans,code',
@@ -64,7 +67,28 @@ class OrderController extends Controller
         if (!$plan) {
             return Resp::success(['error'=> 'Plan not found']);
         }
+        session(['plan_code'=>$request->input('plan_code')]);
+        session(['start_date'=>$request->input('start_date')]);
+        session(['end_date'=>$request->input('end_date')]);
+        session(['image_id'=>$request->input('image_id')]);
+        session(['only_fans_link'=>$request->input('only_fans_link')]);
+        session(['many_vids_link'=>$request->input('many_vids_link')]);
+        session(['fan_centro_link'=>$request->input('fan_centro_link')]);
+        session(['price'=>$plan->price]);
+        session(['total'=>$plan->price]);
+        
 
+ Log::info("Session data: ".session('plan_code'));
+ Log::info("Session data: ".session('start_date'));
+ Log::info("Session data: ".session('image_id'));
+ Log::info("Session data: ".session('only_fans_link'));
+ Log::info("Session data: ".session('many_vids_link'));
+ Log::info("Session data: ".session('fan_centro_link'));
+ Log::info("Session data: ".session('price'));
+ Log::info("Session data total: ".session('total'));
+ Log::info("Session data end_date: ".session('end_date'));
+
+ 
         $sub_exists=Subscription::where('escort_id',$user->id)->first();
         $days = $plan->days;
         $end_date = date('Y-m-d', strtotime($request->input('start_date') . " + $days days"));
@@ -181,11 +205,19 @@ if (!$media || $media->id != $request->input('image_id')) {
         if ($request->has('fan_centro_link')) {
             $response['fan_centro_link'] = $request->input('fan_centro_link');
         }
+
        EmailHelper::sendDynamicEmail('new_order', 
-    ['[CUSTOMER_NAME]' => $user->username, '[CUSTOMER_EMAIL]' => $user->email], 
+    ['[CUSTOMER_NAME]' => $user->username, 
+    '[PLAN_CODE]' => session('plan_code'), 
+    '[START_DATE]' => session('start_date'),
+    '[END_DATE]' => session('end_date'), 
+    '[PRICE]' => session('price'), 
+    '[TOTAL]' => session('total')], 
     $user->email);
         return Resp::success($response);
     }
+
+
 
     function updateOrder(Request $request){
         $user=auth()->user();
