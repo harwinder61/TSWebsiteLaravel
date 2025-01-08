@@ -303,6 +303,8 @@ class SubscriptionController extends Controller
     public function topLocation()
     {
         $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+            ->where('subscriptions.end_date', '>', now())
+            ->where('subscriptions.is_hidden', 0)
             ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
             ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.type as location_type,locations.slug as slug');
 
