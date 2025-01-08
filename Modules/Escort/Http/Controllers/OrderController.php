@@ -87,7 +87,7 @@ class OrderController extends Controller
         $total_orders_count = $subscription_count + $pending_orders_count;
     
         if ($total_orders_count >= $max_users) {
-            return Resp::success(['error'=> 'Max subscription reached, plan not available']);
+            return Resp::error(['error'=> 'Max subscription reached, plan not available']);
         }
     
         $start_date2 = Carbon::parse($request->input('start_date'));
@@ -108,7 +108,7 @@ class OrderController extends Controller
                 })->get();
     
             if ($weekly_sub_exists->isNotEmpty()) {
-                return Resp::success(['error'=> 'Weekly subscription is already owned by someone']);
+                return Resp::error(['error'=> 'Weekly subscription is already owned by someone']);
             }
         }
     
@@ -127,7 +127,7 @@ class OrderController extends Controller
         ]);
         
         if (!$order) {
-            return Resp::success(['error'=> 'Failed to create order']);
+            return Resp::error(['error'=> 'Failed to create order']);
         }
     
         // Stripe payment logic remains the same
