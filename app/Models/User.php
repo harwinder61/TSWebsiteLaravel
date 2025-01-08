@@ -30,7 +30,7 @@ class User extends Authenticatable
         'firstname',
         'lastname',
         'last_active_at',
-        
+        'inactivity_email_sent',
     ];
     protected $casts=[
         'user_type'=>'integer',

@@ -236,47 +236,36 @@ private function sendExpirationEmail($subscription)
 
 public function sendInactivityEmails()
 {
-    // Fetch users who haven't been active for the last 28 days or have no last active timestamp.
-    $inactiveUsers = User::where(function ($query) {
-        $query->where('last_active_at', Carbon::now()->subDays(28)->startOfDay())
-              ->orWhereNull('last_active_at');
-    })
-    ->where('drop_mail', 0)
-    ->get();
-    
+    // Fetch users who haven't been active for the last 28 days.
+    $inactiveUsers = User::where('last_active_at', '<', Carbon::now()->subDays(28))
+        ->where('drop_mail', 0) // Optional: if you have a flag for users who shouldn't receive the email
+        ->get();
+        // die($inactiveUsers);
+
     // Log how many inactive users were found.
     Log::info('Found ' . $inactiveUsers->count() . ' inactive users');
 
     $count = 1;
 
-    // Loop through all inactive users to send them emails.
     foreach ($inactiveUsers as $user) {
-        // Log which user will receive the email.
-        Log::info('Sending email to user ' . $count.' >>> '.$user->id . ' with email ' . $user->email);
+        Log::info('Sending email to user ' . $count . ' >>> ' . $user->id . ' with email ' . $user->email);
 
         try {
-            // Send the inactivity email to the user.
-            EmailHelper::sendDynamicEmail('4 weeks of profile inactivity',
+            EmailHelper::sendDynamicEmail('4_weeks_of_profile_inactivity_notification',
                 ['[User Login]' => $user->username, '[User Email]' => $user->email],
                 $user->email);
             Log::info('Email sent to: ' . $user->email);
-
-            // Update last_active_at to current time after sending email
-            $user->last_active_at = Carbon::now();
-            $user->drop_mail = 1;
+            $user->last_active_at = Carbon::now(); 
+            $user->drop_mail = 1;  
+            $user->inactivity_email_sent = 1;
             $user->save(); 
 
-            Log::info('Updated last_active_at for user ' . $user->id . ' to: ' . $user->last_active_at);
+            Log::info('Updated last_active_at and drop_mail for user ' . $user->id . ' to: ' . $user->last_active_at . ', drop_mail: ' . $user->drop_mail);
         } catch (\Exception $e) {
             Log::error('Failed to send email to ' . $user->email . ': ' . $e->getMessage());
         }
-
-        $count++;  
+        $count++;   
     }
 }
 
-
 }
-
-
-

@@ -163,13 +163,6 @@ public function login(Request $request)
     } catch (\Exception $e) {
         Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
     }
-
-    // Update the `last_active_at` timestamp when the user logs in
-    // $user->last_active_at = Carbon::now();
-    // $user->save();
-    // Log::info('Updated last_active_at for user ' . $user->id . ' to ' . $user->last_active_at);
-
-    // Call inactivity email logic for all inactive users
     Log::info('Calling sendInactivityEmails for all inactive users');
     $scheduledEmails = new ScheduledEmails();
     $scheduledEmails->sendInactivityEmails();
