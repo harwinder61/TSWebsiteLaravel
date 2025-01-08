@@ -237,7 +237,7 @@ if (!$media || $media->id != $request->input('image_id')) {
         $order=Orders::find($order_id);
 
         if(!$order){
-            return Resp::error(['Order not found']);
+            return Resp::error(['error'=>'Order not found']);
         }
         if($order->payment_status=="PENDING"){
             $order->update([
@@ -252,7 +252,7 @@ if (!$media || $media->id != $request->input('image_id')) {
 
             $plan=Plan::where('code',$order->plan_code)->first();
             if(!$plan){
-                return Resp::error(['Plan not found']);
+                return Resp::error(['error'=>'Plan not found']);
             }
             $days=$plan->days;
             
@@ -287,11 +287,11 @@ if (!$media || $media->id != $request->input('image_id')) {
                 'extra_location'=>$extra_location
             ]);
             if(!$subscription){
-                return Resp::error(['Failed to create subscription']);
+                return Resp::error(['error'=>'Failed to create subscription']);
             }
             return Resp::success(['subscription'=>$subscription,'order'=>$order]);
         }else{
-          return Resp::error(['Order already paid']);
+          return Resp::error(['error'=>'Order already paid']);
         }
         return Resp::success(['order'=>$order]);
     }
