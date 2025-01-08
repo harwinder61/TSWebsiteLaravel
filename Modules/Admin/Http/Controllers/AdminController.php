@@ -111,9 +111,6 @@ public function addLocation(Request $request){
     }
 }
 
-
-
-
 public function deleteLocation($id , Request $request){
     $location = Location::find($id);
     $location->delete();
