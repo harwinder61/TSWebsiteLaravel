@@ -170,6 +170,8 @@ class OrderController extends Controller
             $price = $plan->price;
             if ($request->input('plan_code') == "P105" && !$sub_exists) {
                 $price = 0;
+                EmailHelper::sendDynamicEmail('ts_great_news_you_are_step_away_to_place_your_free_featured_ad', 
+                ['[USER_LOGIN]' => $user->username, '[UNCORAGING_URL]' => 'https://transbunnies.com/escort/profile'], $user->email);
             }
 
             $amount = intval($plan->price) * 100;
@@ -289,12 +291,12 @@ class OrderController extends Controller
             $order->update([
                 'payment_status' => 'PAID',
             ]);
-            $escort = AuthUser::find($order->escort_id);
-            $email = new EmailService();
-            $email->to($escort->email);
-            $email->subject('Thanku for purchasing subscription hope you enjoy our services');
-            $email->setBodyPurchasingEmail('purchasing', ['user' => $order->escort_id]);
-            $email->send();
+            // $escort = AuthUser::find($order->escort_id);
+            // $email = new EmailService();
+            // $email->to($escort->email);
+            // $email->subject('Thanku for purchasing subscription hope you enjoy our services');
+            // $email->setBodyPurchasingEmail('purchasing', ['user' => $order->escort_id]);
+            // $email->send();
 
             $plan = Plan::where('code', $order->plan_code)->first();
             if (!$plan) {
@@ -339,7 +341,7 @@ class OrderController extends Controller
 
 
             EmailHelper::sendDynamicEmail(
-                'new_order',
+                'ts_new_order_notification',
                 [
                     '[CUSTOMER_NAME]' => $user->username,
                     '[PLAN_CODE]' => $plan->code,

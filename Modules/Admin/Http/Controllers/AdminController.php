@@ -561,7 +561,7 @@ public function hideProfile($id, Request $request)
             $user->profile->delete();
             $user->delete();
 
-            EmailHelper::sendDynamicEmail('account_deleted', 
+            EmailHelper::sendDynamicEmail('ts_your_profile_is_deleted', 
             ['[CUSTOMER_NAME]' => $user->username, '[CUSTOMER_EMAIL]' => $user->email], 
             $user->email);
 
@@ -657,7 +657,7 @@ public function hideProfile($id, Request $request)
             '{{name}}' => 'John Doe',
             '{{email}}' => 'john@example.com',
         ];
-        $template = EmailTemplate::where('type', 'new_order')->first();
+        $template = EmailTemplate::where('type', 'ts_new_order_notification')->first();
         if (!$template) {
             return Resp::error(['message' => 'Email template not found']);
         }

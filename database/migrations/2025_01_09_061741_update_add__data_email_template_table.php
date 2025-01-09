@@ -19,7 +19,7 @@ return new class extends Migration
                                 <p style="color: #333; margin: 10px 0;">You\'ve received the following order from :</p>
                                 
                                 <div style="margin: 20px 0;">
-                                  <strong style="color: #333;">[ORDER_ID] (start_date)</strong>
+                                  <strong style="color: #333;">#[ORDER_ID] ([START_DATE])</strong>
                                 </div>
                 
                                 <table cellpadding="10" cellspacing="0" width="100%" style="border-collapse: collapse;">
@@ -59,7 +59,7 @@ return new class extends Migration
                                     <th style="border: 1px solid #ddd; text-align: left;">Price</th>
                                   </tr>
                                   <tr>
-                                    <td style="border: 1px solid #ddd;">[SUBSCRIPTION_ID]</td>
+                                    <td style="border: 1px solid #ddd;">#[SUBSCRIPTION_ID]</td>
                                     <td style="border: 1px solid #ddd;">[START_DATE]</td>
                                     <td style="border: 1px solid #ddd;">[END_DATE]</td>
                                     <td style="border: 1px solid #ddd;">[PRICE] every 2 weeks</td>
