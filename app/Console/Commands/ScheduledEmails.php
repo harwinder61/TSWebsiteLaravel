@@ -168,10 +168,11 @@ public function handle()
 
 private function sendExpirationEmail($subscription)
 {
+    $user = auth()->user();
     if ($subscription->escort && $subscription->escort->user) {
         $email = $subscription->escort->user->email;
-        EmailHelper::sendDynamicEmail('subscription_expired', 
-            ['[User Login]' => $subscription->escort->user->username, '[User Email]' => $email], 
+        EmailHelper::sendDynamicEmail('ts_subscription_expired', 
+            ['[USER_LOGIN]' => $subscription->escort->user->username, '[USER_EMAIL]' => $email], 
             $email);
         return Resp::success(['message' => 'Subscription expired successfully']);
     } else {
@@ -236,6 +237,7 @@ private function sendExpirationEmail($subscription)
 
 public function sendInactivityEmails()
 {
+    $user = auth()->user();
     // Fetch users who haven't been active for the last 28 days.
     $inactiveUsers = User::where('last_active_at', '<', Carbon::now()->subDays(28))
         ->where('drop_mail', 0) // Optional: if you have a flag for users who shouldn't receive the email
@@ -251,8 +253,8 @@ public function sendInactivityEmails()
         Log::info('Sending email to user ' . $count . ' >>> ' . $user->id . ' with email ' . $user->email);
 
         try {
-            EmailHelper::sendDynamicEmail('4_weeks_of_profile_inactivity_notification',
-                ['[User Login]' => $user->username, '[User Email]' => $user->email],
+            EmailHelper::sendDynamicEmail('ts_4_weeks_of_profile_inactivity',
+                ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],
                 $user->email);
             Log::info('Email sent to: ' . $user->email);
             $user->last_active_at = Carbon::now(); 

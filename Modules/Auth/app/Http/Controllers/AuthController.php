@@ -202,15 +202,15 @@ public function login(Request $request)
         $user->save();
         
         // Send verification email
-        $email = new Mailer();
-        $email->to($request->new_email);
-        $email->subject('Verify Your New Email');
-        $email->setBodyByTemplate('verify-email', [
-            'verification_token' => $verification_token,
-            'user' => $user
-        ]);
-        $email->send();
-      EmailHelper::sendDynamicEmail('ts_reset_email_confirmations', 
+        // $email = new Mailer();
+        // $email->to($request->new_email);
+        // $email->subject('Verify Your New Email');
+        // $email->setBodyByTemplate('verify-email', [
+        //     'verification_token' => $verification_token,
+        //     'user' => $user
+        // ]);
+        // $email->send();
+      EmailHelper::sendDynamicEmail('ts_verify_your_new_email_address', 
       ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email], 
       $user->email);
         return Resp::success([
