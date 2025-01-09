@@ -300,12 +300,32 @@ class SubscriptionController extends Controller
     }
 
 
-    public function topLocation()
+    public function topLocation(Request $request)
     {
         $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
             ->where('subscriptions.end_date', '>', now())
-            ->where('subscriptions.is_hidden', 0)
-            ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
+            ->where('subscriptions.is_hidden', 0);
+
+        $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($byPlanOrder) {
+            $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+            as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+        } else {
+            $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+            as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+        }
+
+        $result = $result->join(                                                                                                                                                   
+            \DB::raw($rawSubQuary),
+            'subscriptions.id',
+            '=',                                                                                                                                                                                                                                                                                                                                                                                    
+            'latest_subscription.max_id'
+        )
+        ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+
+
+            $result=$result->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
             ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.type as location_type,locations.slug as slug');
         
             // $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
@@ -791,6 +811,15 @@ class SubscriptionController extends Controller
         $slug = $request->input('slug');
         $location = Location::where('slug', $slug)->first();
 
+        $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($byPlanOrder) {
+            $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                        as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+        }else{
+            $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                        as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+        }
+
         if ($location) {
             if ($location->type == 'city') {
                 $county = Location::where('id', $location->parent_id)->first();
@@ -807,24 +836,44 @@ class SubscriptionController extends Controller
                 $city_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
                     ->where('profile.city_id', $location->id)
                     ->where('subscriptions.end_date', '>', now())
-                    ->where('subscriptions.is_hidden', 0)
-                    ->selectRaw('COUNT(*) as subscription_count')
+                    ->where('subscriptions.is_hidden', 0);
+
+                $city_data=$city_data->join(                                                        
+                    \DB::raw($rawSubQuary),
+                    'subscriptions.id','=','latest_subscription.max_id')
+                        ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+                $city_data=$city_data->selectRaw('COUNT(*) as subscription_count')
                     ->first();
 
 
                 $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
                     ->where('profile.county_id', $county->id)
                     ->where('subscriptions.end_date', '>', now())
-                    ->where('subscriptions.is_hidden', 0)
-                    ->selectRaw('COUNT(*) as subscription_count')
+                    ->where('subscriptions.is_hidden', 0);
+
+                    
+                $county_data=$county_data->join(                                                        
+                    \DB::raw($rawSubQuary),
+                    'subscriptions.id','=','latest_subscription.max_id')
+                        ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+                    
+                    
+                $county_data=$county_data->selectRaw('COUNT(*) as subscription_count')
                     ->first();
 
 
                 $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
                     ->where('profile.region_id', $region->id)
                     ->where('subscriptions.end_date', '>', now())
-                    ->where('subscriptions.is_hidden', 0)
-                    ->selectRaw('COUNT(*) as subscription_count')
+                    ->where('subscriptions.is_hidden', 0);
+
+                $region_data=$region_data->join(                                                        
+                        \DB::raw($rawSubQuary),
+                        'subscriptions.id','=','latest_subscription.max_id')
+                            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+                $region_data=$region_data->selectRaw('COUNT(*) as subscription_count')
                     ->first();
 
                 $location['subscription_count'] = $city_data->subscription_count;
@@ -837,16 +886,27 @@ class SubscriptionController extends Controller
                 $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
                     ->where('profile.county_id', $location->id)
                     ->where('subscriptions.end_date', '>', now())
-                    ->where('subscriptions.is_hidden', 0)
-                    ->selectRaw('COUNT(*) as subscription_count')
+                    ->where('subscriptions.is_hidden', 0);
+
+                $county_data=$county_data->join(                                                        
+                        \DB::raw($rawSubQuary),
+                        'subscriptions.id','=','latest_subscription.max_id')
+                            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+                $county_data=$county_data->selectRaw('COUNT(*) as subscription_count')
                     ->first();
 
 
                 $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
                     ->where('profile.region_id', $region->id)
                     ->where('subscriptions.end_date', '>', now())
-                    ->where('subscriptions.is_hidden', 0)
-                    ->selectRaw('COUNT(*) as subscription_count')
+                    ->where('subscriptions.is_hidden', 0);
+
+                $region_data=$region_data->join(                                                        
+                        \DB::raw($rawSubQuary),
+                        'subscriptions.id','=','latest_subscription.max_id')
+                            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+                $region_data=$region_data->selectRaw('COUNT(*) as subscription_count')
                     ->first();
 
                 $location['subscription_count'] = $county_data->subscription_count;
@@ -862,8 +922,14 @@ class SubscriptionController extends Controller
         $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
             ->where('profile.region_id', $location->id)
             ->where('subscriptions.end_date', '>', now())
-            ->where('subscriptions.is_hidden', 0)
-            ->selectRaw('COUNT(*) as subscription_count')
+            ->where('subscriptions.is_hidden', 0);
+
+        $region_data=$region_data->join(                                                        
+                \DB::raw($rawSubQuary),
+                'subscriptions.id','=','latest_subscription.max_id')
+                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+        $region_data=$region_data->selectRaw('COUNT(*) as subscription_count')
             ->first();
         $region['subscription_count'] = $region_data->subscription_count;
 
