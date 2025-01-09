@@ -88,7 +88,7 @@ class OrderController extends Controller
         // Log::info("Session data total: " . session('total'));
         // Log::info("Session data end_date: " . session('end_date'));
         // Log::info("Session data plan_title: " . session('plan_title'));
-        
+
 
 
         $sub_exists = Subscription::where('escort_id', $user->id)->first();
@@ -155,7 +155,7 @@ class OrderController extends Controller
         if (!$order) {
             return Resp::error(['error' => 'Failed to create order']);
         }
-        session(['order_id'=>$order->id]);
+        session(['order_id' => $order->id]);
         Log::info("Session data order_id: " . session('order_id'));
 
         // Stripe payment logic remains the same
@@ -170,8 +170,11 @@ class OrderController extends Controller
             $price = $plan->price;
             if ($request->input('plan_code') == "P105" && !$sub_exists) {
                 $price = 0;
-                EmailHelper::sendDynamicEmail('ts_great_news_you_are_step_away_to_place_your_free_featured_ad', 
-                ['[USER_LOGIN]' => $user->username, '[UNCORAGING_URL]' => 'https://transbunnies.com/escort/profile'], $user->email);
+                EmailHelper::sendDynamicEmail(
+                    'ts_great_news_you_are_step_away_to_place_your_free_featured_ad',
+                    ['[USER_LOGIN]' => $user->username, '[UNCORAGING_URL]' => 'https://transbunnies.com/escort/profile'],
+                    $user->email
+                );
             }
 
             $amount = intval($plan->price) * 100;
@@ -345,15 +348,15 @@ class OrderController extends Controller
                 [
                     '[CUSTOMER_NAME]' => $user->username,
                     '[PLAN_CODE]' => $plan->code,
-                    '[START_DATE]' => $order->start_date,
-                    '[END_DATE]' => $end_date,
+                    '[START_DATE]' => Carbon::parse($order->start_date)->format('Y-m-d'),
+                    '[END_DATE]' => Carbon::parse($end_date)->format('Y-m-d'),
                     '[PRICE]' => $plan->price,
                     '[TOTAL]' => $plan->price,
                     '[PLAN_TITLE]' => $plan->title,
                     '[ORDER_ID]' => $order->id,
                     '[USER_EMAIL]' => $user->email,
                     '[SUBSCRIPTION_ID]' => $subscription->id
-    
+
                 ],
                 $user->email
             );
@@ -363,6 +366,11 @@ class OrderController extends Controller
             Log::info("Session data: " . session('start_date'));
             Log::info("Session data: " . session('end_date'));
             Log::info("Session data: " . session('price'));
+            Log::info("Session data: " . session('total'));
+            Log::info("Session data: " . session('plan_title'));
+            Log::info("Session data: " . session('order_id'));
+            Log::info("Session data: " . session('end_date'));
+
 
             if (!$subscription) {
                 return Resp::error(['error' => 'Failed to create subscription']);
