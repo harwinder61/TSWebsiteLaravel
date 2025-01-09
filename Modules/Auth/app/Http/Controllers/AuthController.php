@@ -155,7 +155,7 @@ public function login(Request $request)
     // Send dynamic email (ensure the template exists in the DB)
     try {
         EmailHelper::sendDynamicEmail(
-            'Verify_your_new_email_address',
+            'ts_verify_your_new_email_address',
             $dynamicData,
             $user->email
         );
@@ -316,7 +316,7 @@ public function changePassword(Request $request) {
         $user->password = Hash::make($request->password);
         $user->recovery_token = null;
         $user->save();
-        EmailHelper::sendDynamicEmail('ts_reset_email_confirmations', 
+        EmailHelper::sendDynamicEmail('ts_new_password_notification', 
         ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email], 
         $user->email);
         return Resp::success(['message' => 'Password reset successfully']);     
@@ -380,11 +380,11 @@ public function changePassword(Request $request) {
        ]);
    
        // Send verification email
-       $email = new Mailer();
-       $email->to($user->email);
-       $email->subject('Test Email');
-       $email->setBodyByTemplate('verify-email', ['verification_token' => $verification_token, 'user' => $user]);
-       $email->send();
+    //    $email = new Mailer();
+    //    $email->to($user->email);
+    //    $email->subject('Test Email');
+    //    $email->setBodyByTemplate('verify-email', ['verification_token' => $verification_token, 'user' => $user]);
+    //    $email->send();
    
        // Create user profile
        $escort = Profile::create([
@@ -394,7 +394,7 @@ public function changePassword(Request $request) {
    
        // One-liner call to send dynamic email
        EmailHelper::sendDynamicEmail(
-           'ts_reset_email_confirmations',
+           'ts_email_verification',
            ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],
            $user->email
        );
@@ -450,7 +450,7 @@ public function changePassword(Request $request) {
 
             // One-liner call to send dynamic email
              EmailHelper::sendDynamicEmail(
-            'ts_reset_email_confirmations',
+            'ts_email_verification',
             [
                 '[USER_LOGIN]' => $user->username, 
                 '[USER_EMAIL]' => $user->email,

@@ -53,7 +53,7 @@ class EscortController extends Controller
         $user->save();
         $profile = Profile::where('escort_id', $user->id)->first();
         $profile->delete();
-        EmailHelper::sendDynamicEmail('account_deleted', 
+        EmailHelper::sendDynamicEmail('ts_your_profile_is_deleted', 
         ['[USER_LOGIN]' => $user->username, '[CUSTOMER_NAME]' => $user->username, '[CUSTOMER_EMAIL]' => $user->email], 
         $user->email);
         
