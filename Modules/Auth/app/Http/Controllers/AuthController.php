@@ -395,7 +395,8 @@ public function changePassword(Request $request) {
        // One-liner call to send dynamic email
        EmailHelper::sendDynamicEmail(
            'ts_email_verification',
-           ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],
+           ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email,
+            '[VERIFIED_EMAIL_LINK]' => env('WEBAPP_URL')."/account-verification?token=".$verification_token],
            $user->email
        );
    
