@@ -145,11 +145,13 @@ public function login(Request $request)
         return Resp::error(['error' => 'Email not verified']);
     }
 
+
     // Prepare dynamic email data
     $dynamicData = [
         '[USER_LOGIN]' => $user->username,
         '[CUSTOMER_NAME]' => $user->username,
         '[CUSTOMER_EMAIL]' => $user->email,
+        '[VERIFY_EMAIL_URL]' => env('WEBAPP_URL')."/account-verification?token=".$user->verification_token,
     ];
 
     // Send dynamic email (ensure the template exists in the DB)
