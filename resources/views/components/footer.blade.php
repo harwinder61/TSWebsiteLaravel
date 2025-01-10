@@ -1,7 +1,7 @@
 <div class="container">
     <div class="footer-logo">
-        <img src="{{ asset('images/ts-twiter.png') }}" alt="Transbunnies Logo" class="instagram-2" style="height: 55px;">
-        <img src="{{ asset('images/ts-instagram.png') }}" alt="Transbunnies Logo" class="instagram-2" style="height: 55px;">
+        <img src="https://phplaravel-1347729-4949264.cloudwaysapps.com/uploads/media/user_2/gallery_1736485455.png" alt="Transbunnies Logo" class="instagram-2" style="height: 55px;">
+        <img src="https://phplaravel-1347729-4949264.cloudwaysapps.com/uploads/media/user_2/gallery_1736485500.png" alt="Transbunnies Logo" class="instagram-2" style="height: 55px;">
     </div>
 </div>
 
