@@ -5,9 +5,9 @@
     </div>
 </div>
 
-<p style="text-align: center; color: #666;">
+<!-- <p style="text-align: center; color: #666;">
     © {{ date('Y') }}, Transbunnies. All Rights Reserved.
-</p>
+</p> -->
 </footer>
 
 <style>
