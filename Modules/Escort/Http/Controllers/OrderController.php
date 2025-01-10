@@ -65,29 +65,7 @@ class OrderController extends Controller
         if (!$plan) {
             return Resp::success(['error' => 'Plan not found']);
         }
-        // session(['plan_code' => $request->input('plan_code')]);
-        // session(['plan_title' => $plan->title]);
-        // session(['start_date' => $request->input('start_date')]);
-        // session(['end_date' => $request->input('end_date')]);
-        // session(['image_id' => $request->input('image_id')]);
-        // session(['only_fans_link' => $request->input('only_fans_link')]);
-        // session(['many_vids_link' => $request->input('many_vids_link')]);
-        // session(['fan_centro_link' => $request->input('fan_centro_link')]);
-        // session(['price' => $plan->price]);
-        // session(['total' => $plan->price]);
 
-
-
-        // Log::info("Session data: " . session('plan_code'));
-        // Log::info("Session data: " . session('start_date'));
-        // Log::info("Session data: " . session('image_id'));
-        // Log::info("Session data: " . session('only_fans_link'));
-        // Log::info("Session data: " . session('many_vids_link'));
-        // Log::info("Session data: " . session('fan_centro_link'));
-        // Log::info("Session data: " . session('price'));
-        // Log::info("Session data total: " . session('total'));
-        // Log::info("Session data end_date: " . session('end_date'));
-        // Log::info("Session data plan_title: " . session('plan_title'));
 
 
 
@@ -110,10 +88,11 @@ class OrderController extends Controller
         $max_users = Plan::where('code', $request->input('plan_code'))->first('allowed_user_account');
         $max_users = $max_users->allowed_user_account;
 
-        $total_orders_count = $subscription_count + $pending_orders_count;
+        // $total_orders_count = $subscription_count + $pending_orders_count;
 
-        if ($total_orders_count >= $max_users) {
-            return Resp::error(['error' => 'Max subscription reached, plan not available']);
+        $total_orders_count=$subscription_count;
+        if ($total_orders_count >= $plan->advert_spaces) {
+            return Resp::error(['error' => 'Max subscription reached, plan not available','total_subscription'=>$total_orders_count]);
         }
 
         $start_date2 = Carbon::parse($request->input('start_date'));
