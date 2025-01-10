@@ -311,8 +311,19 @@ class SubscriptionController extends Controller
             $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
             as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
         } else {
-            $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-            as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+            // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+            // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+
+            $rawSubQuary = '(
+                SELECT t.escort_id, t.latest_end_date, t.max_id
+                FROM (
+                    SELECT escort_id, end_date as latest_end_date, id as max_id,
+                           ROW_NUMBER() OVER (PARTITION BY escort_id ORDER BY FIELD(plan_code, "P101", "P102", "P103", "P104","P105","P106")) as rn
+                    FROM subscriptions
+                    WHERE end_date > NOW()
+                ) t
+                WHERE t.rn = 1
+            ) as latest_subscription';
         }
 
         $result = $result->join(
@@ -519,14 +530,23 @@ class SubscriptionController extends Controller
                     ) t
                     WHERE t.rn = 1
                 ) as latest_subscription';
-            }
+            }     
 
- 
-            $subscriptions->join(
+
+
+        
+            
+
+
+
+
+            
+            $subscriptions->join(                                                                                                                                                   
                 \DB::raw($rawSubQuary),
                 'subscriptions.id',
                 '=',
                 'latest_subscription.max_id'
+
             )
                 ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
 
@@ -821,8 +841,20 @@ class SubscriptionController extends Controller
             $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                         as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
         } else {
-            $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-                        as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+            // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+            //             as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+        
+        
+            $rawSubQuary = '(
+                SELECT t.escort_id, t.latest_end_date, t.max_id
+                FROM (
+                    SELECT escort_id, end_date as latest_end_date, id as max_id,
+                           ROW_NUMBER() OVER (PARTITION BY escort_id ORDER BY FIELD(plan_code, "P101", "P102", "P103", "P104","P105","P106")) as rn
+                    FROM subscriptions
+                    WHERE end_date > NOW()
+                ) t
+                WHERE t.rn = 1
+            ) as latest_subscription';
         }
 
         if ($location) {
