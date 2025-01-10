@@ -528,40 +528,67 @@ class SubscriptionController extends Controller
                 });
             }
 
+            // if (!is_null($request->query('city_id'))) {
+
+
+            //     $subscriptions->where(function ($query) use ($request) {
+            //         $query->whereHas('escort.profile', function ($query) use ($request) {
+            //             $query->where('city_id', $request->query('city_id'));
+            //         })
+            //             ->orWhere(function ($query) use ($request) {
+            //                 // Check if the city_id exists in the extra_location JSON column
+            //                 $query->whereJsonContains('extra_location', $request->query('city_id'));
+            //             });
+            //     });
+            // }
+
+            // if (!is_null($request->query('region_id'))) {
+
+            //     $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+            //         $query->where('region_id', $request->query('region_id'));
+            //     })
+            //         ->orWhere(function ($query) use ($request) {
+            //             // Check if the city_id exists in the extra_location JSON column
+            //             $query->whereJsonContains('extra_location', $request->query('region_id'));
+            //         });
+            // }
+
+            // if (!is_null($request->query('county_id'))) {
+
+            //     $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+            //         $query->where('county_id', $request->query('county_id'));
+            //     })
+            //         ->orWhere(function ($query) use ($request) {
+            //             // Check if the city_id exists in the extra_location JSON column
+            //             $query->whereJsonContains('extra_location', $request->query('county_id'));
+            //         });
+            // }
+
             if (!is_null($request->query('city_id'))) {
-
-
                 $subscriptions->where(function ($query) use ($request) {
                     $query->whereHas('escort.profile', function ($query) use ($request) {
                         $query->where('city_id', $request->query('city_id'));
                     })
-                        ->orWhere(function ($query) use ($request) {
-                            // Check if the city_id exists in the extra_location JSON column
-                            $query->whereJsonContains('extra_location', $request->query('city_id'));
-                        });
+                    ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$request->query('city_id')]);
                 });
             }
-
+    
             if (!is_null($request->query('region_id'))) {
-
-                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
-                    $query->where('region_id', $request->query('region_id'));
-                })
-                    ->orWhere(function ($query) use ($request) {
-                        // Check if the city_id exists in the extra_location JSON column
-                        $query->whereJsonContains('extra_location', $request->query('region_id'));
-                    });
+                $subscriptions->where(function ($query) use ($request) {
+                    $query->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('region_id', $request->query('region_id'));
+                    })
+                    ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$request->query('region_id')]);
+                });
             }
-
+    
             if (!is_null($request->query('county_id'))) {
-
-                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
-                    $query->where('county_id', $request->query('county_id'));
-                })
-                    ->orWhere(function ($query) use ($request) {
-                        // Check if the city_id exists in the extra_location JSON column
-                        $query->whereJsonContains('extra_location', $request->query('county_id'));
-                    });
+                $subscriptions->where(function ($query) use ($request) {
+                    $query->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('county_id', $request->query('county_id'));
+                    })
+                    ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$request->query('county_id')]);
+                });
             }
 
             if (!is_null($request->query('name'))) {
