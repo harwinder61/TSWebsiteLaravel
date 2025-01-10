@@ -519,7 +519,8 @@ class SubscriptionController extends Controller
                     ) t
                     WHERE t.rn = 1
                 ) as latest_subscription';
-            }
+            }     
+              
 
 
             
