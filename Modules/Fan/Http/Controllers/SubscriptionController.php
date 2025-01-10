@@ -535,6 +535,7 @@ class SubscriptionController extends Controller
                 'subscriptions.id',
                 '=',
                 'latest_subscription.max_id'
+
             )
                 ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
 
