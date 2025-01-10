@@ -47,7 +47,11 @@ public function plans(Request $request){
         $plan->active_users_count = $plan->active_users()->count();
     }
     foreach($data as $plan){
-        $plan->available_spaces = $plan->allowed_user_account - $plan->active_users_count;
+        // $plan->available_spaces = $plan->allowed_user_account - $plan->active_users_count;
+        $plan->available_spaces = $plan->advert_spaces-$plan->active_users_count;
+        if($plan->available_spaces<0){
+            $plan->available_spaces=0;
+        }
     }
     return Resp::success(['list'=>$data]);
 
