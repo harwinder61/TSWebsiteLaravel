@@ -273,7 +273,7 @@ public function changePassword(Request $request) {
         }
         $user->email_verified = true;
         $user->save();
-        $template = EmailTemplates::where('type','ts_reset_email_confirmations')->first();
+        $template = EmailTemplates::where('type','ts_verify_your_new_email_address')->first();
         if(!$template){
             return Resp::error(['message' => 'Email template not found']);
         }

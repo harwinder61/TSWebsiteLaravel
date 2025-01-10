@@ -1746,8 +1746,6 @@ class AdminController extends Controller
         return $slug;
     }
 
-
-
     public function spotlightMedia(Request $request)
     {
 
@@ -1760,13 +1758,11 @@ class AdminController extends Controller
 
     public function updatePlanDetails($plan_code, Request $request)
     {
-
         $plan = Plan::where('code', $plan_code)->first();
         if (!$plan) {
 
             return Resp::error(['message' => 'Plan not found']);
         }
-
         $validator = Validator::make($request->all(), [
             'price' => 'required|numeric',
             'description' => 'nullable|string',
@@ -1775,7 +1771,6 @@ class AdminController extends Controller
             'desktop_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
             'mobile_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000'
         ]);
-
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
