@@ -174,7 +174,6 @@ public function login(Request $request)
     ]);
 }
     
-
     public function resetOldEmail(Request $request) {
         $validator = Validator::make($request->all(), [
             'old_email' => 'required|string|email',
@@ -666,7 +665,6 @@ public function changePassword(Request $request) {
         if (!$token) {
             return Resp::error(['error' => 'No token found!!!']);
         }
-        
         try {
 
             JWTAuth::setToken($token);
@@ -676,7 +674,6 @@ public function changePassword(Request $request) {
 
             return Resp::error(['error' => 'Could not log out, token might be invalid'], 401);
         }
-
         return Resp::success(['message' => 'Successfully logged out']);
     }
 
