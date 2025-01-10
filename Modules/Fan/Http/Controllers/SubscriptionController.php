@@ -29,7 +29,7 @@ class SubscriptionController extends Controller
         ]);
     }
 
-    
+
 
     // public function getAllListReviews(Request $request)
     // {
@@ -42,58 +42,58 @@ class SubscriptionController extends Controller
     //     $escortId = $request->query('escort_id');
     //     $fanId = $request->query('fan_id');
     //     $verifiedStatus = $request->query('verified_status'); // New filter parameter
-    
+
     //     // Start building the query for reviews
     //     $reviewsQuery = BaseReviews::with('user', 'escort', 'fan') // Relationship with user and escort
     //         ->orderBy('created_at', 'desc') // Order by created_at descending
     //         ->offset($offset)
     //         ->limit($perPage);
-    
+
     //     // Apply filters based on query parameters
     //     if ($statuses) {
     //         $statuses = explode(',', $statuses); // Convert comma-separated string to array
     //         $reviewsQuery->whereIn('status', $statuses);
     //     }
-    
+
     //     if ($s) {
     //         $reviewsQuery->whereHas('user', function ($query) use ($s) {
     //             $query->where('username', 'like', '%' . $s . '%');
     //         });
     //     }
-    
+
     //     if ($filter === '0') {
     //         $reviewsQuery->where('avg_rating', '<', 3); // avg_rating < 3
     //     } elseif ($filter === '1') {
     //         $reviewsQuery->where('avg_rating', '>=', 3); // avg_rating >= 3
     //     }
-    
+
     //     if ($escortId) {
     //         $reviewsQuery->where('escort_id', $escortId); // Filter by escort ID
     //     }
-    
+
     //     if ($fanId) {
     //         $reviewsQuery->where('user_id', $fanId); // Filter by fan ID
     //     }
-    
+
     //     // Apply the new verified_status filter if provided
     //     if ($verifiedStatus !== null) {
     //         $reviewsQuery->where('verified_status', $verifiedStatus); // Filter by verified_status
     //     }
-    
+
     //     // Get the filtered reviews
     //     $reviews = $reviewsQuery->get()->map(function ($review) {
     //         $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
     //         return $review;
     //     });
-    
+
     //     // Get the total count of filtered reviews for pagination
     //     $totalResults = $reviewsQuery->count();
     //     $totalPages = ceil($totalResults / $perPage);
-    
+
     //     // Calculate the total average rating of the reviews
     //     $totalRatings = $reviews->sum('avg_rating');
     //     $averageRating = $reviews->count() > 0 ? $totalRatings / $reviews->count() : 0;
-    
+
     //     // Pagination response
     //     $pagination = [
     //         'total_results' => $totalResults,
@@ -119,13 +119,13 @@ class SubscriptionController extends Controller
         $escortId = $request->query('escort_id');
         $fanId = $request->query('fan_id');
         $verifiedStatus = $request->query('verified_status'); // New filter parameter
-        
+
         // Start building the query for reviews
         $reviewsQuery = BaseReviews::with('user', 'escort', 'fan') // Relationship with user and escort
             ->orderBy('created_at', 'desc'); // Order by created_at descending
-        
+
         // Apply filters based on query parameters
-        
+
         // Check for status=0 before applying other filters
         if ($statuses === '0') {
             $reviewsQuery->where('status', 0); // Filter reviews where status is 0
@@ -133,57 +133,57 @@ class SubscriptionController extends Controller
             $statuses = explode(',', $statuses); // Convert comma-separated string to array
             $reviewsQuery->whereIn('status', $statuses);
         }
-    
+
         if ($s) {
             $reviewsQuery->whereHas('user', function ($query) use ($s) {
                 $query->where('username', 'like', '%' . $s . '%');
             });
         }
-        
+
         if ($filter === '0') {
             $reviewsQuery->where('avg_rating', '<', 3); // avg_rating < 3
         } elseif ($filter === '1') {
             $reviewsQuery->where('avg_rating', '>=', 3); // avg_rating >= 3
         }
-        
+
         if ($escortId) {
             $reviewsQuery->where('escort_id', $escortId); // Filter by escort ID
         }
-        
+
         if ($fanId) {
             $reviewsQuery->where('user_id', $fanId); // Filter by fan ID
         }
-        
+
         // Apply the new verified_status filter if provided
         if ($verifiedStatus !== null) {
             $reviewsQuery->where('verified_status', $verifiedStatus); // Filter by verified_status
         }
-        
+
         // DEBUG: Log the full SQL query before applying pagination
         \Log::info('SQL Query before pagination: ' . $reviewsQuery->toSql());
-        
+
         // 1. Get the total count of filtered reviews (without pagination)
         $totalResults = $reviewsQuery->count();
-    
+
         // DEBUG: Log the total count
         \Log::info('Total filtered reviews count: ' . $totalResults);
-    
+
         // 2. Apply pagination (skip and take)
         $reviews = $reviewsQuery->skip($offset)->take($perPage)->get()->map(function ($review) {
             $review->avg_rating = ($review->photo_accuracy + $review->service + $review->clean_liness + $review->location + $review->value_for_money) / 5;
             return $review;
         });
-    
+
         // DEBUG: Log the number of reviews retrieved for the current page
         \Log::info('Reviews count on page ' . $page . ': ' . $reviews->count());
-    
+
         // 3. Calculate the total pages based on the total count
         $totalPages = ceil($totalResults / $perPage);
-        
+
         // Calculate the total average rating of the reviews
         $totalRatings = $reviews->sum('avg_rating');
         $averageRating = $reviews->count() > 0 ? $totalRatings / $reviews->count() : 0;
-        
+
         // Pagination response
         $pagination = [
             'total_results' => $totalResults,
@@ -192,11 +192,11 @@ class SubscriptionController extends Controller
             'page_size' => $perPage,
             'average_rating' => $averageRating,
         ];
-        
+
         // Return response with reviews and pagination data
         return Resp::success(['reviews' => $reviews->values(), 'pagination' => $pagination]);
     }
-    
+
 
 
 
@@ -315,38 +315,38 @@ class SubscriptionController extends Controller
             as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
         }
 
-        $result = $result->join(                                                                                                                                                   
+        $result = $result->join(
             \DB::raw($rawSubQuary),
             'subscriptions.id',
-            '=',                                                                                                                                                                                                                                                                                                                                                                                    
+            '=',
             'latest_subscription.max_id'
         )
-        ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
 
 
 
-            $result=$result->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
+        $result = $result->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
             ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.type as location_type,locations.slug as slug');
-        
-            // $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            // if ($byPlanOrder) {
-            //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-            //     as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
-            // }else{
-            //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-            //     as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
-            // }
+
+        // $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        // if ($byPlanOrder) {
+        //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+        //     as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+        // }else{
+        //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+        //     as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+        // }
 
 
-            
 
-            // $result = $result->join(                                                                                                                                                   
-            //     \DB::raw($rawSubQuary),
-            //     'subscriptions.id',
-            //     '=',                                                                                                                                                                                                                                                                                                                                                                                    
-            //     'latest_subscription.max_id'
-            // )
-            //     ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+        // $result = $result->join(                                                                                                                                                   
+        //     \DB::raw($rawSubQuary),
+        //     'subscriptions.id',
+        //     '=',                                                                                                                                                                                                                                                                                                                                                                                    
+        //     'latest_subscription.max_id'
+        // )
+        //     ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
 
         $result = $result->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type');
         return Resp::success(["list" => $result->get()]);
@@ -504,10 +504,10 @@ class SubscriptionController extends Controller
             if ($byPlanOrder) {
                 $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                 as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
-            }else{
+            } else {
                 // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                 // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
-            
+
 
                 $rawSubQuary = '(
                     SELECT t.escort_id, t.latest_end_date, t.max_id
@@ -533,12 +533,12 @@ class SubscriptionController extends Controller
             $subscriptions->join(                                                                                                                                                   
                 \DB::raw($rawSubQuary),
                 'subscriptions.id',
-                '=',                                                                                                                                                                                                                                                                                                                                                                                    
+                '=',
                 'latest_subscription.max_id'
             )
                 ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
 
-            $perPage = $request->query('per_page',18);
+            $perPage = $request->query('per_page', 18);
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
 
@@ -617,30 +617,30 @@ class SubscriptionController extends Controller
     {
         try {
             $user = auth()->user();
-            $locationType="";
+            $locationType = "";
             $subscriptions = EscortSubscription::query();
 
 
 
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
                 ->select('subscriptions.*', 'plans.title as plan_title')
-                ->where('subscriptions.end_date','>',now());
+                ->where('subscriptions.end_date', '>', now());
             if ($request->query('slug')) {
                 $slug = $request->query('slug');
 
-                $location=Location::where('slug','like','%'.$slug.'%')->first();
-                $type=$location->type;
-                switch($type){
+                $location = Location::where('slug', 'like', '%' . $slug . '%')->first();
+                $type = $location->type;
+                switch ($type) {
                     case 'city':
-                        $locationType='city';
+                        $locationType = 'city';
                         $request->merge(['city_id' => $location->id]);
                         break;
                     case 'county':
-                        $locationType='county';
+                        $locationType = 'county';
                         $request->merge(['county_id' => $location->id]);
                         break;
                     case 'region':
-                        $locationType='region';
+                        $locationType = 'region';
                         $request->merge(['region_id' => $location->id]);
                         break;
                 }
@@ -649,8 +649,8 @@ class SubscriptionController extends Controller
             if (!is_null($request->query('county_slug'))) {
                 $countySlug = $request->query('county_slug');
                 $subscriptions->whereHas('escort.profile', function ($query) use ($countySlug) {
-                    $query->whereHas('county', function($q) use ($countySlug) {
-                        $q->where('slug','like','%'.$countySlug.'%');
+                    $query->whereHas('county', function ($q) use ($countySlug) {
+                        $q->where('slug', 'like', '%' . $countySlug . '%');
                     });
                 });
             }
@@ -658,8 +658,8 @@ class SubscriptionController extends Controller
             if (!is_null($request->query('region_slug'))) {
                 $regionSlug = $request->query('region_slug');
                 $subscriptions->whereHas('escort.profile', function ($query) use ($regionSlug) {
-                    $query->whereHas('region', function($q) use ($regionSlug) {
-                        $q->where('slug','like','%'.$regionSlug.'%');
+                    $query->whereHas('region', function ($q) use ($regionSlug) {
+                        $q->where('slug', 'like', '%' . $regionSlug . '%');
                     });
                 });
             }
@@ -688,11 +688,11 @@ class SubscriptionController extends Controller
                 });
             }
 
-            if(!is_null($request->query('status'))){
-                if($request->query('status')=='active'){
-                    $subscriptions->where('end_date','>',now());
-                }elseif($request->query('status')=='expired'){
-                    $subscriptions->where('end_date','<',now());
+            if (!is_null($request->query('status'))) {
+                if ($request->query('status') == 'active') {
+                    $subscriptions->where('end_date', '>', now());
+                } elseif ($request->query('status') == 'expired') {
+                    $subscriptions->where('end_date', '<', now());
                 }
             }
 
@@ -709,13 +709,11 @@ class SubscriptionController extends Controller
                     $query->whereHas('escort.profile', function ($query) use ($request) {
                         $query->where('city_id', $request->query('city_id'));
                     })
-                    ->orWhere(function ($query) use ($request) {
-                        // Check if the city_id exists in the extra_location JSON column
-                        $query->whereJsonContains('extra_location', $request->query('city_id'));
-                    });
+                        ->orWhere(function ($query) use ($request) {
+                            // Check if the city_id exists in the extra_location JSON column
+                            $query->whereJsonContains('extra_location', $request->query('city_id'));
+                        });
                 });
-
-
             }
 
             if (!is_null($request->query('region_id'))) {
@@ -723,10 +721,10 @@ class SubscriptionController extends Controller
                 $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
                     $query->where('region_id', $request->query('region_id'));
                 })
-                ->orWhere(function ($query) use ($request) {
-                    // Check if the city_id exists in the extra_location JSON column
-                    $query->whereJsonContains('extra_location', $request->query('region_id'));
-                });
+                    ->orWhere(function ($query) use ($request) {
+                        // Check if the city_id exists in the extra_location JSON column
+                        $query->whereJsonContains('extra_location', $request->query('region_id'));
+                    });
             }
 
             if (!is_null($request->query('county_id'))) {
@@ -734,11 +732,10 @@ class SubscriptionController extends Controller
                 $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
                     $query->where('county_id', $request->query('county_id'));
                 })
-                ->orWhere(function ($query) use ($request) {
-                    // Check if the city_id exists in the extra_location JSON column
-                    $query->whereJsonContains('extra_location', $request->query('county_id'));
-                });
-
+                    ->orWhere(function ($query) use ($request) {
+                        // Check if the city_id exists in the extra_location JSON column
+                        $query->whereJsonContains('extra_location', $request->query('county_id'));
+                    });
             }
 
             if (!is_null($request->query('name'))) {
@@ -753,7 +750,7 @@ class SubscriptionController extends Controller
                 });
             }
 
-            $perPage = $request->query('per_page',15); 
+            $perPage = $request->query('per_page', 15);
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
 
@@ -765,7 +762,7 @@ class SubscriptionController extends Controller
                 'escort.profile.city',
                 'escort.profile.region',
                 'escort.profile.reviews',
-                'escort.profile.media' ,
+                'escort.profile.media',
                 'escort.profile.rates',
                 'orders',
                 'media'
@@ -787,42 +784,40 @@ class SubscriptionController extends Controller
                 $totalValueForMoney = 0;
                 $totalReviews = count($reviews);
 
-                    // If there are reviews, calculate the sum for each field
-                    if ($totalReviews > 0) {
-                        foreach ($reviews as $review) {
-                            $totalPhotoAccuracy += $review->photo_accuracy;
-                            $totalService += $review->service;
-                            $totalCleanliness += $review->clean_liness;
-                            $totalLocation += $review->location;
-                            $totalValueForMoney += $review->value_for_money;
-                        }
-
-
-                        $averageRating = (
-                            $totalPhotoAccuracy + 
-                            $totalService + 
-                            $totalCleanliness + 
-                            $totalLocation + 
-                            $totalValueForMoney
-                        ) / (5 * $totalReviews); 
-
-
-                        $escort->profile->avg_rating = round($averageRating, 2); 
-
-
+                // If there are reviews, calculate the sum for each field
+                if ($totalReviews > 0) {
+                    foreach ($reviews as $review) {
+                        $totalPhotoAccuracy += $review->photo_accuracy;
+                        $totalService += $review->service;
+                        $totalCleanliness += $review->clean_liness;
+                        $totalLocation += $review->location;
+                        $totalValueForMoney += $review->value_for_money;
                     }
+
+
+                    $averageRating = (
+                        $totalPhotoAccuracy +
+                        $totalService +
+                        $totalCleanliness +
+                        $totalLocation +
+                        $totalValueForMoney
+                    ) / (5 * $totalReviews);
+
+
+                    $escort->profile->avg_rating = round($averageRating, 2);
                 }
+            }
 
 
 
-                return Resp::success(["list" => $result,'location_type'=>$locationType,'pagination'=>['total_results'=>$totalCount,'total_pages'=>ceil($totalCount/$perPage),'page_number'=>$page,'page_size'=>$perPage]]);
+            return Resp::success(["list" => $result, 'location_type' => $locationType, 'pagination' => ['total_results' => $totalCount, 'total_pages' => ceil($totalCount / $perPage), 'page_number' => $page, 'page_size' => $perPage]]);
 
             // Retrieve subscriptions with related escort and profile
         } catch (\Exception $e) {
-            return Resp::error(['message' => 'Something went wrong'.$e->getMessage()]);
+            return Resp::error(['message' => 'Something went wrong' . $e->getMessage()]);
         }
     }
-   
+
 
     public function slugToLocation(Request $request)
     {
@@ -833,7 +828,7 @@ class SubscriptionController extends Controller
         if ($byPlanOrder) {
             $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                         as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
-        }else{
+        } else {
             $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                         as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
         }
@@ -856,12 +851,15 @@ class SubscriptionController extends Controller
                     ->where('subscriptions.end_date', '>', now())
                     ->where('subscriptions.is_hidden', 0);
 
-                $city_data=$city_data->join(                                                        
+                $city_data = $city_data->join(
                     \DB::raw($rawSubQuary),
-                    'subscriptions.id','=','latest_subscription.max_id')
-                        ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+                    'subscriptions.id',
+                    '=',
+                    'latest_subscription.max_id'
+                )
+                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
 
-                $city_data=$city_data->selectRaw('COUNT(*) as subscription_count')
+                $city_data = $city_data->selectRaw('COUNT(*) as subscription_count')
                     ->first();
 
 
@@ -870,14 +868,17 @@ class SubscriptionController extends Controller
                     ->where('subscriptions.end_date', '>', now())
                     ->where('subscriptions.is_hidden', 0);
 
-                    
-                $county_data=$county_data->join(                                                        
+
+                $county_data = $county_data->join(
                     \DB::raw($rawSubQuary),
-                    'subscriptions.id','=','latest_subscription.max_id')
-                        ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-                    
-                    
-                $county_data=$county_data->selectRaw('COUNT(*) as subscription_count')
+                    'subscriptions.id',
+                    '=',
+                    'latest_subscription.max_id'
+                )
+                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+
+                $county_data = $county_data->selectRaw('COUNT(*) as subscription_count')
                     ->first();
 
 
@@ -886,12 +887,15 @@ class SubscriptionController extends Controller
                     ->where('subscriptions.end_date', '>', now())
                     ->where('subscriptions.is_hidden', 0);
 
-                $region_data=$region_data->join(                                                        
-                        \DB::raw($rawSubQuary),
-                        'subscriptions.id','=','latest_subscription.max_id')
-                            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+                $region_data = $region_data->join(
+                    \DB::raw($rawSubQuary),
+                    'subscriptions.id',
+                    '=',
+                    'latest_subscription.max_id'
+                )
+                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
 
-                $region_data=$region_data->selectRaw('COUNT(*) as subscription_count')
+                $region_data = $region_data->selectRaw('COUNT(*) as subscription_count')
                     ->first();
 
                 $location['subscription_count'] = $city_data->subscription_count;
@@ -906,11 +910,14 @@ class SubscriptionController extends Controller
                     ->where('subscriptions.end_date', '>', now())
                     ->where('subscriptions.is_hidden', 0);
 
-                $county_data=$county_data->join(                                                        
-                        \DB::raw($rawSubQuary),
-                        'subscriptions.id','=','latest_subscription.max_id')
-                            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-                $county_data=$county_data->selectRaw('COUNT(*) as subscription_count')
+                $county_data = $county_data->join(
+                    \DB::raw($rawSubQuary),
+                    'subscriptions.id',
+                    '=',
+                    'latest_subscription.max_id'
+                )
+                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+                $county_data = $county_data->selectRaw('COUNT(*) as subscription_count')
                     ->first();
 
 
@@ -919,12 +926,15 @@ class SubscriptionController extends Controller
                     ->where('subscriptions.end_date', '>', now())
                     ->where('subscriptions.is_hidden', 0);
 
-                $region_data=$region_data->join(                                                        
-                        \DB::raw($rawSubQuary),
-                        'subscriptions.id','=','latest_subscription.max_id')
-                            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+                $region_data = $region_data->join(
+                    \DB::raw($rawSubQuary),
+                    'subscriptions.id',
+                    '=',
+                    'latest_subscription.max_id'
+                )
+                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
 
-                $region_data=$region_data->selectRaw('COUNT(*) as subscription_count')
+                $region_data = $region_data->selectRaw('COUNT(*) as subscription_count')
                     ->first();
 
                 $location['subscription_count'] = $county_data->subscription_count;
@@ -942,12 +952,15 @@ class SubscriptionController extends Controller
             ->where('subscriptions.end_date', '>', now())
             ->where('subscriptions.is_hidden', 0);
 
-        $region_data=$region_data->join(                                                        
-                \DB::raw($rawSubQuary),
-                'subscriptions.id','=','latest_subscription.max_id')
-                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+        $region_data = $region_data->join(
+            \DB::raw($rawSubQuary),
+            'subscriptions.id',
+            '=',
+            'latest_subscription.max_id'
+        )
+            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
 
-        $region_data=$region_data->selectRaw('COUNT(*) as subscription_count')
+        $region_data = $region_data->selectRaw('COUNT(*) as subscription_count')
             ->first();
         $region['subscription_count'] = $region_data->subscription_count;
 

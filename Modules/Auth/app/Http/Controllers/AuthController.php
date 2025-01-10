@@ -174,7 +174,6 @@ public function login(Request $request)
     ]);
 }
     
-
     public function resetOldEmail(Request $request) {
         $validator = Validator::make($request->all(), [
             'old_email' => 'required|string|email',
@@ -274,7 +273,7 @@ public function changePassword(Request $request) {
         }
         $user->email_verified = true;
         $user->save();
-        $template = EmailTemplates::where('type','ts_reset_email_confirmations')->first();
+        $template = EmailTemplates::where('type','ts_verify_your_new_email_address')->first();
         if(!$template){
             return Resp::error(['message' => 'Email template not found']);
         }
@@ -666,7 +665,6 @@ public function changePassword(Request $request) {
         if (!$token) {
             return Resp::error(['error' => 'No token found!!!']);
         }
-        
         try {
 
             JWTAuth::setToken($token);
@@ -676,7 +674,6 @@ public function changePassword(Request $request) {
 
             return Resp::error(['error' => 'Could not log out, token might be invalid'], 401);
         }
-
         return Resp::success(['message' => 'Successfully logged out']);
     }
 
