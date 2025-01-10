@@ -720,6 +720,7 @@ public function changePassword(Request $request) {
         $user->email_verified = true;
         $user->save();
         return view('emailTemplates.email-verify-succesfully');
+        
     }
    
     
