@@ -300,69 +300,134 @@ class SubscriptionController extends Controller
     }
 
 
+    // public function topLocation(Request $request)
+    // {
+    //     $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+    //         ->where('subscriptions.end_date', '>', now())
+    //         ->where('subscriptions.is_hidden', 0);
+
+    //     $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    //     if ($byPlanOrder) {
+    //         $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+    //         as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+    //     } else {
+    //         // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+    //         // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+
+    //         $rawSubQuary = '(
+    //             SELECT t.escort_id, t.latest_end_date, t.max_id
+    //             FROM (
+    //                 SELECT escort_id, end_date as latest_end_date, id as max_id,
+    //                        ROW_NUMBER() OVER (PARTITION BY escort_id ORDER BY FIELD(plan_code, "P101", "P102", "P103", "P104","P105","P106")) as rn
+    //                 FROM subscriptions
+    //                 WHERE end_date > NOW()
+    //             ) t
+    //             WHERE t.rn = 1
+    //         ) as latest_subscription';
+    //     }
+
+    //     $result = $result->join(
+    //         \DB::raw($rawSubQuary),
+    //         'subscriptions.id',
+    //         '=',
+    //         'latest_subscription.max_id'
+    //     )
+    //         ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+
+
+    //     $result = $result->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
+    //         ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.type as location_type,locations.slug as slug');
+
+    //     // $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    //     // if ($byPlanOrder) {
+    //     //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+    //     //     as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+    //     // }else{
+    //     //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+    //     //     as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+    //     // }
+
+
+
+
+    //     // $result = $result->join(                                                                                                                                                   
+    //     //     \DB::raw($rawSubQuary),
+    //     //     'subscriptions.id',
+    //     //     '=',                                                                                                                                                                                                                                                                                                                                                                                    
+    //     //     'latest_subscription.max_id'
+    //     // )
+    //     //     ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+    //     $result = $result->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type');
+    //     return Resp::success(["list" => $result->get()]);
+    // }
+
     public function topLocation(Request $request)
-    {
-        $result = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-            ->where('subscriptions.end_date', '>', now())
-            ->where('subscriptions.is_hidden', 0);
+{
+    $primaryLocations = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+        ->where('subscriptions.end_date', '>', now())
+        ->where('subscriptions.is_hidden', 0);
 
-        $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-        if ($byPlanOrder) {
-            $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-            as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
-        } else {
-            // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-            // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+    $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    if ($byPlanOrder) {
+        $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+        as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+    } else {
+        $rawSubQuary = '(
+            SELECT t.escort_id, t.latest_end_date, t.max_id
+            FROM (
+                SELECT escort_id, end_date as latest_end_date, id as max_id,
+                       ROW_NUMBER() OVER (PARTITION BY escort_id ORDER BY FIELD(plan_code, "P101", "P102", "P103", "P104","P105","P106")) as rn
+                FROM subscriptions
+                WHERE end_date > NOW()
+            ) t
+            WHERE t.rn = 1
+        ) as latest_subscription';
+    }
 
-            $rawSubQuary = '(
-                SELECT t.escort_id, t.latest_end_date, t.max_id
-                FROM (
-                    SELECT escort_id, end_date as latest_end_date, id as max_id,
-                           ROW_NUMBER() OVER (PARTITION BY escort_id ORDER BY FIELD(plan_code, "P101", "P102", "P103", "P104","P105","P106")) as rn
-                    FROM subscriptions
-                    WHERE end_date > NOW()
-                ) t
-                WHERE t.rn = 1
-            ) as latest_subscription';
-        }
+    $primaryLocations = $primaryLocations->join(
+        \DB::raw($rawSubQuary),
+        'subscriptions.id',
+        '=',
+        'latest_subscription.max_id'
+    )
+        ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id')
+        ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
+        ->selectRaw('locations.id, COUNT(*) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug')
+        ->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type');
 
-        $result = $result->join(
+    // Second query for extra locations
+    $extraLocations = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+        ->where('subscriptions.end_date', '>', now())
+        ->where('subscriptions.is_hidden', 0)
+        ->join(
             \DB::raw($rawSubQuary),
             'subscriptions.id',
             '=',
             'latest_subscription.max_id'
         )
-            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+        ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id')
+        ->crossJoin('locations')
+        ->whereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(locations.id AS CHAR))')
+        ->selectRaw('locations.id, COUNT(*) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug')
+        ->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type');
 
+    // Convert Eloquent builders to Query builders
+    $primaryLocationsQuery = $primaryLocations->toBase();
+    $extraLocationsQuery = $extraLocations->toBase();
 
+    // Combine results using UNION ALL
+    $result = $primaryLocationsQuery->union($extraLocationsQuery);
 
-        $result = $result->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
-            ->selectRaw('locations.id, COUNT(*) as subscription_count,locations.name as city_name,locations.type as location_type,locations.slug as slug');
+    // Sum up the counts for duplicate locations
+    $finalResult = \DB::table(\DB::raw("({$result->toSql()}) as combined"))
+        ->mergeBindings($result)
+        ->selectRaw('id, SUM(subscription_count) as subscription_count, city_name, location_type, slug')
+        ->groupBy('id', 'city_name', 'location_type', 'slug');
 
-        // $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-        // if ($byPlanOrder) {
-        //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-        //     as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
-        // }else{
-        //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-        //     as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
-        // }
-
-
-
-
-        // $result = $result->join(                                                                                                                                                   
-        //     \DB::raw($rawSubQuary),
-        //     'subscriptions.id',
-        //     '=',                                                                                                                                                                                                                                                                                                                                                                                    
-        //     'latest_subscription.max_id'
-        // )
-        //     ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-
-        $result = $result->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type');
-        return Resp::success(["list" => $result->get()]);
-    }
-
+    return Resp::success(["list" => $finalResult->get()]);
+}
 
 
 
