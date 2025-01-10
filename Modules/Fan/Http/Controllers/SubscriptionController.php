@@ -520,11 +520,16 @@ class SubscriptionController extends Controller
                     WHERE t.rn = 1
                 ) as latest_subscription';
             }     
-              
+
+
+
+        
+            
+
+
 
 
             
-
             $subscriptions->join(                                                                                                                                                   
                 \DB::raw($rawSubQuary),
                 'subscriptions.id',
