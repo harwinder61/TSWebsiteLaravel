@@ -923,163 +923,355 @@ class SubscriptionController extends Controller
     }
 
 
+    // public function slugToLocation(Request $request)
+    // {
+    //     $slug = $request->input('slug');
+    //     $location = Location::where('slug', $slug)->first();
+
+    //     $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    //     if ($byPlanOrder) {
+    //         $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+    //                     as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+    //     } else {
+    //         // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+    //         //             as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+        
+        
+    //         $rawSubQuary = '(
+    //             SELECT t.escort_id, t.latest_end_date, t.max_id
+    //             FROM (
+    //                 SELECT escort_id, end_date as latest_end_date, id as max_id,
+    //                        ROW_NUMBER() OVER (PARTITION BY escort_id ORDER BY FIELD(plan_code, "P101", "P102", "P103", "P104","P105","P106")) as rn
+    //                 FROM subscriptions
+    //                 WHERE end_date > NOW()
+    //             ) t
+    //             WHERE t.rn = 1
+    //         ) as latest_subscription';
+    //     }
+
+    //     if ($location) {
+    //         if ($location->type == 'city') {
+    //             $county = Location::where('id', $location->parent_id)->first();
+    //             $region = Location::where('id', $county->parent_id)->first();
+    //             $city_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+    //                 // ->where('subscriptions.end_date', '>', now())
+    //                 // ->where('subscriptions.is_hidden', 0)
+    //                 ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
+    //                 ->where('profile.city_id', $location->id)
+    //                 ->selectRaw('COUNT(*) as subscription_count,locations.name as location_name')
+    //                 ->groupBy('profile.city_id', 'locations.name')
+    //                 ->first();
+
+    //             $city_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+    //                 ->where('profile.city_id', $location->id)
+    //                 ->where('subscriptions.end_date', '>', now())
+    //                 ->where('subscriptions.is_hidden', 0)
+    //                 ->where(function($query) use ($location) {
+    //                     $query->where('profile.city_id', $location->id)
+    //                           ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
+    //                 });
+
+    //             $city_data = $city_data->join(
+    //                 \DB::raw($rawSubQuary),
+    //                 'subscriptions.id',
+    //                 '=',
+    //                 'latest_subscription.max_id'
+    //             )
+    //                 ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+    //             $city_data = $city_data->selectRaw('COUNT(*) as subscription_count')
+    //                 ->first();
+
+
+    //             $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+    //                 ->where('profile.county_id', $county->id)
+    //                 ->where('subscriptions.end_date', '>', now())
+    //                 ->where('subscriptions.is_hidden', 0)
+    //                 ->where(function($query) use ($county) {
+    //                     $query->where('profile.county_id', $county->id)
+    //                           ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$county->id]);
+    //                 });
+
+
+    //             $county_data = $county_data->join(
+    //                 \DB::raw($rawSubQuary),
+    //                 'subscriptions.id',
+    //                 '=',
+    //                 'latest_subscription.max_id'
+    //             )
+    //                 ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+
+    //             $county_data = $county_data->selectRaw('COUNT(*) as subscription_count')
+    //                 ->first();
+
+
+    //             $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+    //                 ->where('profile.region_id', $region->id)
+    //                 ->where('subscriptions.end_date', '>', now())
+    //                 ->where('subscriptions.is_hidden', 0)
+    //                 ->where(function($query) use ($region) {
+    //                     $query->where('profile.region_id', $region->id)
+    //                           ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$region->id]);
+    //                 });
+
+    //             $region_data = $region_data->join(
+    //                 \DB::raw($rawSubQuary),
+    //                 'subscriptions.id',
+    //                 '=',
+    //                 'latest_subscription.max_id'
+    //             )
+    //                 ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+    //             $region_data = $region_data->selectRaw('COUNT(*) as subscription_count')
+    //                 ->first();
+
+    //             $location['subscription_count'] = $city_data->subscription_count;
+    //             $county['subscription_count'] = $county_data->subscription_count;
+    //             $region['subscription_count'] = $region_data->subscription_count;
+    //             return Resp::success(['city' => $city_data, 'county' => $county_data, 'location_type' => $location->type, 'data' => ['county' => $county, 'region' => $region, 'city' => $location]]);
+    //         } elseif ($location->type == 'county') {
+    //             $region = Location::where('id', $location->parent_id)->first();
+
+    //             $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+    //                 ->where('profile.county_id', $location->id)
+    //                 ->where('subscriptions.end_date', '>', now())
+    //                 ->where('subscriptions.is_hidden', 0)
+    //                 ->where(function($query) use ($location) {
+    //                     $query->where('profile.county_id', $location->id)
+    //                           ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
+    //                 });
+
+    //             $county_data = $county_data->join(
+    //                 \DB::raw($rawSubQuary),
+    //                 'subscriptions.id',
+    //                 '=',
+    //                 'latest_subscription.max_id'
+    //             )
+    //                 ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+    //             $county_data = $county_data->selectRaw('COUNT(*) as subscription_count')
+    //                 ->first();
+
+
+    //             $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+    //                 ->where('profile.region_id', $region->id)
+    //                 ->where('subscriptions.end_date', '>', now())
+    //                 ->where('subscriptions.is_hidden', 0)
+    //                 ->where(function($query) use ($region) {
+    //                     $query->where('profile.region_id', $region->id)
+    //                           ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$region->id]);
+    //                 });
+
+    //             $region_data = $region_data->join(
+    //                 \DB::raw($rawSubQuary),
+    //                 'subscriptions.id',
+    //                 '=',
+    //                 'latest_subscription.max_id'
+    //             )
+    //                 ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+    //             $region_data = $region_data->selectRaw('COUNT(*) as subscription_count')
+    //                 ->first();
+
+    //             $location['subscription_count'] = $county_data->subscription_count;
+    //             $region['subscription_count'] = $region_data->subscription_count;
+
+    //             return Resp::success(['location_type' => $location->type, 'data' => ['county' => $location, 'region' => $region]]);
+    //         } else {
+    //             $region = $location;
+    //         }
+    //     }
+
+
+    //     $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+    //         ->where('profile.region_id', $location->id)
+    //         ->where('subscriptions.end_date', '>', now())
+    //         ->where('subscriptions.is_hidden', 0)
+    //         ->where(function($query) use ($location) {
+    //             $query->where('profile.region_id', $location->id)
+    //                   ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
+    //         });
+
+    //     $region_data = $region_data->join(
+    //         \DB::raw($rawSubQuary),
+    //         'subscriptions.id',
+    //         '=',
+    //         'latest_subscription.max_id'
+    //     )
+    //         ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+    //     $region_data = $region_data->selectRaw('COUNT(*) as subscription_count')
+    //         ->first();
+    //     $region['subscription_count'] = $region_data->subscription_count;
+
+    //     return Resp::success(['location_type' => $location->type, 'data' => ['region' => $region]]);
+    // }
+
     public function slugToLocation(Request $request)
-    {
-        $slug = $request->input('slug');
-        $location = Location::where('slug', $slug)->first();
+{
+    $slug = $request->input('slug');
+    $location = Location::where('slug', $slug)->first();
 
-        $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-        if ($byPlanOrder) {
-            $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-                        as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
-        } else {
-            // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-            //             as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
-        
-        
-            $rawSubQuary = '(
-                SELECT t.escort_id, t.latest_end_date, t.max_id
-                FROM (
-                    SELECT escort_id, end_date as latest_end_date, id as max_id,
-                           ROW_NUMBER() OVER (PARTITION BY escort_id ORDER BY FIELD(plan_code, "P101", "P102", "P103", "P104","P105","P106")) as rn
-                    FROM subscriptions
-                    WHERE end_date > NOW()
-                ) t
-                WHERE t.rn = 1
-            ) as latest_subscription';
-        }
-
-        if ($location) {
-            if ($location->type == 'city') {
-                $county = Location::where('id', $location->parent_id)->first();
-                $region = Location::where('id', $county->parent_id)->first();
-                $city_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-                    // ->where('subscriptions.end_date', '>', now())
-                    // ->where('subscriptions.is_hidden', 0)
-                    ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
-                    ->where('profile.city_id', $location->id)
-                    ->selectRaw('COUNT(*) as subscription_count,locations.name as location_name')
-                    ->groupBy('profile.city_id', 'locations.name')
-                    ->first();
-
-                $city_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-                    ->where('profile.city_id', $location->id)
-                    ->where('subscriptions.end_date', '>', now())
-                    ->where('subscriptions.is_hidden', 0);
-
-                $city_data = $city_data->join(
-                    \DB::raw($rawSubQuary),
-                    'subscriptions.id',
-                    '=',
-                    'latest_subscription.max_id'
-                )
-                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-
-                $city_data = $city_data->selectRaw('COUNT(*) as subscription_count')
-                    ->first();
-
-
-                $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-                    ->where('profile.county_id', $county->id)
-                    ->where('subscriptions.end_date', '>', now())
-                    ->where('subscriptions.is_hidden', 0);
-
-
-                $county_data = $county_data->join(
-                    \DB::raw($rawSubQuary),
-                    'subscriptions.id',
-                    '=',
-                    'latest_subscription.max_id'
-                )
-                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-
-
-                $county_data = $county_data->selectRaw('COUNT(*) as subscription_count')
-                    ->first();
-
-
-                $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-                    ->where('profile.region_id', $region->id)
-                    ->where('subscriptions.end_date', '>', now())
-                    ->where('subscriptions.is_hidden', 0);
-
-                $region_data = $region_data->join(
-                    \DB::raw($rawSubQuary),
-                    'subscriptions.id',
-                    '=',
-                    'latest_subscription.max_id'
-                )
-                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-
-                $region_data = $region_data->selectRaw('COUNT(*) as subscription_count')
-                    ->first();
-
-                $location['subscription_count'] = $city_data->subscription_count;
-                $county['subscription_count'] = $county_data->subscription_count;
-                $region['subscription_count'] = $region_data->subscription_count;
-                return Resp::success(['city' => $city_data, 'county' => $county_data, 'location_type' => $location->type, 'data' => ['county' => $county, 'region' => $region, 'city' => $location]]);
-            } elseif ($location->type == 'county') {
-                $region = Location::where('id', $location->parent_id)->first();
-
-                $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-                    ->where('profile.county_id', $location->id)
-                    ->where('subscriptions.end_date', '>', now())
-                    ->where('subscriptions.is_hidden', 0);
-
-                $county_data = $county_data->join(
-                    \DB::raw($rawSubQuary),
-                    'subscriptions.id',
-                    '=',
-                    'latest_subscription.max_id'
-                )
-                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-                $county_data = $county_data->selectRaw('COUNT(*) as subscription_count')
-                    ->first();
-
-
-                $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-                    ->where('profile.region_id', $region->id)
-                    ->where('subscriptions.end_date', '>', now())
-                    ->where('subscriptions.is_hidden', 0);
-
-                $region_data = $region_data->join(
-                    \DB::raw($rawSubQuary),
-                    'subscriptions.id',
-                    '=',
-                    'latest_subscription.max_id'
-                )
-                    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-
-                $region_data = $region_data->selectRaw('COUNT(*) as subscription_count')
-                    ->first();
-
-                $location['subscription_count'] = $county_data->subscription_count;
-                $region['subscription_count'] = $region_data->subscription_count;
-
-                return Resp::success(['location_type' => $location->type, 'data' => ['county' => $location, 'region' => $region]]);
-            } else {
-                $region = $location;
-            }
-        }
-
-
-        $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
-            ->where('profile.region_id', $location->id)
-            ->where('subscriptions.end_date', '>', now())
-            ->where('subscriptions.is_hidden', 0);
-
-        $region_data = $region_data->join(
-            \DB::raw($rawSubQuary),
-            'subscriptions.id',
-            '=',
-            'latest_subscription.max_id'
-        )
-            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-
-        $region_data = $region_data->selectRaw('COUNT(*) as subscription_count')
-            ->first();
-        $region['subscription_count'] = $region_data->subscription_count;
-
-        return Resp::success(['location_type' => $location->type, 'data' => ['region' => $region]]);
+    $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    if ($byPlanOrder) {
+        $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                    as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+    } else {
+        $rawSubQuary = '(
+            SELECT t.escort_id, t.latest_end_date, t.max_id
+            FROM (
+                SELECT escort_id, end_date as latest_end_date, id as max_id,
+                       ROW_NUMBER() OVER (PARTITION BY escort_id ORDER BY FIELD(plan_code, "P101", "P102", "P103", "P104","P105","P106")) as rn
+                FROM subscriptions
+                WHERE end_date > NOW()
+            ) t
+            WHERE t.rn = 1
+        ) as latest_subscription';
     }
+
+    if ($location) {
+        if ($location->type == 'city') {
+            $county = Location::where('id', $location->parent_id)->first();
+            $region = Location::where('id', $county->parent_id)->first();
+
+            $city_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('subscriptions.end_date', '>', now())
+                ->where('subscriptions.is_hidden', 0)
+                ->where(function($query) use ($location) {
+                    $query->where('profile.city_id', $location->id)
+                          ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
+                });
+
+            $city_data = $city_data->join(
+                \DB::raw($rawSubQuary),
+                'subscriptions.id',
+                '=',
+                'latest_subscription.max_id'
+            )
+            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id')
+            ->selectRaw('COUNT(DISTINCT subscriptions.escort_id) as subscription_count')
+            ->first();
+
+            $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('subscriptions.end_date', '>', now())
+                ->where('subscriptions.is_hidden', 0)
+                ->where(function($query) use ($county) {
+                    $query->where('profile.county_id', $county->id)
+                          ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$county->id]);
+                });
+
+            $county_data = $county_data->join(
+                \DB::raw($rawSubQuary),
+                'subscriptions.id',
+                '=',
+                'latest_subscription.max_id'
+            )
+            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id')
+            ->selectRaw('COUNT(DISTINCT subscriptions.escort_id) as subscription_count')
+            ->first();
+
+            $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('subscriptions.end_date', '>', now())
+                ->where('subscriptions.is_hidden', 0)
+                ->where(function($query) use ($region) {
+                    $query->where('profile.region_id', $region->id)
+                          ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$region->id]);
+                });
+
+            $region_data = $region_data->join(
+                \DB::raw($rawSubQuary),
+                'subscriptions.id',
+                '=',
+                'latest_subscription.max_id'
+            )
+            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id')
+            ->selectRaw('COUNT(DISTINCT subscriptions.escort_id) as subscription_count')
+            ->first();
+
+            $location['subscription_count'] = $city_data->subscription_count;
+            $county['subscription_count'] = $county_data->subscription_count;
+            $region['subscription_count'] = $region_data->subscription_count;
+            
+            return Resp::success([
+                'city' => $city_data, 
+                'county' => $county_data, 
+                'location_type' => $location->type, 
+                'data' => [
+                    'county' => $county, 
+                    'region' => $region, 
+                    'city' => $location
+                ]
+            ]);
+
+        } elseif ($location->type == 'county') {
+            $region = Location::where('id', $location->parent_id)->first();
+
+            $county_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('subscriptions.end_date', '>', now())
+                ->where('subscriptions.is_hidden', 0)
+                ->where(function($query) use ($location) {
+                    $query->where('profile.county_id', $location->id)
+                          ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
+                });
+
+            $county_data = $county_data->join(
+                \DB::raw($rawSubQuary),
+                'subscriptions.id',
+                '=',
+                'latest_subscription.max_id'
+            )
+            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id')
+            ->selectRaw('COUNT(DISTINCT subscriptions.escort_id) as subscription_count')
+            ->first();
+
+            $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+                ->where('subscriptions.end_date', '>', now())
+                ->where('subscriptions.is_hidden', 0)
+                ->where(function($query) use ($region) {
+                    $query->where('profile.region_id', $region->id)
+                          ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$region->id]);
+                });
+
+            $region_data = $region_data->join(
+                \DB::raw($rawSubQuary),
+                'subscriptions.id',
+                '=',
+                'latest_subscription.max_id'
+            )
+            ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id')
+            ->selectRaw('COUNT(DISTINCT subscriptions.escort_id) as subscription_count')
+            ->first();
+
+            $location['subscription_count'] = $county_data->subscription_count;
+            $region['subscription_count'] = $region_data->subscription_count;
+
+            return Resp::success(['location_type' => $location->type, 'data' => ['county' => $location, 'region' => $region]]);
+
+        } else {
+            $region = $location;
+        }
+    }
+
+    $region_data = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
+        ->where('subscriptions.end_date', '>', now())
+        ->where('subscriptions.is_hidden', 0)
+        ->where(function($query) use ($location) {
+            $query->where('profile.region_id', $location->id)
+                  ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
+        });
+
+    $region_data = $region_data->join(
+        \DB::raw($rawSubQuary),
+        'subscriptions.id',
+        '=',
+        'latest_subscription.max_id'
+    )
+    ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id')
+    ->selectRaw('COUNT(DISTINCT subscriptions.escort_id) as subscription_count')
+    ->first();
+
+    $region['subscription_count'] = $region_data->subscription_count;
+
+    return Resp::success(['location_type' => $location->type, 'data' => ['region' => $region]]);
+}
 }
