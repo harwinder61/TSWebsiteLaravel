@@ -521,7 +521,7 @@ class SubscriptionController extends Controller
                 ) as latest_subscription';
             }
 
-
+ 
             $subscriptions->join(
                 \DB::raw($rawSubQuary),
                 'subscriptions.id',
