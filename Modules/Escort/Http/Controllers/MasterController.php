@@ -44,7 +44,7 @@ public function nationality(Request $request){
 public function plans(Request $request){
     $data=Plan::get();
     foreach($data as $plan){
-        $plan->active_users_count = $plan->active_users()->count();
+        $plan->active_users_count = $plan->active_users()->where('end_date','>',now())->count();
     }
     foreach($data as $plan){
         // $plan->available_spaces = $plan->allowed_user_account - $plan->active_users_count;
