@@ -177,44 +177,87 @@ class AuthController extends Controller
         ]);
     }
 
+    // public function resetOldEmail(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'old_email' => 'required|string|email',
+    //         'new_email' => 'required|string|email|max:255|unique:users,email',
+    //         'confirm_email' => 'required|same:new_email',
+    //     ]);
+    
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    
+    //     $user = auth()->user();
+    
+    //     if ($request->old_email !== $user->email) {
+    //         return Resp::error(['message' => 'Old email is incorrect']);
+    //     }
+    
+    //     // Generate verification token
+    //     $verification_token = Str::random(30);
+    
+    //     // Update user with new email and verification status
+    //     $user->email = $request->new_email;
+    //     $user->email_verified = false;
+    //     $user->verification_token = $verification_token;
+    //     $user->save();
+    
+    //     EmailHelper::sendDynamicEmail(
+    //         'Email_Change_Request',
+    //         ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $request->old_email,],
+    //         $request->old_email
+    //     );
+    //     return Resp::success([
+    //         'message' => 'Email changed successfully. Please verify your new email address.'
+    //     ]);
+    // }
     public function resetOldEmail(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'old_email' => 'required|string|email',
-            'new_email' => 'required|string|email|max:255|unique:users,email',
-            'confirm_email' => 'required|same:new_email',
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'old_email' => 'required|string|email',
+        'new_email' => 'required|string|email|max:255|unique:users,email',
+        'confirm_email' => 'required|same:new_email',
+    ]);
 
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-
-        $user = auth()->user();
-
-        if ($request->old_email !== $user->email) {
-            return Resp::error(['message' => 'Old email is incorrect']);
-        }
-
-        // Generate verification token
-        $verification_token = Str::random(30);
-
-        // Update user with new email and verification status
-        $user->email = $request->new_email;
-        $user->email_verified = false;
-        $user->verification_token = $verification_token;
-        $user->save();
-
-        EmailHelper::sendDynamicEmail(
-            'ts_verify_your_new_email_address',
-            ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email, '[VERIFY_EMAIL_URL]' => env('WEBAPP_URL') . "/account-verification?token=" . $verification_token],
-            $user->email
-        );
-        return Resp::success([
-            
-            'message' => 'Email changed successfully. Please verify your new email address.'
-        ]);
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
 
+    $user = auth()->user();
+
+    if ($request->old_email !== $user->email) {
+        return Resp::error(['message' => 'Old email is incorrect']);
+    }
+
+    // Generate verification token
+    $verification_token = Str::random(30);
+
+    // Update user with new email and verification status
+    $user->email = $request->new_email;
+    $user->email_verified = false;
+    $user->verification_token = $verification_token;
+    $user->save();
+
+    // Send email to old email address
+    EmailHelper::sendDynamicEmail(
+        'Email_Change_Request',
+        ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $request->old_email,],
+        $request->old_email
+    );
+
+    // Send verification email to new email address
+    EmailHelper::sendDynamicEmail(
+        'ts_verify_your_new_email_address',
+        ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email,'[VERIFY_EMAIL_URL]' => env('WEBAPP_URL') . "/account-verification?token=" . $user->verification_token, '' => $verification_token],
+        $user->email
+    );
+
+    return Resp::success([
+        'message' => 'Email changed successfully. Please verify your new email address.'
+    ]);
+}
 
 
     public function changePassword(Request $request)
