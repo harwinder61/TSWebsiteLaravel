@@ -210,6 +210,7 @@ class AuthController extends Controller
             $user->email
         );
         return Resp::success([
+            
             'message' => 'Email changed successfully. Please verify your new email address.'
         ]);
     }

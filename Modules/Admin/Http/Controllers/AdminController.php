@@ -51,6 +51,7 @@ use Google\Service\Walletobjects\Pagination;
 use Modules\Escort\app\Models\Orders;
 
 
+
 class AdminController extends Controller
 {
 
@@ -585,6 +586,32 @@ class AdminController extends Controller
 
 
 
+    // public function resetEmail($id, Request $request)
+    // {
+        
+    //     $validator = Validator::make($request->all(), [
+    //         'email' => 'required|email|unique:users,email,' . $id,
+    //     ]);
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    //     $user = AuthUser::find($id);
+    //     $user->email = $request->email;
+    //     $user->save();
+    //     $template = EmailTemplates::where('type', 'ts_verify_your_new_email_address')->first();
+    //     if (!$template) {
+    //         return Resp::error(['message' => 'Email template not found']);
+    //     }
+    //     $templateSubject = $template->subject;
+    //     $templateBody = $template->content;
+    //     $recipientEmail = $user->email; 
+    //     $dynamicData = [
+    //         ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],
+    //          ['[VERIFY_EMAIL_URL]' => env('WEBAPP_URL') . "/account-verification?token=" . $user->verification_token],    
+    //     ];
+    //     return Resp::success(['message' => 'Email reset successfully']);
+    // }
+
     public function resetEmail($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -596,39 +623,81 @@ class AdminController extends Controller
         $user = AuthUser::find($id);
         $user->email = $request->email;
         $user->save();
-        return Resp::success(['message' => 'Email reset successfully']);
-    }
-
-    public function resetPassword($id, Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'old_password' => 'required|string',
-            'new_password' => 'required|string|min:8',
-            'confirm_password' => 'required|same:new_password',
-        ]);
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-        $user = AuthUser::find($id);
-        if (!$user) {
-            return Resp::error(['message' => 'User not found']);
-        }
-        $user->password = Hash::make($request->new_password);
-        $user->save();
-        $template = EmailTemplates::where('type', 'ts_new_password_notification')->first();
+        $template = EmailTemplates::where('type', 'ts_verify_your_new_email_address')->first();
         if (!$template) {
             return Resp::error(['message' => 'Email template not found']);
         }
-        $templateSubject = $template->subject;
-        $templateBody = $template->content;
-        $recipientEmail = $user->email; // You can pass this via API request
         $dynamicData = [
-            '[CUSTOMER_NAME]' => $user->username,
-            '[CUSTOMER_EMAIL]' => $user->email,
+            '[USER_LOGIN]' => $user->username,
+            '[USER_EMAIL]' => $user->email,
+            '[VERIFY_EMAIL_URL]' => env('WEBAPP_URL') . "/account-verification?token=" . $user->verification_token
         ];
-        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
-        return Resp::success(['message' => 'Password reset successfully']);
+        Log::info($dynamicData);
+        $result = EmailHelper::sendDynamicEmail('ts_verify_your_new_email_address', $dynamicData, $user->email);
+        return Resp::success(['message' => 'Email reset successfully']);
     }
+
+    // public function resetPassword($id, Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'old_password' => 'required|string',
+    //         'new_password' => 'required|string|min:8',
+    //         'confirm_password' => 'required|same:new_password',
+    //     ]);
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    //     $user = AuthUser::find($id);
+    //     if (!$user) {
+    //         return Resp::error(['message' => 'User not found']);
+    //     }
+    //     $user->password = Hash::make($request->new_password);
+    //     $user->save();
+    //     $template = EmailTemplates::where('type', 'ts_new_password_notification')->first();
+    //     if (!$template) {
+    //         return Resp::error(['message' => 'Email template not found']);
+    //     }
+    //     $templateSubject = $template->subject;
+    //     $templateBody = $template->content;
+    //     $recipientEmail = $user->email; // You can pass this via API request
+    //     $dynamicData = [
+    //         ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],    
+    //     ];
+    //     $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+    //     sendEmail($user->email, 'ts_new_password_notification', 'New Password Notification', ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email]);
+    //     return Resp::success(['message' => 'Password reset successfully']);
+    // }
+
+    public function resetPassword($id, Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'old_password' => 'required|string',
+        'new_password' => 'required|string|min:8',
+        'confirm_password' => 'required|same:new_password',
+    ]);
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+    $user = AuthUser::find($id);
+    if (!$user) {
+        return Resp::error(['message' => 'User not found']);
+    }
+    $user->password = Hash::make($request->new_password);
+    $user->save();
+    $template = EmailTemplates::where('type', 'ts_new_password_notification')->first();
+    if (!$template) {
+        return Resp::error(['message' => 'Email template not found']);
+    }
+    $templateSubject = $template->subject;
+    $templateBody = $template->content;
+    $recipientEmail = $user->email; // You can pass this via API request
+    $dynamicData = [
+        '[USER_LOGIN]' => $user->username,
+        '[USER_EMAIL]' => $user->email,
+    ];
+    $result = EmailHelper::sendDynamicEmail('ts_new_password_notification', $dynamicData, $user->email);
+    return Resp::success(['message' => 'Password reset successfully']);
+}
 
     public function profileMedia(Request $request)
     {

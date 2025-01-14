@@ -103,6 +103,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/admin-get-users',[AdminController::class,'adminGetUsers']);
         Route::post('/locations/delete/{id}',[AdminController::class,'deleteLocation']);
         Route::post('/location/add',[AdminController::class,'addLocation']);
+        
     });
 
 

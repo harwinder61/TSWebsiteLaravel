@@ -8,6 +8,7 @@ use Modules\Admin\app\Models\EmailTemplates;
 use App\Models\User;
 use Carbon\Carbon;
 
+
 class EmailHelper
 {
     // This function sends an email with dynamic content
