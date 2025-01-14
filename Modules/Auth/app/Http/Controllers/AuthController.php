@@ -36,7 +36,7 @@ class AuthController extends Controller
         $this->middleware(AuthMiddleware::class)->except(['register', 'loginWithGmail', 'registerWithGmail',  'login', 'verifyEmail', 'verificationEmailToken', 'recoverPassword', 'resetPassword']);
     }
 
-    // public function login(Request $request)
+    // public function login(Request $reques
     // {
     //     $validator = Validator::make($request->all(), [
     //         'username' => 'required|string',
@@ -106,6 +106,58 @@ class AuthController extends Controller
     // }
 
     // Login Method
+
+    // public function backendToken($token)
+    // {
+    //     // Attempt to find the user with the given temp_token
+    //     $user = User::where('temp_token', $token)->first();
+    
+    //     // If the token is invalid or expired, return an error
+    //     if (!$user) {
+    //         return Resp::error(['message' => 'Invalid or expired token.']);
+    //     }
+    
+    //     // If there is no requested email, return an error
+    //     if (!$user->requested_email) {
+    //         return Resp::error(['message' => 'No requested email found.']);
+    //     }
+    
+    //     // Proceed with updating the user's email
+    //     $user->email = $user->requested_email; // Set the main email to the requested email
+    //     $user->email_verified = true;           // Mark the email as verified
+    //     $user->requested_email = null;          // Clear the requested email field
+    //     $user->temp_token = null;               // Clear the temporary token
+    //     $user->save();                          // Save the changes to the user
+    
+    //     // Return a success message indicating the email change has been completed
+    //     return Resp::success(['message' => 'Your email has been successfully changed and verified.']);
+    // }
+
+    public function backendToken($token)
+    {
+        $user = User::where('temp_token', $token)->first();
+    
+        if (!$user) {
+            return Resp::error(['message' => 'Invalid or expired token.']);
+        }
+    
+        // If the user has a requested email
+        if (!$user->requested_email) {
+            return Resp::error(['message' => 'No requested email found.']);
+        }
+    
+        // Update the user's main email with the requested email
+        $user->email = $user->requested_email;
+        $user->email_verified = true; // Mark the email as verified
+        $user->requested_email = null; // Clear requested email
+        $user->temp_token = null; // Clear temp token
+        $user->save();
+    
+        return Resp::success(['message' => 'Your email has been successfully changed and verified.']);
+    }
+    
+    
+
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -213,7 +265,108 @@ class AuthController extends Controller
     //         'message' => 'Email changed successfully. Please verify your new email address.'
     //     ]);
     // }
-    public function resetOldEmail(Request $request)
+//     public function resetOldEmail(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'old_email' => 'required|string|email',
+//         'new_email' => 'required|string|email|max:255|unique:users,email',
+//         'confirm_email' => 'required|same:new_email',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+//     }
+
+//     $user = auth()->user();
+
+//     if ($request->old_email !== $user->email) {
+//         return Resp::error(['message' => 'Old email is incorrect']);
+//     }
+
+//     // Generate verification token
+//     $verification_token = Str::random(30);
+
+//     // Update user with new email and verification status
+//     $user->email = $request->new_email;
+//     $user->email_verified = false;
+//     $user->verification_token = $verification_token;
+//     $user->save();
+
+//     // Send email to old email address
+//     EmailHelper::sendDynamicEmail(
+//         'Email_Change_Request',
+//         ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $request->old_email,],
+//         $request->old_email
+//     );
+
+//     // Send verification email to new email address
+//     EmailHelper::sendDynamicEmail(
+//         'ts_verify_your_new_email_address',
+//         ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email,'[VERIFY_EMAIL_link]' => env('WEBAPP_URL') . "/account-verification?token=" . $user->verification_token, '' => $verification_token],
+//         $user->email
+//     );
+
+//     return Resp::success([
+//         'message' => 'Email changed successfully. Please verify your new email address.'
+//     ]);
+// }
+
+// public function resetOldEmail(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'old_email' => 'required|string|email',
+//         'new_email' => 'required|string|email|max:255|unique:users,email',
+//         'confirm_email' => 'required|same:new_email',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+//     }
+
+//     $user = auth()->user();
+
+//     if ($request->old_email !== $user->email) {
+//         return Resp::error(['message' => 'Old email is incorrect']);
+//     }
+
+//     // Generate verification token
+//     $verification_token = Str::random(30);
+
+//     // Update user with new email and verification status
+//     $user->email = $request->new_email;
+//     $user->email_verified = false;
+//     $user->verification_token = $verification_token;
+//     $user->save();
+
+//     // Send email to old email address
+//     $oldEmailContent = [
+//         '[USER_LOGIN]' => $user->username,
+//         '[RESET_EMAIL]' => $request->new_email, // Replace with the new email
+//     ];
+
+//     EmailHelper::sendDynamicEmail(
+//         'Email_Change_Request',
+//         $oldEmailContent,
+//         $request->old_email
+//     );
+
+//     // Send verification email to new email address
+//     EmailHelper::sendDynamicEmail(
+//         'ts_verify_your_new_email_address',
+//         [
+//             '[USER_LOGIN]' => $user->username,
+//             '[USER_EMAIL]' => $user->email,
+//             '[VERIFY_EMAIL_link]' => env('WEBAPP_URL') . "/account-verification?token=" . $user->verification_token,
+//         ],
+//         $user->email
+//     );
+
+//     return Resp::success([
+//         'message' => 'Email changed successfully. Please verify your new email address.'
+//     ]);
+// }
+
+public function resetOldEmail(Request $request)
 {
     $validator = Validator::make($request->all(), [
         'old_email' => 'required|string|email',
@@ -227,37 +380,46 @@ class AuthController extends Controller
 
     $user = auth()->user();
 
+    // Check if the old email matches the current user email
     if ($request->old_email !== $user->email) {
         return Resp::error(['message' => 'Old email is incorrect']);
     }
 
-    // Generate verification token
-    $verification_token = Str::random(30);
-
-    // Update user with new email and verification status
+    // Update user with requested email directly (no verification)
     $user->email = $request->new_email;
-    $user->email_verified = false;
-    $user->verification_token = $verification_token;
+    $user->email_verified = true;  // Assuming you want to mark this email as verified directly
     $user->save();
 
-    // Send email to old email address
+    // Send confirmation email to old email address
+    $oldEmailContent = [
+        '[USER_LOGIN]' => $user->username,
+        '[RESET_EMAIL]' => $request->new_email, // Add the new email in the message
+    ];
+
     EmailHelper::sendDynamicEmail(
         'Email_Change_Request',
-        ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $request->old_email,],
+        $oldEmailContent,
         $request->old_email
     );
 
-    // Send verification email to new email address
+    // Send email to new email address confirming the email change
+    $newEmailContent = [
+        '[USER_LOGIN]' => $user->username,
+        '[NEW_EMAIL]' => $request->new_email,
+        '[USER_TOKEN]' => $user->verification_token,
+    ];
+
     EmailHelper::sendDynamicEmail(
-        'ts_verify_your_new_email_address',
-        ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email,'[VERIFY_EMAIL_URL]' => env('WEBAPP_URL') . "/account-verification?token=" . $user->verification_token, '' => $verification_token],
-        $user->email
+        'Email_Successful_Change_VERIFIED',
+        $newEmailContent,
+        $request->new_email
     );
 
     return Resp::success([
-        'message' => 'Email changed successfully. Please verify your new email address.'
+        'message' => 'Your email has been successfully changed.'
     ]);
 }
+
 
 
     public function changePassword(Request $request)
