@@ -10,16 +10,18 @@ use App\Models\Media;
 class BaseSubscription extends Model
 {
     protected $table = 'subscriptions';
-    protected $fillable = ['escort_id','order_id','plan_code','status','image_id','start_date','created_by','created_mode','end_date','extra_location','sort_order','is_hidden'];
-    protected $hidden=['created_at','updated_at'];
-    protected $casts=['start_date'=>'date','end_date'=>'date','extra_location'=>'json'];
+    protected $fillable = ['escort_id', 'order_id', 'plan_code', 'status', 'image_id', 'start_date', 'created_by', 'created_mode', 'end_date', 'extra_location', 'sort_order', 'is_hidden'];
+    protected $hidden = ['created_at', 'updated_at'];
+    protected $casts = ['start_date' => 'date', 'end_date' => 'date', 'extra_location' => 'json'];
 
-    public function orders(){
-        return $this->belongsTo(BaseOrder::class,'order_id','id');
+    public function orders()
+    {
+        return $this->belongsTo(BaseOrder::class, 'order_id', 'id');
     }
 
-    public function media(){
-        return $this->belongsTo(Media::class,'image_id','id');
+    public function media()
+    {
+        return $this->belongsTo(Media::class, 'image_id', 'id');
     }
 
     public function escort()
@@ -34,6 +36,11 @@ class BaseSubscription extends Model
     public function profile()
     {
         return $this->belongsTo(BaseProfile::class, 'escort_id', 'id');
+    }
+
+    public function extraLocations()
+    {
+        return $this->hasMany(ExtraLocation::class, 'subscription_id');
     }
 
 }

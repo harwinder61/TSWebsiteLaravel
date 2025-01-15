@@ -589,13 +589,20 @@ class SubscriptionController extends Controller
                     $query->whereHas('escort.profile', function ($query) use ($request) {
                         $query->where('region_id', $request->query('region_id'));
                     })
+                    ->orWhereHas('extraLocations', function ($query) use ($request) {
+                        $query->where('region_id', $request->query('region_id'));
+                    })
                     ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$request->query('region_id')]);
                 });
             }
     
             if (!is_null($request->query('county_id'))) {
+
                 $subscriptions->where(function ($query) use ($request) {
                     $query->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('county_id', $request->query('county_id'));
+                    })
+                    ->orWhereHas('extraLocations', function ($query) use ($request) {
                         $query->where('county_id', $request->query('county_id'));
                     })
                     ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$request->query('county_id')]);
@@ -1245,7 +1252,10 @@ class SubscriptionController extends Controller
                 ->where(function($query) use ($location) {
                     $query->where('profile.county_id', $location->id)
                           ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
-                });
+                })->orWhereHas('extraLocations', function ($query) use ($location) {
+                    $query->where('county_id', $location->id);
+                })
+                ;
 
             $county_data = $county_data->join(
                 \DB::raw($rawSubQuary),
@@ -1263,6 +1273,9 @@ class SubscriptionController extends Controller
                 ->where(function($query) use ($region) {
                     $query->where('profile.region_id', $region->id)
                           ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$region->id]);
+                })
+                ->orWhereHas('extraLocations', function ($query) use ($region) {
+                    $query->where('region_id', $region->id);
                 });
 
             $region_data = $region_data->join(
@@ -1303,8 +1316,11 @@ class SubscriptionController extends Controller
         ->where(function($query) use ($location) {
             $query->where('profile.region_id', $location->id)
                   ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
+        })
+        ->orWhereHas('extraLocations', function ($query) use ($location) {
+            $query->where('region_id', $location->id);
         });
-
+        
     $region_data = $region_data->join(
         \DB::raw($rawSubQuary),
         'subscriptions.id',
