@@ -213,7 +213,9 @@ class EscortController extends Controller
         if ($request->is_hidden) {
             $user->is_hidden = $request->is_hidden;
             $user->save();
-            
+            $profile = Profile::where('escort_id',$user->id)->first();
+            $profile->is_hidden = $request->is_hidden;
+            $profile->save();
             return Resp::success(['message' => 'Profile hidden successfully']);
         }
         

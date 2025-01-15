@@ -538,6 +538,9 @@ class AdminController extends Controller
         $user = AuthUser::find($id);
         $user->is_hidden = $request->is_hidden ? 1 : 0; // Update is_hidden to 1 if true, 0 if false
         $user->save();
+        $profile = Profile::where('escort_id',$id)->first();
+        $profile->is_hidden = $request->is_hidden ? 1 : 0;
+        $profile->save();
 
         return Resp::success(['message' => 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully']);
     }
