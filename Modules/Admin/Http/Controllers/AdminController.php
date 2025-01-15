@@ -228,6 +228,8 @@ class AdminController extends Controller
         }
     }
 
+    // //// ak ///////
+
     public function getVarifiacationList(Request $request)
     {
         try {
@@ -284,6 +286,10 @@ class AdminController extends Controller
             return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
         }
     }
+
+
+    
+
 
     public function getSinglePage(Request $request)
     {
