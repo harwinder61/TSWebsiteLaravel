@@ -465,82 +465,14 @@ class OrderController extends Controller
 
 
         $updateData = [];
+        Log::info("start of loop");
         if ($request->has('extra_locations')) {
             $updated_locations = $subscription->update(['extra_location' => $request->input('extra_locations')]);
             if (!$updated_locations) {
                 return Resp::error(['Failed to update extra locations']);
             }
 
-            $locationIds = $request->input('extra_locations'); // e.g., [1, 2, 3]
-
-            // Fetch existing extra locations for the subscription
-            $existingExtraLocations = ExtraLocation::where('subscription_id', $subscription->id)->get();
-
-            // Create a set of IDs from the incoming request
-            $incomingLocationIds = collect($locationIds)->map(function ($locationId) {
-                $location = Location::find($locationId); // Fetch location to determine type
-                return $location ? $location->id : null; // Ensure valid ID
-            })->filter(); // Filter out any null values
-
-            // Insert or update extra locations
-            foreach ($incomingLocationIds as $locationId) {
-                $location = Location::find($locationId); // Fetch the location
-
-                if ($location) {
-                    // Initialize variables for region, county, and city IDs
-                    $regionId = null;
-                    $countyId = null;
-                    $cityId = null;
-
-                    // Determine the type of location and fetch the appropriate IDs
-                    if ($location->type === 'region') {
-                        $regionId = $location->id;
-                    } elseif ($location->type === 'county') {
-                        $countyId = $location->id;
-                        $regionId = $location->parent_id; // Assuming parent_id is the region ID
-                    } elseif ($location->type === 'city') {
-                        $cityId = $location->id;
-                        $countyId = $location->parent_id; // Assuming parent_id is the county ID
-                        $regionId = Location::find($countyId)->parent_id; // Fetch the region ID from the county
-                    }
-
-                    // Check for existing entry to avoid duplication
-                    $existing = ExtraLocation::where('subscription_id', $subscription->id)
-                        ->where(function ($query) use ($regionId, $countyId, $cityId) {
-                            if ($regionId) {
-                                $query->where('region_id', $regionId);
-                            }
-                            if ($countyId) {
-                                $query->where('county_id', $countyId);
-                            }
-                            if ($cityId) {
-                                $query->where('city_id', $cityId);
-                            }
-                        })
-                        ->first();
-
-                    // If no existing entry, create a new one
-                    if (!$existing) {
-                        ExtraLocation::create([
-                            'subscription_id' => $subscription->id, // Assuming $subscription is defined
-                            'region_id' => $regionId,
-                            'county_id' => $countyId,
-                            'city_id' => $cityId,
-                        ]);
-                    }
-                }
-            }
-
-            // Remove extra locations that are no longer in the incoming request
-            foreach ($existingExtraLocations as $extraLocation) {
-                if (
-                    !$incomingLocationIds->contains($extraLocation->city_id) &&
-                    !$incomingLocationIds->contains($extraLocation->county_id) &&
-                    !$incomingLocationIds->contains($extraLocation->region_id)
-                ) {
-                    $extraLocation->delete(); // Delete if not present in the incoming request
-                }
-            }
+            
         }
         if ($request->has('onlyfans_link')) {
             $updateData['only_fans_link'] = $request->input('onlyfans_link');
@@ -696,8 +628,89 @@ class OrderController extends Controller
             if (!$updated_subscription) {
                 return Resp::error(['Failed to update subscription']);
             }
+            $subscription = Subscription::find($request->input('subscription_id'));
+            if(!$subscription){
+                return Resp::error(['Subscription not found']);
+            }
+            $locationIds = $request->input('extra_locations'); // e.g., [1, 2, 3]
+
+            // Fetch existing extra locations for the subscription
+            $existingExtraLocations = ExtraLocation::where('subscription_id', $subscription->id)->get();
+
+            // Create a set of IDs from the incoming request
+            $incomingLocationIds = collect($locationIds)->map(function ($locationId) {
+                $location = Location::find($locationId); // Fetch location to determine type
+                return $location ? $location->id : null; // Ensure valid ID
+            })->filter(); // Filter out any null values
+            Log::info("incomingLocationIds : ");
+            Log::info($incomingLocationIds);
+
+            // Insert or update extra locations
+            foreach ($incomingLocationIds as $locationId) {
+                $location = Location::find($locationId); // Fetch the location
+
+                if (!$location) {
+                    Log::error("Location not found for ID: $locationId");
+                    continue; // Skip to the next ID
+                }
+                if ($location) {
+                    // Initialize variables for region, county, and city IDs
+                    $regionId = null;
+                    $countyId = null;
+                    $cityId = null;
+
+                    // Determine the type of location and fetch the appropriate IDs
+                    if ($location->type === 'region') {
+                        $regionId = $location->id;
+                    } elseif ($location->type === 'county') {
+                        $countyId = $location->id;
+                        $regionId = $location->parent_id; // Assuming parent_id is the region ID
+                    } elseif ($location->type === 'city') {
+                        $cityId = $location->id;
+                        $countyId = $location->parent_id; // Assuming parent_id is the county ID
+                        $regionId = Location::find($countyId)->parent_id; // Fetch the region ID from the county
+                    }
+
+                    // Check for existing entry to avoid duplication
+                    $existing = ExtraLocation::where('subscription_id', $subscription->id)
+                        ->where(function ($query) use ($regionId, $countyId, $cityId) {
+                            if ($regionId) {
+                                $query->where('region_id', $regionId);
+                            }
+                            if ($countyId) {
+                                $query->where('county_id', $countyId);
+                            }
+                            if ($cityId) {
+                                $query->where('city_id', $cityId);
+                            }
+                        })
+                        ->first();
+
+                    // If no existing entry, create a new one
+                    if (!$existing) {
+                        ExtraLocation::create([
+                            'subscription_id' => $subscription->id, // Assuming $subscription is defined
+                            'region_id' => $regionId,
+                            'county_id' => $countyId,
+                            'city_id' => $cityId,
+                        ]);
+                    }
+                }
+            }
+
+            // Remove extra locations that are no longer in the incoming request
+            foreach ($existingExtraLocations as $extraLocation) {
+                if (
+                    !$incomingLocationIds->contains($extraLocation->city_id) &&
+                    !$incomingLocationIds->contains($extraLocation->county_id) &&
+                    !$incomingLocationIds->contains($extraLocation->region_id)
+                ) {
+                    $extraLocation->delete(); // Delete if not present in the incoming request
+                }
+            }
             return Resp::success(['order' => $order]);
         } catch (\Exception $e) {
+            Log::error($e->getMessage());
             return Resp::error([$e->getMessage()]);
         }
     }
