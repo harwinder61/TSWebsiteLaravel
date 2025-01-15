@@ -420,8 +420,6 @@ public function resetOldEmail(Request $request)
     ]);
 }
 
-
-
     public function changePassword(Request $request)
     {
         $validator = Validator::make($request->all(), [

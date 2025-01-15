@@ -54,16 +54,36 @@ class EscortController extends Controller
         $profile = Profile::where('escort_id', $user->id)->first();
         $profile->delete();
         EmailHelper::sendDynamicEmail('ts_your_profile_is_deleted', 
-        ['[USER_LOGIN]' => $user->username, '[CUSTOMER_NAME]' => $user->username, '[CUSTOMER_EMAIL]' => $user->email], 
+        ['[USER_LOGIN]' => $user->username], 
         $user->email);
         
         return Resp::success(['user'=>$user],'Profile deleted successfully');
     }
-    
         return Resp::error(['message' => 'Invalid request']);
     }
     
 
+
+    public function hideProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'is_hidden' => 'required|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $user = auth()->user();
+        if ($request->is_hidden) {
+            $user->is_hidden = $request->is_hidden;
+            $user->save();
+            EmailHelper::sendDynamicEmail('Hide_Profile', 
+            ['[USER_LOGIN]' => $user->username], 
+            $user->email);
+            return Resp::success(['message' => 'Profile hidden successfully']);
+        }
+        return Resp::success(['user'=>$user],'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
+    }
 
 
 
@@ -200,27 +220,7 @@ class EscortController extends Controller
     }
 
 
-    public function hideProfile(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'is_hidden' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-        $user = auth()->user();
-        if ($request->is_hidden) {
-            $user->is_hidden = $request->is_hidden;
-            $user->save();
-            $profile = Profile::where('escort_id',$user->id)->first();
-            $profile->is_hidden = $request->is_hidden;
-            $profile->save();
-            return Resp::success(['message' => 'Profile hidden successfully']);
-        }
-        
-        return Resp::success(['user'=>$user],'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
-    }
+ 
 
     public function updateSubscription(Request $request)
 {
