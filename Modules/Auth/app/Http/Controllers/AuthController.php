@@ -397,7 +397,7 @@ public function resetOldEmail(Request $request)
     ];
 
     EmailHelper::sendDynamicEmail(
-        'Email_Change_Request',
+        'ts_email_change_request',
         $oldEmailContent,
         $request->old_email
     );
@@ -410,7 +410,7 @@ public function resetOldEmail(Request $request)
     ];
 
     EmailHelper::sendDynamicEmail(
-        'Email_Successful_Change_VERIFIED',
+        'ts_email_successful_change_verified',
         $newEmailContent,
         $request->new_email
     );
