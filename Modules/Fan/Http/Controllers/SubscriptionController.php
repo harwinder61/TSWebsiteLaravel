@@ -518,6 +518,10 @@ class SubscriptionController extends Controller
                 });
             }
 
+            if (!is_null($request->query('subscription_id'))) {
+                $subscriptions->where('subscriptions.id', $request->query('subscription_id'));
+            }
+
 
             if (!is_null($request->query('cock_size'))) {
                 $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
