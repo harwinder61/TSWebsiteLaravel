@@ -745,6 +745,7 @@ class SubscriptionController extends Controller
             $user = auth()->user();
             $locationType = "";
             $subscriptions = EscortSubscription::query();
+            $s = $request->query('s');
 
 
 
@@ -770,6 +771,12 @@ class SubscriptionController extends Controller
                         $request->merge(['region_id' => $location->id]);
                         break;
                 }
+            }
+
+            if (!is_null($request->query('s'))) {
+                $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('username', 'like', '%' . $request->query('s') . '%');
+                });
             }
 
             if (!is_null($request->query('county_slug'))) {
