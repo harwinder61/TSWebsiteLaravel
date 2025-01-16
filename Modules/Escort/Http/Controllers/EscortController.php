@@ -53,7 +53,7 @@ class EscortController extends Controller
         $user->save();
         $profile = Profile::where('escort_id', $user->id)->first();
         $profile->delete();
-        EmailHelper::sendDynamicEmail('ts_your_profile_is_deleted', 
+        EmailHelper::sendDynamicEmail('ts_delete_profile', 
         ['[USER_LOGIN]' => $user->username], 
         $user->email);
         
@@ -77,12 +77,19 @@ class EscortController extends Controller
         if ($request->is_hidden) {
             $user->is_hidden = $request->is_hidden;
             $user->save();
-            EmailHelper::sendDynamicEmail('Hide_Profile', 
+            EmailHelper::sendDynamicEmail('ts_hide_profile', 
             ['[USER_LOGIN]' => $user->username], 
             $user->email);
             return Resp::success(['message' => 'Profile hidden successfully']);
         }
-        return Resp::success(['user'=>$user],'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
+        else{
+            $user->is_hidden = $request->is_hidden;
+            $user->save();
+            EmailHelper::sendDynamicEmail('ts_show_profile', 
+            ['[USER_LOGIN]' => $user->username], 
+            $user->email);
+            return Resp::success(['message' => 'Profile shown successfully']);
+        }
     }
 
 
