@@ -54,8 +54,45 @@ use Modules\Escort\app\Models\Orders;
 
 class AdminController extends Controller
 {
-
-
+    public function getOrders(Request $request)
+    {
+        // Start with a query builder
+        $orders = Orders::query();
+    
+        // Handle 'status' filtering
+        $status = $request->input('status') ?? $request->query('status'); // Accept status from both POST and GET
+        if (!is_null($status)) {
+            $status = strtolower($status); // Convert to lowercase
+            if ($status == 'paid') {
+                $orders->where('payment_status', 'paid');
+            } elseif ($status == 'pending') {
+                $orders->where('payment_status', 'pending');
+            }
+        }
+    
+        // Handle pagination
+        $perPage = (int)($request->input('per_page') ?? $request->query('per_page', 10)); // Accept per_page from both POST and GET
+        $page = (int)($request->input('page') ?? $request->query('page', 1)); // Accept page from both POST and GET
+    
+        // Get total results and calculate total pages
+        $totalResults = $orders->count();
+        $totalPages = ceil($totalResults / $perPage);
+        $offset = ($page - 1) * $perPage;
+    
+        // Fetch orders with pagination
+        $orders = $orders->orderBy('id', 'desc')->skip($offset)->take($perPage)->get();
+    
+        return Resp::success([
+            'orders' => $orders,
+            'pagination' => [
+                'total_results' => $totalResults,
+                'total_pages' => $totalPages,
+                'page' => $page,
+                'per_page' => $perPage
+            ]
+        ]);
+    }
+    
 
     public function addLocation(Request $request)
     {
@@ -179,7 +216,7 @@ class AdminController extends Controller
 
             // Check if page is valid
             if ($page < 1 || $page > $totalPages) {
-                return Resp::message('Invalid page number', 400);
+                return Resp::message('Invalid page number', 401);
             }
 
             $offset = ($page - 1) * $perPage;
