@@ -565,6 +565,7 @@ public function resetOldEmail(Request $request)
             'password' => 'required|string|min:8|confirmed',
             'user_type' => 'required|integer|in:1,2,3',
             'password_confirmation' => 'required|same:password',
+            'others' => 'string',
         ], [
             'user_type.in' => 'The user type must be either 1 or 2 or 3',
             'password.confirmed' => 'The password and confirm password do not match',
@@ -587,6 +588,7 @@ public function resetOldEmail(Request $request)
             'verification_token' => $verification_token,
             'email_verified' => false,
             'last_active_at' => Carbon::now(),
+            'others' => $request->others,
         ]);
 
         // Send verification email
