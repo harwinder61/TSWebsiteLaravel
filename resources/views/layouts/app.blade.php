@@ -4,151 +4,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{!! $title ?? 'Welcome' !!}}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        header {
-            background-color: #FFFFFF;
-            /* Changed to red */
-            color: white;
-            padding: 5px 20px;
-            /* Adjusted padding for a smaller height */
-            text-align: center;
-        }
-
-        footer {
-            background-color: #FFFFFF;
-            color: white;
-            text-align: center;
-            padding: 10px 20px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-        }
-
-        /* Container for flex centering the footer content */
-        .container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-            /* Add margin to space it from the footer text */
-        }
-
-        .footer-logo {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 50px;
-        }
-
-        /* Image styles */
-        .footer-logo img {
-            height: 80px;
-            /* Set image height */
-            margin: 0 10px;
-            /* Space between the images */
-        }
-
-        /* Footer styling with lines before and after content */
-        footer {
-            position: relative;
-            padding: 20px 0;
-        }
-
-        /* Line before the footer content */
-        footer::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            border-top: 2px solid #ddd;
-            margin-bottom: 10px;
-        }
-
-        /* Line after the footer content */
-        footer::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            border-bottom: 2px solid #ddd;
-            margin-top: 10px;
-        }
-
-        /* Footer text styling */
-        footer p {
-            text-align: center;
-            color: #666;
-            z-index: 1;
-            /* Ensure text appears above lines */
-        }
-
-        .container-custom {
-            margin: 20px;
-        }
-
-        @media (max-width: 600px) {
-
-            header,
-            footer {
-                padding: 5px;
-                font-size: 14px;
-            }
-
-            .logo-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .logo-container img {
-                height: 100px;
-                position: fixed;
-            }
-
-            .footer-logo img {
-                height: 70px;
-                margin: 20px 10px;
-            }
-
-            .instagram-2 {
-                height: 60px;
-            }
-        }
-    </style>
+    <title>{{ $title ?? 'Welcome' }}</title>
 </head>
 
 <body>
-    <div class="container">
-        <div class="main_section">
-            <header>
-            @include('components.header')
-            </header>
-
-            <main>
-                {!! $body !!}
-            </main>
-
-            @include('components.footer')
-           
-                </div>
-
-             <p style="text-align: center; color: #666;">
+    <div id="wrapper" dir="ltr"
+        style="background-color: #fdfdfd; margin: 0; padding: 70px 0; width: 100%; padding-top: 70px; padding-bottom: px; -webkit-text-size-adjust: none;"
+        bgcolor="#fdfdfd" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%">
+            <tbody>
+                <tr>
+                    <td align="center" valign="top">
+                        <table border="0" cellpadding="0" cellspacing="0" width="600" id="template_container"
+                            style="background-color: #fff;border: none;border-width: 1px;border-right-width: px;border-bottom-width: px;border-left-width: px;border-color: #dedede;border-radius: 3px;box-shadow: 0 1px 4px 1px rgba(0,0,0,.1);"
+                            bgcolor="#fff">
+                            <tbody>
+                                <tr>
+                                    <td align="center" valign="top">
+                                        <!-- Body -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="600"
+                                            id="template_body">
+                                            <tbody>
+                                                @include('components.header')
+                                                <tr>
+                                                    <td valign="top" id="body_content"
+                                                        style="background-color: #fff; padding-top: px; padding-bottom: 0px;"
+                                                        bgcolor="#fff">
+                                                        <!-- Content -->
+                                                        <table border="0" cellpadding="20" cellspacing="0" width="100%">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td valign="top"
+                                                                        style="padding: 48px 48px 32px; padding-left: 48px; padding-right: 48px;">
+                                                                        <div id="body_content_inner"
+                                                                            style="color: #333; text-align: left; font-size: 14px; line-height: 24px; font-family: &quot;Helvetica Neue&quot;,Helvetica,Roboto,Arial,sans-serif; font-weight: 400;"
+                                                                            align="left">
+                                                                            {!! $body !!}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                        <!-- End Content -->
+                                                    </td>
+                                                </tr>
+                                                @include('components.footer')
+                                            </tbody>
+                                        </table>
+                                        <!-- End Body -->
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                <!-- <p style="text-align: center; color: #666;">
                 © {{ date('Y') }}, Transbunnies. All Rights Reserved.
-            </p>
-            </footer>
-        </div>
+            </p> -->
+            </tbody>
+        </table>
     </div>
 </body>
 
