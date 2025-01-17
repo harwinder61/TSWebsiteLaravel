@@ -58,16 +58,20 @@ class AdminController extends Controller
     {
         // Start with a query builder
         $orders = Orders::query();
-        $orders->with('escort');
-        $orders->with('plan');
-        $s = $request->query('s');
+        
+        // Eager load relationships with specific columns
+        $orders->with(['escort:id,username,email', 'plan:code,title', 'subscription' => function ($query) {
+            $query->select('id', 'order_id', 'plan_code', 'start_date', 'end_date', 'status');
+        }]);
+        
+        // Apply search filter on escort username
+        $s = $request->query('s');  
         if (!is_null($s)) {
             $orders->whereHas('escort', function ($query) use ($s) {
                 $query->where('username', 'like', '%' . $s . '%');
             });
         }
         
-    
         // Handle 'status' filtering
         $status = $request->input('status') ?? $request->query('status'); // Accept status from both POST and GET
         if (!is_null($status)) {
@@ -78,28 +82,26 @@ class AdminController extends Controller
                 $orders->where('payment_status', 'pending');
             }
         }
-    
+        
         // Handle pagination
         $perPage = (int)($request->input('per_page') ?? $request->query('per_page', 10)); // Accept per_page from both POST and GET
         $page = (int)($request->input('page') ?? $request->query('page')); // Accept page from both POST and GET
-    
+        
         if (is_null($page)) {
             $perPage = 1000000; // Set per_page to a very large number to disable pagination
             $page = 1;
         } else {
             $page = (int)$page;
         }
-    
+        
         // Get total results and calculate total pages
         $totalResults = $orders->count();
         $totalPages = ceil($totalResults / $perPage);
         $offset = ($page - 1) * $perPage;
-    
+        
         // Fetch orders with pagination
         $orders = $orders->orderBy('id', 'desc')->skip($offset)->take($perPage)->get();
-    
-
-  
+        
         return Resp::success([
             'orders' => $orders,
             'pagination' => [
@@ -110,6 +112,7 @@ class AdminController extends Controller
             ]
         ]);
     }
+    
     
 
     public function addLocation(Request $request)

@@ -32,4 +32,9 @@ class Orders extends BaseOrder
     {
         return $this->belongsTo(Plan::class, 'plan_code','code');
     }
+
+    public function subscription()
+    {
+        return $this->hasOne(Subscription::class, 'order_id', 'id', 'status');
+    }
 }
