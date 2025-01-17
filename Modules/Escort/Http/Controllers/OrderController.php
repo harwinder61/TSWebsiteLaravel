@@ -321,7 +321,7 @@ class OrderController extends Controller
             ]);
 
             // Assuming you receive an array of IDs from the request
-            $locationIds = $extra_location; // e.g., [1, 2, 3]
+            $locationIds = $extra_location ?? []; // e.g., [1, 2, 3]
 
             foreach ($locationIds as $locationId) {
                 // Fetch the location from the database

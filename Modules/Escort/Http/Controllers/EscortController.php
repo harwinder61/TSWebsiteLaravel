@@ -569,6 +569,23 @@ class EscortController extends Controller
                         ProfileRates::create($rate_data);
                     }
                 }
+
+                //when outcall or incall is disabled and there is exisiting data then update it to 0
+                else if (($category == 'outcall' && !$is_outcall_enabled) || ($category == 'incall' && !$is_incall_enabled)) {
+                    $rate_data = [
+                        'category' => $rate['category'],
+                        '15_min' => 0,
+                        '30_min' => 0,
+                        '1_hour' => 0,
+                        '2_hour' => 0,
+                        '4_hour' => 0,
+                        'overnight' => 0,
+                    ];
+
+                    if ($profile_rates) {
+                        $profile_rates->update($rate_data);
+                    }
+                }
             }
             $profile_data = Profile::where('escort_id', $profile_data->escort_id)->first();
             $profile_data->rates;
