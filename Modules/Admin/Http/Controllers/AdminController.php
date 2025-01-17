@@ -58,6 +58,15 @@ class AdminController extends Controller
     {
         // Start with a query builder
         $orders = Orders::query();
+        $orders->with('escort');
+        $orders->with('plan');
+        $s = $request->query('s');
+        if (!is_null($s)) {
+            $orders->whereHas('escort', function ($query) use ($s) {
+                $query->where('username', 'like', '%' . $s . '%');
+            });
+        }
+        
     
         // Handle 'status' filtering
         $status = $request->input('status') ?? $request->query('status'); // Accept status from both POST and GET
@@ -72,7 +81,14 @@ class AdminController extends Controller
     
         // Handle pagination
         $perPage = (int)($request->input('per_page') ?? $request->query('per_page', 10)); // Accept per_page from both POST and GET
-        $page = (int)($request->input('page') ?? $request->query('page', 1)); // Accept page from both POST and GET
+        $page = (int)($request->input('page') ?? $request->query('page')); // Accept page from both POST and GET
+    
+        if (is_null($page)) {
+            $perPage = 1000000; // Set per_page to a very large number to disable pagination
+            $page = 1;
+        } else {
+            $page = (int)$page;
+        }
     
         // Get total results and calculate total pages
         $totalResults = $orders->count();
@@ -82,6 +98,8 @@ class AdminController extends Controller
         // Fetch orders with pagination
         $orders = $orders->orderBy('id', 'desc')->skip($offset)->take($perPage)->get();
     
+
+  
         return Resp::success([
             'orders' => $orders,
             'pagination' => [
