@@ -1,38 +1,88 @@
-<div class="container">
-    <div class="footer-logo">
+<tr>
+    <td align="center" valign="top" style="background: white;" bgcolor="white">
+        <!-- Footer -->
+        <table border="0" cellpadding="10" cellspacing="0" width="600" id="template_footer">
+            <tbody>
+                <tr>
+                    <td valign="top" style="padding: 0; border-radius: 6px;">
+                        <table id="footer-icons-mail" width="600" style="text-align: center; width: 600;">
+                            <tbody>
+                                <tr>
+                                    <td id="template_social" style="text-align: center; padding: 0; border-radius: 6px;"
+                                        align="center">
+                                        <a href="https://x.com/tsgirldirectory" target="_blank"
+                                            style="font-weight: normal; color: #ce0000; text-decoration: none;">
+                                            <img src="https://transbunnies.com/wp-content/themes/transbunnies/img/download.png"
+                                                style="border: none; display: inline-block; font-weight: bold; outline: none; text-decoration: none; text-transform: capitalize; vertical-align: middle; margin-right: 10px; max-width: 100%; font-size: 14px; line-height: 24px; width: 70px; height: 50px;"
+                                                border="0" width="70" height="50">
+                                        </a>
+                                        <a href="https://www.instagram.com/transbunnies/" target="_blank"
+                                            style="font-weight: normal; text-decoration: underline; color: #ce0000;">
+                                            <img src="https://transbunnies.com/wp-content/themes/transbunnies/img/email-insta.png"
+                                                style="border: none; display: inline-block; font-weight: bold; outline: none; text-decoration: none; text-transform: capitalize; vertical-align: middle; max-width: 100%; font-size: 14px; line-height: 24px; margin-right: 0; width: 45px; height: 45px;"
+                                                border="0" width="45" height="45">
+                                        </a>
+                                    </td>
 
-    <a href="https://www.instagram.com/transbunnies/" target="_blank">
-  <img src="https://phplaravel-1347729-4949264.cloudwaysapps.com/uploads/media/user_2/gallery_1736485455.png" alt="Transbunnies Logo" class="instagram-2" style="height: 55px;">
-</a>
-<a href="https://x.com/tsgirldirectory" target="_blank">
-  <img src="https://phplaravel-1347729-4949264.cloudwaysapps.com/uploads/media/user_2/gallery_1736485500.png" alt="Transbunnies Logo" class="instagram-2" style="height: 55px;">
-</a>
-    </div>
-</div>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 0; border-radius: 6px;">
+                                        <hr>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table border="0" cellpadding="10" cellspacing="0" width="100%" id="email-footer-links"
+                            style="text-align: center; margin-top: 8px;">
+                            <tbody>
+                                <tr style="text-align: center;">
+                                    <td valign="middle"
+                                        style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
+                                        align="center" width="33%">
+                                        <a href="https://transbunnies.com/ts-login" target="_blank"
+                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;">Log
+                                            In</a>
 
-<!-- <p style="text-align: center; color: #666;">
-    © {{ date('Y') }}, Transbunnies. All Rights Reserved.
-</p> -->
-</footer>
-
-<style>
-    /* Media query for screens with width 768px or less */
-    @media (max-width: 768px) {
-        footer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            /* To center content vertically */
-            flex-direction: column;
-            /* Ensure items stack vertically */
-            text-align: center;
-        }
-
-        .footer-logo {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            /* Space between logos */
-        }
-    }
-</style>
+                                    </td>
+                                    <td valign="middle" style="padding: 0; border-radius: 6px; text-align: center;"
+                                        align="center">|</td>
+                                    <td valign="middle"
+                                        style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
+                                        align="center" width="33%">
+                                        <a href="https://transbunnies.com/de/ts-contact/" target="_blank"
+                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;">Contact
+                                            Us</a>
+                                    </td>
+                                    <td valign="middle" style="padding: 0; border-radius: 6px; text-align: center;"
+                                        align="center">|</td>
+                                    <td valign="middle"
+                                        style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
+                                        align="center" width="33%">
+                                        <a href="https://transbunnies.com" target="_blank"
+                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;">Transbunnies.com</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td valign="top" style="padding: 0; border-radius: 6px;">
+                        <table border="0" cellpadding="10" cellspacing="10" width="100%" id="email-footer-bottom">
+                            <tbody>
+                                <tr>
+                                    <td colspan="2" valign="middle" id="credit"
+                                        style="border-radius: 6px; border: 0; line-height: 150%; padding: 24px 0; font-family: &quot;Helvetica Neue&quot;,Helvetica,Roboto,Arial,sans-serif; font-weight: 400; padding-top: 0px; padding-bottom: 0px; text-align: center; color: #ce0000; font-size: 22px;"
+                                        align="center">
+                                        © {{ date('Y') }}, Transbunnies. All Rights Reserved.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- End Footer -->
+    </td>
+</tr>
