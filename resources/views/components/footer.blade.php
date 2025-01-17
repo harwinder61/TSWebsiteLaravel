@@ -40,7 +40,7 @@
                                         style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
                                         align="center" width="33%">
                                         <a href="https://transbunnies.com/ts-login" target="_blank"
-                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;">Log
+                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Log
                                             In</a>
 
                                     </td>
@@ -50,7 +50,7 @@
                                         style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
                                         align="center" width="33%">
                                         <a href="https://transbunnies.com/de/ts-contact/" target="_blank"
-                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;">Contact
+                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Contact
                                             Us</a>
                                     </td>
                                     <td valign="middle" style="padding: 0; border-radius: 6px; text-align: center;"
@@ -59,7 +59,7 @@
                                         style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
                                         align="center" width="33%">
                                         <a href="https://transbunnies.com" target="_blank"
-                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;">Transbunnies.com</a>
+                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Transbunnies.com</a>
                                     </td>
                                 </tr>
                             </tbody>
