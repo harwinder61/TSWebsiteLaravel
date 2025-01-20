@@ -371,8 +371,8 @@ class SubscriptionController extends Controller
 
         $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
         if ($byPlanOrder) {
-            $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-        as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+        //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+        // as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
 
             $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
         as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
@@ -404,9 +404,12 @@ class SubscriptionController extends Controller
             ->selectRaw('locations.id, COUNT(*) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug')
             ->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type');
 
-        $rawSubQuary2 = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-        as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+        // $rawSubQuary2 = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+        // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
 
+
+        $rawSubQuary2 = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+        as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
 
         // Second query for extra locations
         $extraLocations = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
@@ -1190,7 +1193,8 @@ class SubscriptionController extends Controller
                     ->where(function ($query) use ($location) {
                         $query->where('profile.city_id', $location->id)
                             ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
-                    });
+                            
+                        });
 
                 $city_data = $city_data->join(
                     \DB::raw($rawSubQuary),
