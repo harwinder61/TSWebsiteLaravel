@@ -416,7 +416,7 @@ class SubscriptionController extends Controller
             ->where('subscriptions.end_date', '>', now())
             ->where('subscriptions.is_hidden', 0)
             ->join(
-                \DB::raw($rawSubQuary2),
+                \DB::raw($rawSubQuary),
                 'subscriptions.id',
                 '=',
                 'latest_subscription.max_id'
@@ -426,7 +426,7 @@ class SubscriptionController extends Controller
             ->leftJoin('locations', 'locations.id', '=', 'locations.id') // Change from crossJoin to leftJoin
             ->whereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(locations.id AS CHAR))')
             // ->selectRaw('locations.id, COUNT(*) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug')
-            ->selectRaw('locations.id, COUNT(DISTINCT subscriptions.escort_id) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug')
+            ->selectRaw('locations.id, COUNT(*) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug')
 
             ->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type');
 
