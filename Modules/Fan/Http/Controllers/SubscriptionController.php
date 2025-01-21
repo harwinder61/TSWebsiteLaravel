@@ -561,7 +561,7 @@ class SubscriptionController extends Controller
                     
                     // Check for a specific rate value
                     if ($request->query('specific_rate')) {
-                        $query->where('' . $request->query('rate_type') . '', $request->query('specific_rate'));
+                        $query->where('' . $request->query('rate_type') . '', "<=",$request->query('specific_rate'));
                     }
                     
                     // Check for Incall or Outcall options
