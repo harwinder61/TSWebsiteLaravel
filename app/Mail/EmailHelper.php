@@ -42,6 +42,12 @@ class EmailHelper
             // If the template doesn't exist, return an error or handle it
             return 'Email template not found';
         }
+
+        if($emailTemplate->status!=1){
+
+            return "Email is disabled";
+
+        }
     
         // Replace dynamic data in the subject and body
         $subject = str_replace(array_keys($dynamicData), array_values($dynamicData), $emailTemplate->subject);
@@ -49,7 +55,7 @@ class EmailHelper
         
     
         // Send the email to the recipient
-        Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
+        //Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
     
         return "Email sent successfully!";
     }
