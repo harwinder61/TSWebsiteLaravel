@@ -1216,7 +1216,9 @@ class SubscriptionController extends Controller
                     ->where(function ($query) use ($county) {
                         $query->where('profile.county_id', $county->id)
                             ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$county->id]);
-                    });
+                    })->orWhereHas('extraLocations', function ($query) use ($county) {
+                        $query->where('county_id', $county->id);
+                    }); 
 
                 $county_data = $county_data->join(
                     \DB::raw($rawSubQuary),
@@ -1234,6 +1236,8 @@ class SubscriptionController extends Controller
                     ->where(function ($query) use ($region) {
                         $query->where('profile.region_id', $region->id)
                             ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$region->id]);
+                    })->orWhereHas('extraLocations', function ($query) use ($region) {
+                        $query->where('region_id', $region->id);
                     });
 
                 $region_data = $region_data->join(
@@ -1248,6 +1252,7 @@ class SubscriptionController extends Controller
 
 
 
+
                 // Check if `extra_location` refers to the city and adjust counts for county and region
                 $city_in_extra_location = EscortSubscription::whereRaw('
                 JSON_CONTAINS(extra_location, CAST(? AS CHAR))', [$location->id])
@@ -1257,8 +1262,8 @@ class SubscriptionController extends Controller
 
                 if ($city_in_extra_location) {
                     // If city is in extra_location, increase the counts for county and region as well
-                    $county_data->subscription_count += $city_data->subscription_count;
-                    $region_data->subscription_count += $city_data->subscription_count;
+                    // $county_data->subscription_count += $city_data->subscription_count;
+                    // $region_data->subscription_count += $city_data->subscription_count;
                 }
 
 
