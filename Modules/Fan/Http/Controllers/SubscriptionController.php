@@ -554,6 +554,30 @@ class SubscriptionController extends Controller
                 });
             }
 
+            if (!is_null($request->query('rate'))) {
+                $subscriptions->whereHas('escort.profile.rates', function ($query) use ($request) {
+                    // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
+                    
+                    
+                    // Check for a specific rate value
+                    if ($request->query('specific_rate')) {
+                        $query->where('' . $request->query('rate_type') . '', $request->query('specific_rate'));
+                    }
+                    
+                    // Check for Incall or Outcall options
+                    if ($request->query('incall') || $request->query('outcall')) {
+                        $query->where(function($q) use ($request) {
+                            if ($request->query('incall')) {
+                                $q->orWhere('category', 'Incall');
+                            }
+                            if ($request->query('outcall')) {
+                                $q->orWhere('category', 'Outcall');
+                            }
+                        });
+                    }
+                });
+            }
+
             // if (!is_null($request->query('city_id'))) {
 
 
