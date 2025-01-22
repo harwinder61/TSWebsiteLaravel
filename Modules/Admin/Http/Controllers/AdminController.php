@@ -46,6 +46,7 @@ use Modules\Admin\app\Models\Pages;
 use Modules\Admin\app\Models\Setting;
 use App\Mail\EmailHelper;
 use App\Models\Media;
+use App\Models\BaseSettings;
 class AdminController extends Controller
 {
 
@@ -2095,6 +2096,94 @@ public function getVarifiacationList(Request $request)
             return Resp::success(['categories' => $categories]);
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
+
+
+    public function fetchDroppableFields(Request $request)
+    {
+        try {
+            $data=BaseSettings::all();
+            if(!$data){
+                return Resp::error([
+                    'error'=>'No dropdown fields found'
+                ]);
+            }
+
+
+            return Resp::success(['data' => $data]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
+
+
+    public function addDroppableField(Request $request,$id){
+        try{
+
+            $validator = Validator::make($request->all(), [
+                'key' => 'required',
+                'value' => 'required',
+            ]);
+
+
+            if ($validator->fails()) {
+                return Resp::error([$validator->errors()]);
+            }
+            
+            
+            $data=BaseSettings::find($id);
+            if(!$data){
+                return Resp::error([
+                    'error'=>'No dropdown fields found'
+                ]);
+            }
+            $data->key=$data->key;
+            $values = $data->value ? $data->value : []; // Decode existing values or initialize as empty array
+            
+            $combined_values = array_merge($values, $request->value); // Merge the arrays
+            
+            $data->update([
+                'key' => $data->key,
+                'value' => $combined_values // Store the combined values back as JSON
+            ]);
+
+
+            return Resp::success(['message' => 'Droppable field added successfully','data'=>$data]);
+        }catch(\Exception $e){
+            return Resp::error(['message'=>$e->getMessage()]);
+        }
+    }
+
+    public function deleteDroppableField(Request $request,$id){
+        try{
+
+            $validator = Validator::make($request->all(), [
+                
+                'value' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return Resp::error([$validator->errors()]);
+            }
+
+            $data=BaseSettings::find($id);
+            if(!$data){
+                return Resp::error([
+                    'error'=>'No dropdown fields found'
+                ]);
+            }
+            $data->key=$data->key;
+            $values = $data->value ? $data->value : []; // Decode existing values or initialize as empty array
+            $combined_values = array_diff($values, $request->value); // Merge the arrays
+            $data->update([
+                'key' => $data->key,
+                'value' => $combined_values // Store the combined values back as JSON
+            ]);
+            return Resp::success(['message' => 'Droppable field deleted successfully','data'=>$data]);
+
+        }catch(\Exception $e){
+            return Resp::error(['message'=>$e->getMessage()]);
         }
     }
 
