@@ -53,17 +53,44 @@ class EscortController extends Controller
         $user->save();
         $profile = Profile::where('escort_id', $user->id)->first();
         $profile->delete();
-        EmailHelper::sendDynamicEmail('account_deleted', 
-        ['[USER_LOGIN]' => $user->username, '[CUSTOMER_NAME]' => $user->username, '[CUSTOMER_EMAIL]' => $user->email], 
+        EmailHelper::sendDynamicEmail('ts_delete_profile', 
+        ['[USER_LOGIN]' => $user->username], 
         $user->email);
         
         return Resp::success(['user'=>$user],'Profile deleted successfully');
     }
-    
         return Resp::error(['message' => 'Invalid request']);
     }
     
 
+
+    public function hideProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'is_hidden' => 'required|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $user = auth()->user();
+        if ($request->is_hidden) {
+            $user->is_hidden = $request->is_hidden;
+            $user->save();
+            EmailHelper::sendDynamicEmail('ts_hide_profile', 
+            ['[USER_LOGIN]' => $user->username], 
+            $user->email);
+            return Resp::success(['message' => 'Profile hidden successfully']);
+        }
+        else{
+            $user->is_hidden = $request->is_hidden;
+            $user->save();
+            EmailHelper::sendDynamicEmail('ts_show_profile', 
+            ['[USER_LOGIN]' => $user->username], 
+            $user->email);
+            return Resp::success(['message' => 'Profile shown successfully']);
+        }
+    }
 
 
 
@@ -183,47 +210,24 @@ class EscortController extends Controller
         ]);
     }
 
-public function profileViews($id, Request $request)
-{
-    $user = auth()->user();
-    if ($user->user_type != 1) {    
-        return Resp::error(['message' => 'Unauthorized user not a fan']);
-    }
-
-    $profile = AuthUser::where('id', $id)
-                       ->where('user_type', 2)
-                       ->with('profile')
-                       ->first();
-
-    if (!$profile || !$profile->profile) {
-        return Resp::error(['message' => 'User is not an escort or profile not found']);
-    }
-
-    $profile->profile->increment('profile_views');
-
-    return Resp::success(['message' => 'Profile views updated successfully']);
-}
-
-
-    public function hideProfile(Request $request)
+    public function profileViews($id, Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'is_hidden' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
         $user = auth()->user();
-        if ($request->is_hidden) {
-            $user->is_hidden = $request->is_hidden;
-            $user->save();
-            
-            return Resp::success(['message' => 'Profile hidden successfully']);
+        $profile = AuthUser::where('id', $id)
+                           ->with('profile')
+                           ->first();
+    
+        if (!$profile || !$profile->profile) {
+            return Resp::error(['message' => 'User not found or profile not found']);
         }
-        
-        return Resp::success(['user'=>$user],'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
+    
+        $profile->profile->increment('profile_views');
+    
+        return Resp::success(['message' => 'Profile views updated successfully']);
     }
+
+
+ 
 
     public function updateSubscription(Request $request)
 {
@@ -347,10 +351,12 @@ public function profileViews($id, Request $request)
         $media = Media::where('escort_id', $user->id)->get();
         if ($profile) {
             $profile = Profile::where('escort_id', $user->id)->first();
+            $profile->rates;
             return Resp::success([
                 'id' => $user->id,
                 'profile' => $profile,
-                'media' => $media
+                'media' => $media,
+                'rates' => $profile->rates
             ]);
         }
         return Resp::error(['message' => 'No active subscription found'], 404);
@@ -382,7 +388,12 @@ public function profileViews($id, Request $request)
     {
         $user = auth()->user();
         $profile_data = $user->profile;
+        $profile_data->rates;
+        
+        
+
         // $profile_data = Profile::find($user->id);
+        
 
         if (!$profile_data) {
 
@@ -440,6 +451,7 @@ public function profileViews($id, Request $request)
                 'date_of_birth' => $request->input('date_of_birth'),
                 'orientation' => $request->input('orientation'),
                 'ethnicity' => $request->input('ethnicity'),
+                'nationality' => $request->input('nationality'),
                 'height' => $request->input('height'),
                 'weight' => $request->input('weight'),
                 'hair' => $request->input('hair'),
@@ -468,6 +480,13 @@ public function profileViews($id, Request $request)
                 'description' => $request->input('description'),
                 'is_incall_enabled' => $request->input('is_incall_enabled'),
                 'is_outcall_enabled' => $request->input('is_outcall_enabled'),
+                'has_onlyfans' => $request->input('has_onlyfans'),
+                'has_manyvids' => $request->input('has_manyvids'),
+                'has_fancentro' => $request->input('has_fancentro'),
+                'onlyfans_handle' => $request->input('onlyfans_handle'),
+                'manyvids_handle' => $request->input('manyvids_handle'),
+                'fancentro_handle' => $request->input('fancentro_handle'),
+                'country_code' => $request->input('country_code'),
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
@@ -548,6 +567,23 @@ public function profileViews($id, Request $request)
                     } else {
                         $rate_data['escort_id'] = $profile_data->escort_id;
                         ProfileRates::create($rate_data);
+                    }
+                }
+
+                //when outcall or incall is disabled and there is exisiting data then update it to 0
+                else if (($category == 'outcall' && !$is_outcall_enabled) || ($category == 'incall' && !$is_incall_enabled)) {
+                    $rate_data = [
+                        'category' => $rate['category'],
+                        '15_min' => 0,
+                        '30_min' => 0,
+                        '1_hour' => 0,
+                        '2_hour' => 0,
+                        '4_hour' => 0,
+                        'overnight' => 0,
+                    ];
+
+                    if ($profile_rates) {
+                        $profile_rates->update($rate_data);
                     }
                 }
             }

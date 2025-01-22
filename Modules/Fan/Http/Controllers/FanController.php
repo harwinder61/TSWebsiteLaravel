@@ -55,7 +55,7 @@ class FanController extends Controller
 
     public function allBlogList(Request $request){
         // Get pagination parameters
-        $perPage = $request->query('per_page', 10); 
+        $perPage = $request->query('per_page', 11); 
         $page = $request->query('page', 1);
         $offset = ($page - 1) * $perPage;
         $blogs = Blog::with('media')

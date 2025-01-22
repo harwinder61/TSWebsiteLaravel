@@ -69,6 +69,9 @@ class BaseProfile extends Model
         'is_profile',
         'is_media',
         'description',
+        'rates',
+        'nationality',
+        
         
     ];
 
@@ -86,22 +89,24 @@ class BaseProfile extends Model
         'name' => 'string|max:255',
         'phone_number' => 'required|integer',
         'allow_whatsapp' => 'boolean',
-        'gender' => 'required|in:'.implode(',',Gender::getValues()),
+        //'gender' => 'required|in:'.implode(',',Gender::getValues()),
         'date_of_birth' => 'required|string',
-        'orientation'=>'required|in:'.implode(',',Orientation::getValues()),
-        'ethnicity'=>'required|in:'.implode(',',Ethnicity::getValues()),
+        //'orientation'=>'required|in:'.implode(',',Orientation::getValues()),
+        //'ethnicity'=>'required|in:'.implode(',',Ethnicity::getValues()),
+        'ethnicity' => 'required',
+        //'nationality' => 'required',
         'height'=>'required|integer',
         'weight'=>'required|integer',
-        'hair'=>'required|in:'.implode(',',Hair::getValues()),
-        'eyes'=>'required|in:'.implode(',',Eyes::getValues()),
-        'breasts_size'=>'required|in:'.implode(',',BreastsSize::getValues()),
-        'breasts_cup'=>'required|in:'.implode(',',BreastsCup::getValues()),
-        'butt'=>'required|in:'.implode(',',Butt::getValues()),
-        'body'=>'required|in:'.implode(',',Body::getValues()),
-        'cock_size'=>'required|in:'.implode(',',CockSize::getValues()),
+        //'hair'=>'required|in:'.implode(',',Hair::getValues()),
+        //'eyes'=>'required|in:'.implode(',',Eyes::getValues()),
+        //'breasts_size'=>'required|in:'.implode(',',BreastsSize::getValues()),
+        //'breasts_cup'=>'required|in:'.implode(',',BreastsCup::getValues()),
+        //'butt'=>'required|in:'.implode(',',Butt::getValues()),
+        //'body'=>'required|in:'.implode(',',Body::getValues()),
+        //'cock_size'=>'required|in:'.implode(',',CockSize::getValues()),
         //'languages'=>'required|in:'.implode(',',Languages::getValues()),
-        'languages' => 'required|array',
-        'languages.*' => 'in:'.implode(',', Languages::getValues()),
+        'languages' => 'required',
+        //'languages.*' => 'in:'.implode(',', Languages::getValues()),
         'offer_services_to'=>'required|array',
         'offer_services_to.*'=>'in:'.implode(',',OfferServicesTo::getValues()),
         'has_twitter' => 'boolean|nullable',
@@ -114,8 +119,8 @@ class BaseProfile extends Model
         'tiktok_handle' => 'required_if:has_tiktok,1|string|nullable',
         'is_incall_enabled' => 'required|boolean',
         'is_outcall_enabled' => 'required|boolean',
-        'extra_services' => 'required|array',
-        'extra_services.*.key'=>'in:'.implode(',',ExtraServices::getKeys()),
+        'extra_services' => 'required',
+        //'extra_services.*.key'=>'in:'.implode(',',ExtraServices::getKeys()),
         'description' => 'nullable|string',
         'city_id' => [
             'required',
@@ -137,6 +142,9 @@ class BaseProfile extends Model
         return $this->hasMany(Media::class,'escort_id','escort_id')
         ->where('is_temp', 0);
     
+    }
+    public function subscriptions(){
+        return $this->hasMany(BaseSubscription::class,'escort_id','escort_id');
     }
 
 

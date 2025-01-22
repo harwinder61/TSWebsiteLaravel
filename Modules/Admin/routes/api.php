@@ -1,10 +1,15 @@
 <?php
-
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Modules\Admin\Http\Controllers\AdminController;
 use Modules\Admin\Http\Controllers\FanController;
 use Modules\Admin\Http\Controllers\EscortController;
-
+use App\Models\User;
+use Carbon\Carbon;
+use Modules\Auth\app\Http\Controllers\AuthController;
+use App\Console\Commands\updateLastActiveAt;
+use App\Console\Commands\sendInactivityEmails;
+use App\Console\Commands\ScheduledEmails;
 Route::middleware(['jwt_auth:admin'])->group(function(){
     Route::group(['prefix'=>'admin'],function(){
         Route::post('/plan/{plan_code}',[AdminController::class,'updatePlan']);
@@ -12,7 +17,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::put('/update-profile/{id}',[AdminController::class,'updateProfile']);
         Route::get('/fans',[FanController::class,'getFans']);
         Route::get('/escorts',[EscortController::class,'getEscorts']);
-        Route::get('/users',[AdminController::class,'getUsers']);
+        Route::get('/users',[AdminController::class,'getAllUsers']);
         Route::get('/profile/{id}',[AdminController::class,'getProfile']);
         Route::get('/inquiries',[AdminController::class,'inquiryFormList']);
         Route::get('/recent-signups',[AdminController::class,'recentSignups']);
@@ -33,7 +38,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/delete-review/{id}',[AdminController::class,'deleteReview']);
         Route::post('/edit-blog/{id}',[AdminController::class,'editBlog']);
         Route::post('/delete-blog/{id}',[AdminController::class,'deleteBlog']);
-        Route::get('/all-advert-users',[AdminController::class,'getAllAdvertUsers']);
+        Route::get('/all-advert-users',[AdminController::class,'getUsers']);
         Route::post('/user',[AdminController::class,'newUser']);
         Route::put('/user/{id}',[AdminController::class,'userProfile']); 
         Route::post('/create-forum',[AdminController::class,'createForum']);
@@ -91,15 +96,51 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/edit-category/{id}',[AdminController::class,'editCategory']);
         Route::post('/add-dropdowns/{id}',[AdminController::class,'addDroppableField']);
         Route::post('/remove-dropdowns/{id}',[AdminController::class,'deleteDroppableField']);
+        Route::get('get-single-page/{id}',[AdminController::class,'getSinglePage']);
+        Route::post('/hide-subscription/{id}',[AdminController::class,'hideSubscription']);
+        Route::post('/show-subscription/{id}',[AdminController::class,'showSubscription']);
+        Route::post('/update-home-advert-images',[AdminController::class,'updateHomeImages']);
+        Route::get('/admin-get-users',[AdminController::class,'adminGetUsers']);
+        Route::post('/locations/delete/{id}',[AdminController::class,'deleteLocation']);
+        Route::post('/location/add',[AdminController::class,'addLocation']);
+        Route::get('/admin-orders',[AdminController::class,'getOrders']);
+
         
     });
 
 
 });
+Route::get('/get-single-page',[AdminController::class,'getSinglePage']);
 Route::get('/get-parallax-image',[AdminController::class,'getParallaxImage']);
 Route::get('/blog/{id?}',[AdminController::class,'getBlog']);
 Route::get('/blog-slug/{slug?}',[AdminController::class,'getBlogBySlug']);
 Route::get('/get-forum',[AdminController::class,'getForum']);
 Route::post('/send-email',[AdminController::class,'sendEmail']);
-
 Route::get('/get-dropdowns',[AdminController::class,'fetchDroppableFields']);
+Route::get('/forum-categories',[AdminController::class,'forumCategories']);
+Route::post('/post-comment',[AdminController::class,'postComment']);
+Route::get('/get-forum-post/{id}',[AdminController::class,'getForumPost']); 
+Route::post('/create-forum',[AdminController::class,'createForum']);
+Route::get('/get-home-advert-images',[AdminController::class,'getHomeImages']);
+Route::get('/get-path',[AdminController::class,'getPath']);
+Route::get('/test-command', function () {
+    // Call the Artisan command
+    Artisan::call('app:scheduled-emails'); 
+    $output = Artisan::output();
+    return response()->json([
+        'message' => 'Command executed successfully.',
+        'expired_subscriptions' => json_decode($output)  
+    ]);
+}
+);
+Route::get('/get-last-active-at',function(){
+  Artisan::call('app:scheduled-emails');
+  $output = Artisan::output();
+  return response()->json([
+    'message' => 'Command executed successfully.',
+    'mail_sent' => json_decode($output) 
+  ]);
+});
+
+Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
+Route::get('/send-inactivity-emails', [AuthController::class, 'sendInactivityEmails']);

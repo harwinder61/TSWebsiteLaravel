@@ -26,6 +26,15 @@ class BaseReviews extends Model
     {
         return $this->belongsTo(AuthUser::class, 'user_id');
     }
+
+    public function escort()
+    {
+        return $this->belongsTo(BaseProfile::class, 'escort_id');
+    }
+    public function fan()
+    {
+        return $this->belongsTo(AuthUser::class, 'fan_id');
+    }
 }
 
 

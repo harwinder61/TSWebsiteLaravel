@@ -38,9 +38,11 @@ class MediaController extends Controller
 
     public function mediaSingle(Request $request)
     {
-        $slug=$request->query('upload_type');
+        $slug=$request->input('upload_type') || $request->query('upload_type');
         $is_temp=$request->input('is_temp');
-        if($slug=='advert'){
+        // print_r($slug);
+        Log::info('advert slug passed');
+        if($slug == 'advert'){
             Log::info('advert slug passed');
             Log::info($request->all());
             $escort_id=$request->input('escort_id');

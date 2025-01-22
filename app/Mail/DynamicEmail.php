@@ -43,10 +43,13 @@ class DynamicEmail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emailTemplates.dynamic_email',
+            //view: 'emailTemplates.dynamic_email',
+            view: 'layouts.app',
             with: [
-                'subject' => $this->subject,
+                //  'subject' => $this->subject,
+                'title' => $this->subject,
                 'body' => $this->body,
+                'mime' => 'text/html', 
             ],
         );
     }
@@ -59,11 +62,20 @@ class DynamicEmail extends Mailable
     public function build()
     {
         return $this->subject($this->subject)
-                    ->view('emailTemplates.dynamic_email') // This uses the Blade view we made
-                    ->with([
-                        'subject' => $this->subject,
-                        'body' => $this->body,
-                        'mime' => 'text/html',
-                    ]);
+            //                    ->view('emailTemplates.dynamic_email') // This uses the Blade view we made
+            ->view('layouts.app') // This uses the Blade view we made  
+            ->with([
+                //'subject' => $this->subject,
+                'title' => $this->subject,
+                'body' => $this->body,
+                'mime' => 'text/html',
+                'plan_code' => session('plan_code'),
+                'start_date' => session('start_date'),
+                'end_date' => session('end_date'),
+                'price' => session('price'),
+                'total' => session('total'),
+            ]);
+            
+            
     }
 }

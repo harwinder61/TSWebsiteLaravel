@@ -47,9 +47,316 @@ use Modules\Admin\app\Models\Setting;
 use App\Mail\EmailHelper;
 use App\Models\Media;
 use App\Models\BaseSettings;
+use Google\Service\Walletobjects\Pagination;
+use Modules\Escort\app\Models\Orders;
+
+
+
 class AdminController extends Controller
 {
+    public function getOrders(Request $request)
+    {
+        // Start with a query builder
+        $orders = Orders::query();
+        
+        // Eager load relationships with specific columns
+        $orders->with(['escort:id,username,email', 'plan:code,title,price', 'subscription' => function ($query) {
+            $query->select('id', 'order_id', 'plan_code', 'start_date', 'end_date', 'status');
+        }]);
+        
+        // Apply search filter on escort username
+        $s = $request->query('s');  
+        if (!is_null($s)) {
+            $orders->whereHas('escort', function ($query) use ($s) {
+                $query->where('username', 'like', '%' . $s . '%');
+            });
+        }
+        
+        // Handle 'status' filtering
+        $status = $request->input('status') ?? $request->query('status'); // Accept status from both POST and GET
+        if (!is_null($status)) {
+            $status = strtolower($status); // Convert to lowercase
+            if ($status == 'paid') {
+                $orders->where('payment_status', 'paid');
+            } elseif ($status == 'pending') {
+                $orders->where('payment_status', 'pending');
+            }
+        }
+        
+        // Handle pagination
+        $perPage = (int)($request->input('per_page') ?? $request->query('per_page', 10)); // Accept per_page from both POST and GET
+        $page = (int)($request->input('page') ?? $request->query('page')); // Accept page from both POST and GET
+        
+        if (is_null($page)) {
+            $perPage = 1000000; // Set per_page to a very large number to disable pagination
+            $page = 1;
+        } else {
+            $page = (int)$page;
+        }
+        
+        // Get total results and calculate total pages
+        $totalResults = $orders->count();
+        $totalPages = ceil($totalResults / $perPage);
+        $offset = ($page - 1) * $perPage;
+        
+        // Fetch orders with pagination
+        $orders = $orders->orderBy('id', 'desc')->skip($offset)->take($perPage)->get();
+        
+        return Resp::success([
+            'orders' => $orders,
+            'pagination' => [
+                'total_results' => $totalResults,
+                'total_pages' => $totalPages,
+                'page' => $page,
+                'per_page' => $perPage
+            ]
+        ]);
+    }
+    
+    
 
+    public function addLocation(Request $request)
+    {
+
+        try {
+            $type = $request->type;
+            if ($type == 'region') {
+                $location = Location::create([
+                    'name' => $request->region,
+                    'type' => 'region',
+                    'parent_id' => null,
+                    'slug' => Str::slug($request->region),
+                ]);
+                return Resp::success(['message' => 'Region added successfully', 'location' => $location]);
+            } else if ($type == 'county') {
+
+                $region = Location::where('type', 'region')->where('id', $request->region)->first();
+                if (!$region) {
+                    return Resp::error(['message' => 'Region not found']);
+                }
+
+                $location = Location::create([
+                    'name' => $request->county,
+                    'type' => 'county',
+                    'parent_id' => $region->id,
+                    'slug' => Str::slug($request->county),
+                ]);
+                return Resp::success(['message' => 'County added successfully', 'location' => $location]);
+            } else if ($type == 'city') {
+                $region = Location::where('type', 'region')->where('id', $request->region)->first();
+                if (!$region) {
+                    return Resp::error(['message' => 'Region not found']);
+                }
+
+                $county = Location::where('type', 'county')
+                    ->where('id', $request->county)
+                    ->where('parent_id', $region->id)
+                    ->first();
+                if (!$county) {
+                    return Resp::error(['message' => 'County not found']);
+                }
+                $location = Location::create([
+                    'name' => $request->city,
+                    'type' => 'city',
+                    'parent_id' => $county->id,
+                    'slug' => Str::slug($request->city),
+                ]);
+                return Resp::success(['message' => 'City added successfully', 'location' => $location]);
+            }
+
+            return Resp::success(['message' => 'Please enter a valid location type']);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => 'Something went wrong', 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function deleteLocation($id, Request $request)
+    {
+        $location = Location::find($id);
+        $location->delete();
+        return Resp::success(['message' => 'Location deleted successfully', 'location' => $location]);
+    }
+
+
+    public function getExpiredSubscriptions()
+    {
+        $expiredSubscriptions = BaseSubscription::where('status', 'expired')->get();
+        return Resp::success(['expiredSubscriptions' => $expiredSubscriptions]);
+    }
+
+
+
+    public function getAllUsers(Request $request)
+    {
+        $user_type = $request->query('user_type');
+        $role = $request->query('role');
+        $s = $request->query('s');
+        $is_deleted = $request->query('is_deleted');
+        $id = $request->query('id');
+        $ids = $request->query('ids'); // added this line
+        $page = $request->query('page', 1);
+        $perPage = $request->query('per_page', 10);
+
+        if ($page == -1) {
+            $users = AuthUser::query()
+                ->when($user_type == 1, function ($query) use ($user_type) {
+                    $query->where('user_type', 1);
+                })
+                ->when(in_array($user_type, [2]), function ($query) use ($user_type) {
+                    $query->whereIn('user_type', [2]);
+                })
+                ->when($role, function ($query) use ($role) {
+                    $query->where('role', $role);
+                })
+                ->when($s, function ($query) use ($s) {
+                    $query->where(function ($query) use ($s) {
+                        $query->where('username', 'like', '%' . $s . '%')
+                            ->orWhere('email', 'like', '%' . $s . '%');
+                    });
+                })
+                ->when($is_deleted, function ($query) use ($is_deleted) {
+                    $query->where('is_deleted', $is_deleted);
+                })
+                ->when($id, function ($query) use ($id) {
+                    $query->where('id', $id);
+                })
+                ->when($ids, function ($query) use ($ids) {
+                    $ids = explode(',', $ids);
+                    $query->whereIn('id', $ids);
+                })
+                ->where('user_type', '<>', 3) // exclude users with user_type = 3
+                ->orderBy('id', 'desc')
+                ->get();
+
+            return Resp::success([
+                'users' => $users,
+            ]);
+        } else {
+            $totalResults = AuthUser::where('user_type', '<>', 3)->count(); // exclude users with user_type = 3 from count
+            $totalPages = ceil($totalResults / $perPage);
+
+            // Check if page is valid
+            if ($page < 1 || $page > $totalPages) {
+                return Resp::message('Invalid page number', 401);
+            }
+
+            $offset = ($page - 1) * $perPage;
+
+            $users = AuthUser::query()
+                ->when($user_type == 1, function ($query) use ($user_type) {
+                    $query->where('user_type', 1);
+                })
+                ->when(in_array($user_type, [2]), function ($query) use ($user_type) {
+                    $query->whereIn('user_type', [2]);
+                })
+                ->when($role, function ($query) use ($role) {
+                    $query->where('role', $role);
+                })
+                ->when($s, function ($query) use ($s) {
+                    $query->where(function ($query) use ($s) {
+                        $query->where('username', 'like', '%' . $s . '%')
+                            ->orWhere('email', 'like', '%' . $s . '%');
+                    });
+                })
+                ->when($is_deleted, function ($query) use ($is_deleted) {
+                    $query->where('is_deleted', $is_deleted);
+                })
+                ->when($id, function ($query) use ($id) {
+                    $query->where('id', $id);
+                })
+                ->when($ids, function ($query) use ($ids) {
+                    $ids = explode(',', $ids);
+                    $query->whereIn('id', $ids);
+                })
+                ->where('user_type', '<>', 3) // exclude users with user_type = 3
+                ->orderBy('id', 'desc')
+                ->skip($offset)
+                ->take($perPage)
+                ->get();
+
+            return Resp::success([
+                'users' => $users,
+                'pagination' => [
+                    'total_results' => $totalResults,
+                    'total_pages' => $totalPages,
+                    'page' => $page,
+                    'per_page' => $perPage
+                ]
+            ]);
+        }
+    }
+
+    // //// ak ///////
+
+    public function getVarifiacationList(Request $request)
+    {
+        try {
+            // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
+            $query = ModelsVerify::with(['escort', 'user']);
+
+            // Apply filters for 'verified_status'
+            if ($request->has('verified_status')) {
+                $verifiedStatus = explode(',', $request->query('verified_status'));
+                $query->whereIn('verified_status', $verifiedStatus);
+            } else {
+                // Default to verified statuses 1, 2, 3, 4 if not provided
+                $query->whereIn('verified_status', [1, 2, 3, 4]);
+            }
+
+            // Search filter
+            $s = $request->query('s');
+            if ($s) {
+                $query->whereHas('user', function ($query) use ($s) {
+                    $query->where('username', 'like', '%' . $s . '%')
+                        ->orWhere('email', 'like', '%' . $s . '%');
+                });
+            }
+
+            // Additional filter using the 'another_filter' parameter
+            $query->when($request->has('another_filter'), function ($query) use ($request) {
+                $query->where('another_column', $request->query('another_filter'));
+            });
+
+            // Order by created_at in descending order
+            $query->orderBy('created_at', 'desc');
+
+            // Pagination parameters
+            $perPage = (int)$request->query('per_page', 10);
+
+            // Use the paginate method to get paginated results
+            $verifications = $query->paginate($perPage);
+
+            // Adjust the total_results based on the actual number of records for the current page
+            $totalResults = $verifications->count();
+
+            // Build pagination response
+            $pagination = [
+                'total_results' => $totalResults, // Show the actual number of records on this page
+                'total_pages' => $verifications->lastPage(),
+                'page' => $verifications->currentPage(),
+                'page_size' => $verifications->perPage(),
+            ];
+
+            // Return the successful response with verification list and pagination
+            return Resp::success(['verifications' => $verifications->items(), 'pagination' => $pagination]);
+        } catch (\Exception $e) {
+            // Return an error if something goes wrong
+            return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
+        }
+    }
+
+
+    
+
+
+    public function getSinglePage(Request $request)
+    {
+        $page = Pages::where('slug', $request->query('slug'))->first();
+        if (!$page) {
+            return Resp::error(['message' => 'Page not found']);
+        }
+        return Resp::success(['page' => $page]);
+    }
 
     public function userDelete($id, Request $request)
     {
@@ -72,13 +379,13 @@ class AdminController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
-           
+
         ]);
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
         $category = ForumCategory::find($id);
-        if(!$category){
+        if (!$category) {
             return Resp::error(['message' => 'Category not found']);
         }
         $category->name = $request->name;
@@ -89,7 +396,7 @@ class AdminController extends Controller
 
         $category->slug = $slug;
         $category->save();
-        return Resp::success(['message' => 'Category updated successfully','category'=> $category]);
+        return Resp::success(['message' => 'Category updated successfully', 'category' => $category]);
     }
 
     public function deleteCategory($id)
@@ -99,95 +406,190 @@ class AdminController extends Controller
         return Resp::success(['message' => 'Category deleted successfully']);
     }
 
-
     public function profileUpdateMedia($id, Request $request)
     {
-        // Validate the input
-        $validator = Validator::make($request->all(), [
-            'gallery' => 'array',
-            'gallery.*' => 'exists:media,id',
-            'private_gallery' => 'array',
-            'private_gallery.*' => 'exists:media,id',
-            'promo_video' => 'exists:media,id',
-            'description' => 'nullable|string',
-        ]);
+        try {
 
-        // Return validation errors if any
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
+            // Validate the input
+            $validator = Validator::make($request->all(), [
+                'gallery' => 'array',
+                'gallery.*' => 'exists:media,id',
+                'private_gallery' => 'array',
+                'private_gallery.*' => 'exists:media,id',
+                'promo_video' => 'exists:media,id',
+                'description' => 'nullable|string',
+            ]);
 
-        // Find the profile
-        $user = Profile::find($id);
-        if (!$user) {
-            return Resp::error(['message' => 'User not found']);
-        }
-
-        // Update gallery and private gallery
-        if ($request->has('gallery')) {
-            $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
-
-            Media::where('escort_id', $user->id)
-                ->where('type', 'gallery')
-                ->whereIn('id', $galleryIds)
-                ->update(['is_temp' => false]);
-
-            Media::where('escort_id', $user->id)
-                ->where('type', 'gallery')
-                ->whereNotIn('id', $galleryIds)
-                ->forceDelete();
-        }
-
-        if ($request->has('private_gallery')) {
-            $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
-
-            Media::where('escort_id', $user->id)
-                ->where('type', 'private_gallery')
-                ->whereIn('id', $privateGalleryIds)
-                ->update(['is_temp' => false]);
-
-            Media::where('escort_id', $user->id)
-                ->where('type', 'private_gallery')
-                ->whereNotIn('id', $privateGalleryIds)
-                ->forceDelete();
-        }
-
-        // Update promo video
-        if ($request->has('promo_video')) {
-            $promoVideoId = $request->input('promo_video');
-
-            Media::where('escort_id', $user->id)
-                ->where('type', 'promo_video')
-                ->where('id', $promoVideoId)
-                ->update(['is_temp' => false]);
-
-            Media::where('escort_id', $user->id)
-                ->where('type', 'promo_video')
-                ->where('id', '!=', $promoVideoId)
-                ->forceDelete();
-        }
-
-        // Update description
-        if ($request->has('description')) {
-            $profile = Profile::where('escort_id', $user->id)->first();
-            if ($profile) {
-                $profile->description = $request->input('description');
-                $profile->save();
+            if ($validator->fails()) {
+                return Resp::fieldErrors(['field_errors' => $validator->errors()]);
             }
-        }
 
-        // Check if all fields are present and update is_media
-        if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
-            $profile = Profile::where('escort_id', $user->id)->first();
-            if ($profile) {
-                $profile->is_media = 1;
-                $profile->save();
+            // Find the profile
+            $user = Profile::where('escort_id', $id)->first();
+            if (!$user) {
+                return Resp::error(['message' => 'User not found']);
             }
-        }
 
-        // Return success message
-        return Resp::success(['message' => 'Media updated successfully']);
+            // Update gallery and private gallery
+            if ($request->has('gallery')) {
+                $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
+
+                Media::where('escort_id', $user->id)
+                    ->where('type', 'gallery')
+                    ->whereIn('id', $galleryIds)
+                    ->update(['is_temp' => false]);
+
+                Media::where('escort_id', $user->id)
+                    ->where('type', 'gallery')
+                    ->whereNotIn('id', $galleryIds)
+                    ->forceDelete();
+            }
+
+            if ($request->has('private_gallery')) {
+                $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
+
+                Media::where('escort_id', $user->id)
+                    ->where('type', 'private_gallery')
+                    ->whereIn('id', $privateGalleryIds)
+                    ->update(['is_temp' => false]);
+
+                Media::where('escort_id', $user->id)
+                    ->where('type', 'private_gallery')
+                    ->whereNotIn('id', $privateGalleryIds)
+                    ->forceDelete();
+            }
+
+            // Update promo video
+            if ($request->has('promo_video')) {
+                $promoVideoId = $request->input('promo_video');
+
+                Media::where('escort_id', $user->id)
+                    ->where('type', 'promo_video')
+                    ->where('id', $promoVideoId)
+                    ->update(['is_temp' => false]);
+
+                Media::where('escort_id', $user->id)
+                    ->where('type', 'promo_video')
+                    ->where('id', '!=', $promoVideoId)
+                    ->forceDelete();
+            }
+
+            // Update description
+            if ($request->input('description')) {
+                $user->description = $request->input('description');
+                $user->save();
+            }
+
+            // Update is_media
+            if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
+                $user->is_media = 1;
+                $user->save();
+            }
+
+            $media = Media::where('escort_id', $id)->first();
+            if (!$media) {
+                return Resp::error(['message' => 'Media not found']);
+            }
+            $user->load('media');
+
+
+            return Resp::success(['message' => 'Media updated successfully', 'media' => $media, 'profile' => $user]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
+        }
     }
+
+
+
+
+    //     public function profileUpdateMedia($id, Request $request)
+    // {
+    //     // Validate the input
+    //     $validator = Validator::make($request->all(), [
+    //         'gallery' => 'array',
+    //         'gallery.*' => 'exists:media,id',
+    //         'private_gallery' => 'array',
+    //         'private_gallery.*' => 'exists:media,id',
+    //         'promo_video' => 'exists:media,id',
+    //         'description' => 'nullable|string',
+    //     ]);
+
+
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+
+    //     // Find the profile
+    //     $user = Profile::find($id);
+    //     if (!$user) {
+    //         return Resp::error(['message' => 'User not found']);
+    //     }
+
+    //     // Update gallery and private gallery
+    //     if ($request->has('gallery')) {
+    //         $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
+
+    //         Media::where('escort_id', $user->id)
+    //             ->where('type', 'gallery')
+    //             ->whereIn('id', $galleryIds)
+    //             ->update(['is_temp' => false]);
+
+    //         Media::where('escort_id', $user->id)
+    //             ->where('type', 'gallery')
+    //             ->whereNotIn('id', $galleryIds)
+    //             ->forceDelete();
+    //     }
+
+    //     if ($request->has('private_gallery')) {
+    //         $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
+
+    //         Media::where('escort_id', $user->id)
+    //             ->where('type', 'private_gallery')
+    //             ->whereIn('id', $privateGalleryIds)
+    //             ->update(['is_temp' => false]);
+
+    //         Media::where('escort_id', $user->id)
+    //             ->where('type', 'private_gallery')
+    //             ->whereNotIn('id', $privateGalleryIds)
+    //             ->forceDelete();
+    //     }
+
+    //     // Update promo video
+    //     if ($request->has('promo_video')) {
+    //         $promoVideoId = $request->input('promo_video');
+
+    //         Media::where('escort_id', $user->id)
+    //             ->where('type', 'promo_video')
+    //             ->where('id', $promoVideoId)
+    //             ->update(['is_temp' => false]);
+
+    //         Media::where('escort_id', $user->id)
+    //             ->where('type', 'promo_video')
+    //             ->where('id', '!=', $promoVideoId)
+    //             ->forceDelete();
+    //     }
+
+    //     // Update description
+    //     if ($request->input('description')) {
+    //         $profile = Profile::where('escort_id',$id)->first();
+    //         if ($profile) {
+    //             $profile->description = $request->input('description');
+    //             $profile->save();
+    //         }
+    //     }
+
+    //     // Check if all fields are present and update is_media
+    // // Check if all fields are present and update is_media
+    // if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
+    //     $profile = Profile::where('escort_id',$id)->first();
+    //     if ($profile) {
+    //         $profile->is_media = 1;
+    //         $profile->save();
+    //     }
+    // }
+
+    //     return Resp::success(['message' => 'Media updated successfully']);
+    // }
     public function hideProfile($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -198,16 +600,14 @@ class AdminController extends Controller
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
         $user = AuthUser::find($id);
-        if ($request->is_hidden) {
-            $user->is_hidden = $request->is_hidden;
-            $user->save();
+        $user->is_hidden = $request->is_hidden ? 1 : 0; // Update is_hidden to 1 if true, 0 if false
+        $user->save();
+        $profile = Profile::where('escort_id',$id)->first();
+        $profile->is_hidden = $request->is_hidden ? 1 : 0;
+        $profile->save();
 
-            return Resp::success(['message' => 'Profile hidden successfully']);
-        }
-
-        return Resp::success(['user' => $user], 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully');
+        return Resp::success(['message' => 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully']);
     }
-
 
     public function deleteProfile($id)
     {
@@ -229,9 +629,11 @@ class AdminController extends Controller
             $user->profile->delete();
             $user->delete();
 
-            EmailHelper::sendDynamicEmail('account_deleted', 
-            ['[CUSTOMER_NAME]' => $user->username, '[CUSTOMER_EMAIL]' => $user->email], 
-            $user->email);
+            EmailHelper::sendDynamicEmail(
+                'ts_your_profile_is_deleted',
+                ['[CUSTOMER_NAME]' => $user->username, '[CUSTOMER_EMAIL]' => $user->email],
+                $user->email
+            );
 
             return Resp::success(['message' => 'Profile deleted successfully']);
         }
@@ -251,6 +653,32 @@ class AdminController extends Controller
 
 
 
+    // public function resetEmail($id, Request $request)
+    // {
+        
+    //     $validator = Validator::make($request->all(), [
+    //         'email' => 'required|email|unique:users,email,' . $id,
+    //     ]);
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    //     $user = AuthUser::find($id);
+    //     $user->email = $request->email;
+    //     $user->save();
+    //     $template = EmailTemplates::where('type', 'ts_verify_your_new_email_address')->first();
+    //     if (!$template) {
+    //         return Resp::error(['message' => 'Email template not found']);
+    //     }
+    //     $templateSubject = $template->subject;
+    //     $templateBody = $template->content;
+    //     $recipientEmail = $user->email; 
+    //     $dynamicData = [
+    //         ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],
+    //          ['[VERIFY_EMAIL_URL]' => env('WEBAPP_URL') . "/account-verification?token=" . $user->verification_token],    
+    //     ];
+    //     return Resp::success(['message' => 'Email reset successfully']);
+    // }
+
     public function resetEmail($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -262,45 +690,87 @@ class AdminController extends Controller
         $user = AuthUser::find($id);
         $user->email = $request->email;
         $user->save();
-        return Resp::success(['message' => 'Email reset successfully']);
-    }
-
-    public function resetPassword($id, Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'old_password' => 'required|string',
-            'new_password' => 'required|string|min:8',
-            'confirm_password' => 'required|same:new_password',
-        ]);
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-        $user = AuthUser::find($id);
-        if (!$user) {
-            return Resp::error(['message' => 'User not found']);
-        }
-        $user->password = Hash::make($request->new_password);
-        $user->save();
-        $template = EmailTemplates::where('type', 'ts_new_password_notification')->first();
+        $template = EmailTemplates::where('type', 'ts_verify_your_new_email_address')->first();
         if (!$template) {
             return Resp::error(['message' => 'Email template not found']);
         }
-        $templateSubject = $template->subject;
-        $templateBody = $template->content;
-        $recipientEmail = $user->email; // You can pass this via API request
         $dynamicData = [
-            '[CUSTOMER_NAME]' => $user->username,
-            '[CUSTOMER_EMAIL]' => $user->email,
+            '[USER_LOGIN]' => $user->username,
+            '[USER_EMAIL]' => $user->email,
+            '[VERIFY_EMAIL_URL]' => env('WEBAPP_URL') . "/account-verification?token=" . $user->verification_token
         ];
-        $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
-        return Resp::success(['message' => 'Password reset successfully']);
+        Log::info($dynamicData);
+        $result = EmailHelper::sendDynamicEmail('ts_verify_your_new_email_address', $dynamicData, $user->email);
+        return Resp::success(['message' => 'Email reset successfully']);
     }
+
+    // public function resetPassword($id, Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'old_password' => 'required|string',
+    //         'new_password' => 'required|string|min:8',
+    //         'confirm_password' => 'required|same:new_password',
+    //     ]);
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    //     $user = AuthUser::find($id);
+    //     if (!$user) {
+    //         return Resp::error(['message' => 'User not found']);
+    //     }
+    //     $user->password = Hash::make($request->new_password);
+    //     $user->save();
+    //     $template = EmailTemplates::where('type', 'ts_new_password_notification')->first();
+    //     if (!$template) {
+    //         return Resp::error(['message' => 'Email template not found']);
+    //     }
+    //     $templateSubject = $template->subject;
+    //     $templateBody = $template->content;
+    //     $recipientEmail = $user->email; // You can pass this via API request
+    //     $dynamicData = [
+    //         ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],    
+    //     ];
+    //     $result = EmailHelper::sendDynamicEmail($dynamicData, $templateSubject, $templateBody, $recipientEmail);
+    //     sendEmail($user->email, 'ts_new_password_notification', 'New Password Notification', ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email]);
+    //     return Resp::success(['message' => 'Password reset successfully']);
+    // }
+
+    public function resetPassword($id, Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'old_password' => 'required|string',
+        'new_password' => 'required|string|min:8',
+        'confirm_password' => 'required|same:new_password',
+    ]);
+    if ($validator->fails()) {
+        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    }
+    $user = AuthUser::find($id);
+    if (!$user) {
+        return Resp::error(['message' => 'User not found']);
+    }
+    $user->password = Hash::make($request->new_password);
+    $user->save();
+    $template = EmailTemplates::where('type', 'ts_new_password_notification')->first();
+    if (!$template) {
+        return Resp::error(['message' => 'Email template not found']);
+    }
+    $templateSubject = $template->subject;
+    $templateBody = $template->content;
+    $recipientEmail = $user->email; // You can pass this via API request
+    $dynamicData = [
+        '[USER_LOGIN]' => $user->username,
+        '[USER_EMAIL]' => $user->email,
+    ];
+    $result = EmailHelper::sendDynamicEmail('ts_new_password_notification', $dynamicData, $user->email);
+    return Resp::success(['message' => 'Password reset successfully']);
+}
 
     public function profileMedia(Request $request)
     {
         $media = Media::query();
         if (!is_null($request->query('id'))) {
-            $media = $media->where('id', $request->query('id'));
+            $media = $media->where('escort_id', $request->query('id'));
         }
         $media = $media->get();
 
@@ -317,7 +787,7 @@ class AdminController extends Controller
         ]);
     }
 
-   
+
     public function sendEmail(Request $request)
     {
         // Dynamic data (e.g., user name and email)
@@ -325,7 +795,7 @@ class AdminController extends Controller
             '{{name}}' => 'John Doe',
             '{{email}}' => 'john@example.com',
         ];
-        $template = EmailTemplate::where('type', 'new_order')->first();
+        $template = EmailTemplate::where('type', 'ts_new_order_notification')->first();
         if (!$template) {
             return Resp::error(['message' => 'Email template not found']);
         }
@@ -343,17 +813,38 @@ class AdminController extends Controller
         $id = $request->query('id');
 
         // Fetch the settings with type 'home_parallax', limit to 2 settings if necessary
-        $settings = Setting::where('type', 'home_parallax')
-            ->when($id, fn($query) => $query->where('id', $id))
-            ->take(2)  // Get 2 settings
-            ->get();
+        //$settings = Setting::where('type', 'home_parallax')
+        //    ->when($id, fn($query) => $query->where('id', $id))
+        //    ->take(2)  // Get 2 settings
+        //    ->get();
+        $settings_mobile = Setting::where('key', 'mobile_parallax')->first();
+        if (!$settings_mobile) {
+            return Resp::error(['message' => 'Parallax image not found']);
+        }
+        $settings_desktop = Setting::where('key', 'desktop_parallax')->first();
+        if (!$settings_desktop) {
+            return Resp::error(['message' => 'Parallax image not found']);
+        }
+
+        $mobile_image = Media::find($settings_mobile->value);
+        if (!$mobile_image) {
+            return Resp::error(['message' => 'Parallax image not found']);
+        }
+        $desktop_image = Media::find($settings_desktop->value);
+        if (!$desktop_image) {
+            return Resp::error(['message' => 'Parallax image not found']);
+        }
+        $settings = [
+            'mobile_image' => $mobile_image,
+            'desktop_image' => $desktop_image
+        ];
 
         // Fetch specific media for value_mobile and value_desktop
-        $settings->each(function ($setting) {
-            // Load the actual media for mobile and desktop using their respective IDs
-            $setting->mobile_image = Media::find($setting->value_mobile);
-            $setting->desktop_image = Media::find($setting->value_desktop);
-        });
+        //$settings->each(function ($setting) {
+        // Load the actual media for mobile and desktop using their respective IDs
+        //    $setting->mobile_image = Media::find($setting->value_mobile);
+        //    $setting->desktop_image = Media::find($setting->value_desktop);
+        //});
 
         return Resp::success(['settings' => $settings]);
     }
@@ -375,19 +866,26 @@ class AdminController extends Controller
         }
 
         // Fetch or create the Setting with type 'home_parallax'
-        $setting = Setting::where('type', 'home_parallax')->first();
-        if (!$setting) {
-            $setting = new Setting();
-            $setting->type = 'home_parallax';
+        $setting_mobile = Setting::where('key', 'mobile_parallax')->first();
+        $setting_desktop = Setting::where('key', 'desktop_parallax')->first();
+        if (!$setting_mobile) {
+            $setting_mobile = new Setting();
+            $setting_mobile->key = 'mobile_parallax';
         }
-        $setting->value_mobile = $request->value_mobile;  // Mobile image media ID
-        $setting->value_desktop = $request->value_desktop;  // Desktop image media ID
-        $setting->save();
-        $mobileMedia = Media::find($setting->value_mobile);  // Mobile media object
-        $desktopMedia = Media::find($setting->value_desktop);  // Desktop media object
+        if (!$setting_desktop) {
+            $setting_desktop = new Setting();
+            $setting_desktop->key = 'desktop_parallax';
+        }
+        $setting_mobile->value = $request->value_mobile;  // Mobile image media ID
+        $setting_desktop->value = $request->value_desktop;  // Desktop image media ID
+        $setting_mobile->save();
+        $setting_desktop->save();
+        $mobileMedia = Media::find($setting_mobile->value);  // Mobile media object
+        $desktopMedia = Media::find($setting_desktop->value);  // Desktop media object
         return Resp::success([
             'message' => 'Parallax images updated successfully',
-            'setting' => $setting,
+            'setting_mobile' => $setting_mobile,
+            'setting_desktop' => $setting_desktop,
             'mobile_image' => $mobileMedia,  // Return mobile image details
             'desktop_image' => $desktopMedia,  // Return desktop image details
         ]);
@@ -463,17 +961,46 @@ class AdminController extends Controller
             'title' => 'required|string',
             'description' => 'required|string',
             'status' => 'required|integer|in:1,0',
-            'featured_image' => 'required|integer|exists:media,id',
+            'featured_image' => 'integer|exists:media,id',
         ]);
+
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
+
+        // Create the page without the slug for now
         $page = Pages::create($validator->validated());
+
+        // Generate the initial slug from the title
+        $slug = Str::slug($request->title);
+
+        // Check if the slug already exists and modify it to be unique
+        $originalSlug = $slug;
+        $counter = 1;
+
+        // Keep checking for existence of the slug, appending a number until it's unique
+        while (Pages::where('slug', $slug)->exists()) {
+            // Increment the counter and append to the original slug
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+
+        // Assign the unique slug to the page
+        $page->slug = $slug;
+
+        // Associate the featured image
         $page->media()->associate(Media::find($request->input('featured_image')));
+
+        // Save the page
         $page->save();
-        $page->load('media'); // Load the related Media model
+
+        // Load related media
+        $page->load('media');
+
         return Resp::success(['message' => 'Page created successfully', 'page' => $page]);
     }
+
+
 
 
     public function media(Request $request)
@@ -585,7 +1112,7 @@ class AdminController extends Controller
             $emailTemplates = EmailTemplates::all();
             return Resp::success([
                 'emailTemplates' =>
-                    $emailTemplates
+                $emailTemplates
             ]);
         }
     }
@@ -735,6 +1262,10 @@ class AdminController extends Controller
 
     public function addComment($id, Request $request)
     {
+        $currentUser = auth()->user();
+        if (!$currentUser) {
+            return Resp::error(['Error' => 'Unauthorized'], 'Please login to add comment', 401);
+        }
         $validator = Validator::make($request->all(), [
             'comment' => 'required|string',
             'parent_comment_id' => 'nullable|exists:comment,id'
@@ -951,10 +1482,8 @@ class AdminController extends Controller
 
         if ($request->action == 1) {
             $verify->verified_status = 1;
-
         } elseif ($request->action == 0) {
             $verify->verified_status = 4;
-
         }
         //$verify->escort()->update(['verified_status' => $verify->verified_status]);
         $verify->save();
@@ -974,6 +1503,10 @@ class AdminController extends Controller
 
     public function postComment(Request $request)
     {
+        $currentUser = auth()->user();
+        if (!$currentUser) {
+            return Resp::error(['Error' => 'Unauthorized'], 'Please login to continue', 401);
+        }
         $validator = Validator::make($request->all(), [
             'comment' => 'required|string',
             'forum_id' => 'required|exists:forum,id',
@@ -1001,171 +1534,121 @@ class AdminController extends Controller
         }
     }
 
-//    public function getVarifiacationList(Request $request)
-//    {
-//        try {
-//            // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
-//            $query = ModelsVerify::with(['escort', 'user']);
-   
-//            // Filter by verified status if provided
-//            if ($request->has('verified_status')) {
-//                $verifiedStatus = explode(',', $request->query('verified_status'));
-//                $query->whereIn('verified_status', $verifiedStatus);
-//            } else {
-//                // Default to verified statuses 1 and 4 if not provided
-//                $query->whereIn('verified_status', [1,2,3,4]);
-//            }
-   
-//            // Filter by escort name if 's' parameter is provided
-//            if (!is_null($request->query('s'))) {
-//                $query->whereHas('escort', function ($q) use ($request) {
-//                    $q->where('name', 'like', '%' . $request->query('s') . '%');
-//                });
-//            }
-   
-//            // Order by created_at in descending order
-//            $query->orderBy('created_at', 'desc');
-   
-//            // Pagination parameters
-//            $perPage = (int)$request->query('per_page', 10);
-//            $page = (int)$request->query('page', 1);
-//            $offset = ($page - 1) * $perPage;
-   
-//            // Fetch results with pagination
-//            $verifications = $query->offset($offset)->limit($perPage)->get();
-   
-//            // Calculate total results and total pages
-//            $totalResults = $query->count();
-//            $totalPages = ceil($totalResults / $perPage);
-   
-//            // Build pagination response
-//            $pagination = [
-//                'total_results' => $totalResults,
-//                'total_pages' => $totalPages,
-//                'page' => $page,
-//                'page_size' => $perPage,
-//            ];
-   
-//            // Return the successful response with verification list and pagination
-//            return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
-   
-//        } catch (\Exception $e) {
-//            // Return an error if something goes wrong
-//            return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
-//        }
-//    }
+    //    public function getVarifiacationList(Request $request)
+    //    {
+    //        try {
+    //            // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
+    //            $query = ModelsVerify::with(['escort', 'user']);
 
-public function getVarifiacationList(Request $request)
-{
-    try {
-        // Initialize the query on ModelsVerify and eager load related 'escort' and 'user'
-        $query = ModelsVerify::with(['escort', 'user']);
+    //            // Filter by verified status if provided
+    //            if ($request->has('verified_status')) {
+    //                $verifiedStatus = explode(',', $request->query('verified_status'));
+    //                $query->whereIn('verified_status', $verifiedStatus);
+    //            } else {
+    //                // Default to verified statuses 1 and 4 if not provided
+    //                $query->whereIn('verified_status', [1,2,3,4]);
+    //            }
 
-        // Filter by verified status if provided
-        if ($request->has('verified_status')) {
-            $verifiedStatus = explode(',', $request->query('verified_status'));
-            $query->whereIn('verified_status', $verifiedStatus);
-        } else {
-            // Default to verified statuses 1 and 4 if not provided
-            $query->whereIn('verified_status', [1, 2, 3, 4]);
+    //            // Filter by escort name if 's' parameter is provided
+    //            if (!is_null($request->query('s'))) {
+    //                $query->whereHas('escort', function ($q) use ($request) {
+    //                    $q->where('name', 'like', '%' . $request->query('s') . '%');
+    //                });
+    //            }
+
+    //            // Order by created_at in descending order
+    //            $query->orderBy('created_at', 'desc');
+
+    //            // Pagination parameters
+    //            $perPage = (int)$request->query('per_page', 10);
+    //            $page = (int)$request->query('page', 1);
+    //            $offset = ($page - 1) * $perPage;
+
+    //            // Fetch results with pagination
+    //            $verifications = $query->offset($offset)->limit($perPage)->get();
+
+    //            // Calculate total results and total pages
+    //            $totalResults = $query->count();
+    //            $totalPages = ceil($totalResults / $perPage);
+
+    //            // Build pagination response
+    //            $pagination = [
+    //                'total_results' => $totalResults,
+    //                'total_pages' => $totalPages,
+    //                'page' => $page,
+    //                'page_size' => $perPage,
+    //            ];
+
+    //            // Return the successful response with verification list and pagination
+    //            return Resp::success(['verifications' => $verifications, 'pagination' => $pagination]);
+
+    //        } catch (\Exception $e) {
+    //            // Return an error if something goes wrong
+    //            return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
+    //        }
+    //    }
+
+
+
+    public function createForum(Request $request)
+    {
+
+        $currentUser = auth()->user();
+        if (!$currentUser) {
+            return Resp::error(['Error' => 'Unauthenticated'], 'Please login to continue', 401);
         }
-
-        // Filter by escort name if 's' parameter is provided
-        if (!is_null($request->query('s'))) {
-            $query->whereHas('escort', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->query('s') . '%');
-            });
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string',
+            'category' => 'required|string',
+            'description' => 'required|string',
+            'status' => 'required|integer|in:1,2,3',
+            'tags' => 'required|string',
+            'region' => 'required|string',
+            'category_slug' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return Resp::error(['message' => $validator->errors()]);
         }
-
-        // Order by created_at in descending order
-        $query->orderBy('created_at', 'desc');
-
-        // Pagination parameters
-        $perPage = (int)$request->query('per_page', 10);
-
-        // Use the paginate method to get paginated results
-        $verifications = $query->paginate($perPage);
-
-        // Adjust the total_results based on the actual number of records for the current page
-        $totalResults = $verifications->count();
-
-        // Build pagination response
-        $pagination = [
-            'total_results' => $totalResults, // Show the actual number of records on this page
-            'total_pages' => $verifications->lastPage(),
-            'page' => $verifications->currentPage(),
-            'page_size' => $verifications->perPage(),
-        ];
-
-        // Return the successful response with verification list and pagination
-        return Resp::success(['verifications' => $verifications->items(), 'pagination' => $pagination]);
-
-    } catch (\Exception $e) {
-        // Return an error if something goes wrong
-        return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
+        $slug = Str::slug($request->input('title'), '-');
+        $slug = $this->genrateForumSlug($slug);
+        $forumData = $validator->validated();
+        $forumData['slug'] = $slug;
+        $forumData['author_id'] = auth()->user()->id;
+        $forum = new Forum();
+        $forum->title = $forumData['title'];
+        $forum->category = $forumData['category'];
+        $forum->description = $forumData['description'];
+        $forum->status = $forumData['status'];
+        $forum->tags = $forumData['tags'];
+        $forum->region = $forumData['region'];
+        $forum->slug = $forumData['slug'];
+        $forum->author_id = $forumData['author_id'];
+        $forum->category_slug = $request->input('category_slug');
+        $category_data = ForumCategory::where('slug', $request->input('category_slug'))->first();
+        if (!($category_data)) {
+            return Resp::error(['message' => 'Category not found']);
+        }
+        $forum->category_id = $category_data->id;
+        $forum->save();
+        $category_data->increment('count');
+        return Resp::success([
+            'message' => 'Forum created successfully',
+            'forum' => $forum,
+            'author' => $forum->getAuthor,
+            'slug' => $forum->slug
+        ]);
     }
-}
 
-
-
-
-
-   
-   
-   public function createForum(Request $request)
-   {
-       $validator = Validator::make($request->all(), [
-           'title' => 'required|string',
-           'category' => 'required|string',
-           'description' => 'required|string',
-           'status' => 'required|integer|in:1,2,3',
-           'tags' => 'required|string',
-           'region' => 'required|string',
-           'category_slug' => 'required',
-       ]);
-       if ($validator->fails()) {
-           return Resp::error(['message' => $validator->errors()]);
-       }
-       $slug = Str::slug($request->input('title'), '-');
-       $slug = $this->genrateForumSlug($slug);
-       $forumData = $validator->validated();
-       $forumData['slug'] = $slug;
-       $forumData['author_id'] = auth()->user()->id; 
-       $forum = new Forum();
-       $forum->title = $forumData['title'];
-       $forum->category = $forumData['category'];
-       $forum->description = $forumData['description'];
-       $forum->status = $forumData['status'];
-       $forum->tags = $forumData['tags'];
-       $forum->region = $forumData['region'];
-       $forum->slug = $forumData['slug'];
-       $forum->author_id = $forumData['author_id'];
-       $forum->category_slug = $request->input('category_slug');
-       $category_data=ForumCategory::where('slug', $request->input('category_slug'))->first();
-       if(!($category_data)) {
-        return Resp::error(['message'=> 'Category not found']);
-       }
-       $forum->category_id=$category_data->id;
-       $forum->save();
-       $category_data->increment('count');
-       return Resp::success([
-           'message' => 'Forum created successfully',
-           'forum' => $forum,
-           'author' => $forum->getAuthor,
-           'slug' => $forum->slug
-       ]);
-   }
-   
-   private function genrateForumSlug($slug)
-   {
-       $baseSlug = $slug;
-       $counter = 1;
-       while (Forum::where('slug', $slug)->exists()) {
-           $slug = $baseSlug . '-' . $counter;
-           $counter++;
-       }
-       return $slug;
-   }
+    private function genrateForumSlug($slug)
+    {
+        $baseSlug = $slug;
+        $counter = 1;
+        while (Forum::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+        return $slug;
+    }
 
     public function userProfile($id, Request $request)
     {
@@ -1229,7 +1712,7 @@ public function getVarifiacationList(Request $request)
             'firstname' => $request->first_name,
             'lastname' => $request->last_name,
             'email_verified' => 1, // Add this line
-        ]);//->load('profile'); // eager load the profile relationship
+        ]); //->load('profile'); // eager load the profile relationship
 
         $user_id = $user->id;
         $escort = Profile::create([
@@ -1254,7 +1737,7 @@ public function getVarifiacationList(Request $request)
         $blog->delete();
         return Resp::success(['message' => 'Blog deleted successfully']);
     }
-    public function getBlog($id, )
+    public function getBlog($id,)
     {
         $blog = Blog::with('media')->find($id);
         return Resp::success(['blog' => $blog]);
@@ -1399,8 +1882,6 @@ public function getVarifiacationList(Request $request)
         return $slug;
     }
 
-
-
     public function spotlightMedia(Request $request)
     {
 
@@ -1413,13 +1894,11 @@ public function getVarifiacationList(Request $request)
 
     public function updatePlanDetails($plan_code, Request $request)
     {
-
         $plan = Plan::where('code', $plan_code)->first();
         if (!$plan) {
 
             return Resp::error(['message' => 'Plan not found']);
         }
-
         $validator = Validator::make($request->all(), [
             'price' => 'required|numeric',
             'description' => 'nullable|string',
@@ -1428,7 +1907,6 @@ public function getVarifiacationList(Request $request)
             'desktop_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000',
             'mobile_placeholder' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000000'
         ]);
-
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
@@ -1653,6 +2131,8 @@ public function getVarifiacationList(Request $request)
         return Resp::success(['details' => $updated_plan]);
     }
 
+
+
     public function getPlan($id, Request $request)
     {
 
@@ -1671,28 +2151,20 @@ public function getVarifiacationList(Request $request)
         if ($admin->user_type != 3) {
             return Resp::error(['Unauthorized user is not an admin']);
         }
-
         $request_data = $request->all();
-
         $validator = Validator::make($request->all(), $profile->rules());
-
         if ($validator->fails()) {
             return Resp::error(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
-
-
         $user_id = $id;
         $user_exists = AuthUser::find($user_id);
         if (!$user_exists) {
             return Resp::error(['Profile not found']);
         }
-
         $profile = AuthUser::find($user_id)->profile;
-
         if (!$profile) {
             return Response::json(['error' => 'Profile not found'], 404);
         }
-
         $city_id = $request->input('city_id');
         $city_exists = Location::where('id', $city_id)->where('type', 'city')->first();
 
@@ -1726,6 +2198,7 @@ public function getVarifiacationList(Request $request)
             'date_of_birth' => $request->input('date_of_birth'),
             'orientation' => $request->input('orientation'),
             'ethnicity' => $request->input('ethnicity'),
+            'nationality' => $request->input('nationality'),
             'height' => $request->input('height'),
             'weight' => $request->input('weight'),
             'hair' => $request->input('hair'),
@@ -1760,6 +2233,12 @@ public function getVarifiacationList(Request $request)
             'allow_whatsapp' => $allow_whatsapp
         ]);
         if (!$updated) {
+            return Resp::error(['error' => 'Failed to update profile'], 500);
+        }
+        if ($updated) {
+            $profile->is_profile = 1;
+            $profile->save();
+        } else {
             return Resp::error(['error' => 'Failed to update profile'], 500);
         }
         // Find the updated escort profile
@@ -1808,7 +2287,7 @@ public function getVarifiacationList(Request $request)
 
         if ($validator->fails()) {
 
-            return Response::json(['error' => $validator->errors()], );
+            return Response::json(['error' => $validator->errors()],);
         }
 
 
@@ -1846,6 +2325,7 @@ public function getVarifiacationList(Request $request)
                 }
             }
         }
+
         $profile_data = Profile::where('escort_id', $user_id)->first();
         $profile_data->rates;
         return Resp::success(['details' => $profile_data]);
@@ -1863,6 +2343,54 @@ public function getVarifiacationList(Request $request)
     }
 
 
+    // public function getUsers(Request $request)
+    // {
+    //     $user_type = $request->query('user_type');
+    //     $search = $request->query('s');
+    //     $page = $request->query('page', 1);
+    //     $perPage = $request->query('per_page', 10);
+
+    //     $users = AuthUser::query()
+    //         ->select('users.*') // Select all fields from users table
+    //         ->when($user_type, function ($query) use ($user_type) {
+    //             $userTypes = explode(',', $user_type); // Split the comma-separated string into an array
+    //             return $query->whereIn('users.user_type', $userTypes);
+    //         })
+    //         // Left join with subscriptions to preserve all users
+    //         ->leftJoin('subscriptions', 'users.id', '=', 'subscriptions.escort_id')
+    //         // Select subscription fields with distinct prefixes
+    //         ->selectRaw('subscriptions.id as subscription_id,
+    //                     subscriptions.status as subscription_status,
+    //                     subscriptions.plan_code,
+    //                     subscriptions.start_date,
+    //                     subscriptions.end_date')
+
+    //         ->orderBy('users.id', 'desc'); // Add this line to order results in descending order
+
+    //     // Add search filter
+    //     if ($search) {
+    //         $users->where(function ($query) use ($search) {
+    //             $query->where('email', 'like', '%' . $search . '%')
+    //                 ->orWhere('username', 'like', '%' . $search . '%');
+    //         });
+    //     }
+
+    //     // Pagination
+    //     $totalCount = $users->count();
+
+    //     $result = $users->offset(($page - 1) * $perPage)
+    //         ->limit($perPage)
+    //         ->get();
+
+    //     return Resp::success([
+    //         'list' => $result,
+    //         'total_count' => $totalCount,
+    //         'page' => (int) $page,
+    //         'per_page' => (int) $perPage
+    //     ]);
+    // }
+
+
     public function getUsers(Request $request)
     {
         $user_type = $request->query('user_type');
@@ -1872,6 +2400,7 @@ public function getVarifiacationList(Request $request)
 
         $users = AuthUser::query()
             ->select('users.*') // Select all fields from users table
+            ->where('user_type', '<>', 3) // Exclude user type 3
             ->when($user_type, function ($query) use ($user_type) {
                 $userTypes = explode(',', $user_type); // Split the comma-separated string into an array
                 return $query->whereIn('users.user_type', $userTypes);
@@ -1884,7 +2413,7 @@ public function getVarifiacationList(Request $request)
                         subscriptions.plan_code,
                         subscriptions.start_date,
                         subscriptions.end_date')
-
+            ->distinct('users.username') // <--- Added this line to show only one username
             ->orderBy('users.id', 'desc'); // Add this line to order results in descending order
 
         // Add search filter
@@ -1916,6 +2445,33 @@ public function getVarifiacationList(Request $request)
         return Resp::success(['list' => $users]);
     }
 
+    // public function getAdminUsers(Request $request)
+    // {
+    //     $perPage = $request->query('per_page', 10); // Default to 10 items per page
+    //     $page = $request->query('page', 1); // Default to page 1
+    //     $offset = ($page - 1) * $perPage;
+
+    //     $users = AuthUser::where('user_type', 3)
+    //         ->when($request->query('email'), function ($query, $email) {
+    //             $query->where('email', 'like', '%' . $email . '%');
+    //         })
+    //         ->when($request->query('username'), function ($query, $username) {
+    //             $query->where('username', 'like', '%' . $username . '%');
+    //         })
+    //         ->offset($offset)
+    //         ->limit($perPage)
+    //         ->get();
+
+    //     $totalCount = AuthUser::where('user_type', 3)->count();
+
+    //     return Resp::success([
+    //         'list' => $users,
+    //         'total_count' => $totalCount,
+    //         'page' => (int) $page,
+    //         'per_page' => $perPage
+    //     ]);
+    // }
+
     public function getAdminUsers(Request $request)
     {
         $perPage = $request->query('per_page', 10); // Default to 10 items per page
@@ -1929,11 +2485,12 @@ public function getVarifiacationList(Request $request)
             ->when($request->query('username'), function ($query, $username) {
                 $query->where('username', 'like', '%' . $username . '%');
             })
+            ->distinct('username') // Retrieve unique usernames
             ->offset($offset)
             ->limit($perPage)
             ->get();
 
-        $totalCount = AuthUser::where('user_type', 3)->count();
+        $totalCount = AuthUser::where('user_type', 3)->distinct('username')->count();
 
         return Resp::success([
             'list' => $users,
@@ -2025,20 +2582,17 @@ public function getVarifiacationList(Request $request)
 
     public function deleteMedia(Request $request)
     {
-
         try {
 
             $media = Media::find($request->input("media_id"));
             if (!$media) {
                 return Resp::error(['Media not found']);
-
             }
             $media->delete();
             return Resp::success(['message' => 'Media deleted successfully']);
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
         }
-
     }
 
 
@@ -2060,7 +2614,6 @@ public function getVarifiacationList(Request $request)
                 'is_temp' => 1
             ]);
             return Resp::success(['message' => 'Media added successfully', 'media' => $media]);
-
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
         }
@@ -2103,10 +2656,10 @@ public function getVarifiacationList(Request $request)
     public function fetchDroppableFields(Request $request)
     {
         try {
-            $data=BaseSettings::all();
-            if(!$data){
+            $data = BaseSettings::all();
+            if (!$data) {
                 return Resp::error([
-                    'error'=>'No dropdown fields found'
+                    'error' => 'No dropdown fields found'
                 ]);
             }
 
@@ -2118,8 +2671,9 @@ public function getVarifiacationList(Request $request)
     }
 
 
-    public function addDroppableField(Request $request,$id){
-        try{
+    public function addDroppableField(Request $request, $id)
+    {
+        try {
 
             $validator = Validator::make($request->all(), [
                 'key' => 'required',
@@ -2130,36 +2684,39 @@ public function getVarifiacationList(Request $request)
             if ($validator->fails()) {
                 return Resp::error([$validator->errors()]);
             }
-            
-            
-            $data=BaseSettings::find($id);
-            if(!$data){
+
+
+            $data = BaseSettings::find($id);
+            if (!$data) {
                 return Resp::error([
-                    'error'=>'No dropdown fields found'
+                    'error' => 'No dropdown fields found'
                 ]);
             }
-            $data->key=$data->key;
+            $data->key = $data->key;
             $values = $data->value ? $data->value : []; // Decode existing values or initialize as empty array
-            
-            $combined_values = array_merge($values, $request->value); // Merge the arrays
-            
+
+            //$combined_values = array_merge($values, $request->value); // Merge the arrays
+            // Merge the arrays and remove duplicates
+            $combined_values = array_unique(array_merge($values, $request->value)); // Remove duplicates
+
             $data->update([
                 'key' => $data->key,
                 'value' => $combined_values // Store the combined values back as JSON
             ]);
 
 
-            return Resp::success(['message' => 'Droppable field added successfully','data'=>$data]);
-        }catch(\Exception $e){
-            return Resp::error(['message'=>$e->getMessage()]);
+            return Resp::success(['message' => 'Droppable field added successfully', 'data' => $data]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
         }
     }
 
-    public function deleteDroppableField(Request $request,$id){
-        try{
+    public function deleteDroppableField(Request $request, $id)
+    {
+        try {
 
             $validator = Validator::make($request->all(), [
-                
+
                 'value' => 'required',
             ]);
 
@@ -2167,25 +2724,129 @@ public function getVarifiacationList(Request $request)
                 return Resp::error([$validator->errors()]);
             }
 
-            $data=BaseSettings::find($id);
-            if(!$data){
+            $data = BaseSettings::find($id);
+            if (!$data) {
                 return Resp::error([
-                    'error'=>'No dropdown fields found'
+                    'error' => 'No dropdown fields found'
                 ]);
             }
-            $data->key=$data->key;
+            $data->key = $data->key;
             $values = $data->value ? $data->value : []; // Decode existing values or initialize as empty array
             $combined_values = array_diff($values, $request->value); // Merge the arrays
+            $combined_values = array_values($combined_values);
             $data->update([
                 'key' => $data->key,
                 'value' => $combined_values // Store the combined values back as JSON
             ]);
-            return Resp::success(['message' => 'Droppable field deleted successfully','data'=>$data]);
+            return Resp::success(['message' => 'Droppable field deleted successfully', 'data' => $data]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
 
-        }catch(\Exception $e){
-            return Resp::error(['message'=>$e->getMessage()]);
+    public function hideSubscription(Request $request, $id)
+    {
+        try {
+
+            $subscription = Subscription::find($id);
+            if (!$subscription) {
+                return Resp::error([
+                    'error' => 'No subscription found'
+                ]);
+            }
+
+            $updatedData = $subscription->update([
+                'is_hidden' => 1
+            ]);
+            if (!$updatedData) {
+                return Resp::error([
+                    'error' => 'Failed to update subscription'
+                ]);
+            }
+
+            $data = Subscription::find($id);
+            return Resp::success(['message' => 'Subscription hidden successfully', 'data' => $data]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
+
+    public function showSubscription(Request $request, $id)
+    {
+        try {
+
+            $subscription = Subscription::find($id);
+            if (!$subscription) {
+                return Resp::error([
+                    'error' => 'No subscription found'
+                ]);
+            }
+
+            $updatedData = $subscription->update([
+                'is_hidden' => 0
+            ]);
+            if (!$updatedData) {
+                return Resp::error([
+                    'error' => 'Failed to update subscription'
+                ]);
+            }
+
+            $data = Subscription::find($id);
+            return Resp::success(['message' => 'Subscription hidden successfully', 'data' => $data]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
         }
     }
 
 
+    public function updateHomeImages(Request $request)
+    {
+        try {
+
+
+            $valiadtor = Validator::make($request->all(), [
+                'image_id' => 'required|exists:media,id',
+                'key' => 'required|exists:settings,key',
+            ]);
+            if ($valiadtor->fails()) {
+                return Resp::error([$valiadtor->errors()]);
+            }
+
+            $data = BaseSettings::with('media')->where('key', '=', $request->key)->first();
+            if (!$data) {
+                return Resp::error([
+                    'error' => 'No Advert Image found!'
+                ]);
+            }
+            $updatedData = $data->update([
+                'value' => $request->image_id
+            ]);
+
+            return Resp::success(['message' => 'Home page images updated successfully', 'data' => $data]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
+
+    public function getHomeImages(Request $request)
+    {
+        try {
+            $slug = $request->query('key');
+            if (!$slug) {
+                return Resp::error([
+                    'error' => 'No slug found!'
+                ]);
+            }
+            $data = BaseSettings::where('key', '=', $slug)->first();
+            $data->load('media');
+            if (!$data) {
+                return Resp::error([
+                    'error' => 'No Advert Images found!'
+                ]);
+            }
+            return Resp::success(['data' => $data]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
 }

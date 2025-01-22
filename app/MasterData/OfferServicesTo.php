@@ -21,6 +21,10 @@ class OfferServicesTo extends Master
         "MW"=>[
             'label' => 'MW',
             'value' => 'MW'
+        ],
+        "MF"=>[
+            'label' => 'MF',
+            'value' => 'MF'
         ]
         
     ];
