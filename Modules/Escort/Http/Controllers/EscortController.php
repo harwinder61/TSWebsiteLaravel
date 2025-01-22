@@ -130,6 +130,10 @@ class EscortController extends Controller
                 $profile = $user->profile;
                 $profile->verified_status = 3;
                 $verify = Verify::where('escort_id', $user->id)->first();
+                if(!$verify){
+                    $verify = new Verify();
+                    $verify->escort_id = $user->id;
+                }
                 $verify->verified_status = 3;
                 $verify->save();
                 $profile->save();
