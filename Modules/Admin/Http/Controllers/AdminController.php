@@ -60,7 +60,7 @@ class AdminController extends Controller
         $orders = Orders::query();
         
         // Eager load relationships with specific columns
-        $orders->with(['escort:id,username,email', 'plan:code,title', 'subscription' => function ($query) {
+        $orders->with(['escort:id,username,email', 'plan:code,title,price', 'subscription' => function ($query) {
             $query->select('id', 'order_id', 'plan_code', 'start_date', 'end_date', 'status');
         }]);
         
@@ -361,17 +361,17 @@ class AdminController extends Controller
     public function userDelete($id, Request $request)
     {
         $user = AuthUser::find($id);
-
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
         }
-        Subscription::where('escort_id', $id)->delete();
-        Orders::where('escort_id', $id)->delete();
-        Profile::where('escort_id', $id)->delete();
-        Media::where('escort_id', $id)->delete();
-        ModelsVerify::where('escort_id', $id)->delete();
-        $user->delete();
-        return Resp::success(['message' => 'User deleted successfully']);
+        try {
+            Media::where('id', $id)->delete();
+            $user->delete();
+            return Resp::success(['message' => 'User deleted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error deleting user: ' . $e->getMessage());
+            return Resp::error(['message' => 'Error deleting user']);
+        }
     }
 
 
