@@ -371,8 +371,8 @@ class SubscriptionController extends Controller
 
         $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
         if ($byPlanOrder) {
-        //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-        // as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+            //     $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+            // as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
 
             $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
         as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
@@ -557,16 +557,16 @@ class SubscriptionController extends Controller
             if (!is_null($request->query('rate'))) {
                 $subscriptions->whereHas('escort.profile.rates', function ($query) use ($request) {
                     // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
-                    
-                    
+
+
                     // Check for a specific rate value
                     if ($request->query('specific_rate')) {
-                        $query->where('' . $request->query('rate_type') . '', "<=",$request->query('specific_rate'));
+                        $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
                     }
-                    
+
                     // Check for Incall or Outcall options
                     if ($request->query('incall') || $request->query('outcall')) {
-                        $query->where(function($q) use ($request) {
+                        $query->where(function ($q) use ($request) {
                             if ($request->query('incall')) {
                                 $q->orWhere('category', 'Incall');
                             }
@@ -1221,8 +1221,33 @@ class SubscriptionController extends Controller
                     ->where(function ($query) use ($location) {
                         $query->where('profile.city_id', $location->id)
                             ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
-                            
-                        });
+
+                    });
+
+
+                if (!is_null($request->query('rate'))) {
+                    $city_data->whereHas('escort.profile.rates', function ($query) use ($request) {
+                        // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
+
+
+                        // Check for a specific rate value
+                        if ($request->query('specific_rate')) {
+                            $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
+                        }
+
+                        // Check for Incall or Outcall options
+                        if ($request->query('incall') || $request->query('outcall')) {
+                            $query->where(function ($q) use ($request) {
+                                if ($request->query('incall')) {
+                                    $q->orWhere('category', 'Incall');
+                                }
+                                if ($request->query('outcall')) {
+                                    $q->orWhere('category', 'Outcall');
+                                }
+                            });
+                        }
+                    });
+                }
 
                 $city_data = $city_data->join(
                     \DB::raw($rawSubQuary),
@@ -1242,7 +1267,32 @@ class SubscriptionController extends Controller
                             ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$county->id]);
                     })->orWhereHas('extraLocations', function ($query) use ($county) {
                         $query->where('county_id', $county->id);
-                    }); 
+                    });
+
+
+                    if (!is_null($request->query('rate'))) {
+                        $county_data->whereHas('escort.profile.rates', function ($query) use ($request) {
+                            // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
+    
+    
+                            // Check for a specific rate value
+                            if ($request->query('specific_rate')) {
+                                $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
+                            }
+    
+                            // Check for Incall or Outcall options
+                            if ($request->query('incall') || $request->query('outcall')) {
+                                $query->where(function ($q) use ($request) {
+                                    if ($request->query('incall')) {
+                                        $q->orWhere('category', 'Incall');
+                                    }
+                                    if ($request->query('outcall')) {
+                                        $q->orWhere('category', 'Outcall');
+                                    }
+                                });
+                            }
+                        });
+                    }
 
                 $county_data = $county_data->join(
                     \DB::raw($rawSubQuary),
@@ -1263,6 +1313,32 @@ class SubscriptionController extends Controller
                     })->orWhereHas('extraLocations', function ($query) use ($region) {
                         $query->where('region_id', $region->id);
                     });
+
+
+                    if (!is_null($request->query('rate'))) {
+                        $region_data->whereHas('escort.profile.rates', function ($query) use ($request) {
+                            // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
+    
+    
+                            // Check for a specific rate value
+                            if ($request->query('specific_rate')) {
+                                $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
+                            }
+    
+                            // Check for Incall or Outcall options
+                            if ($request->query('incall') || $request->query('outcall')) {
+                                $query->where(function ($q) use ($request) {
+                                    if ($request->query('incall')) {
+                                        $q->orWhere('category', 'Incall');
+                                    }
+                                    if ($request->query('outcall')) {
+                                        $q->orWhere('category', 'Outcall');
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
 
                 $region_data = $region_data->join(
                     \DB::raw($rawSubQuary),
@@ -1320,6 +1396,31 @@ class SubscriptionController extends Controller
                     })
                 ;
 
+
+                if (!is_null($request->query('rate'))) {
+                    $county_data->whereHas('escort.profile.rates', function ($query) use ($request) {
+                        // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
+
+
+                        // Check for a specific rate value
+                        if ($request->query('specific_rate')) {
+                            $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
+                        }
+
+                        // Check for Incall or Outcall options
+                        if ($request->query('incall') || $request->query('outcall')) {
+                            $query->where(function ($q) use ($request) {
+                                if ($request->query('incall')) {
+                                    $q->orWhere('category', 'Incall');
+                                }
+                                if ($request->query('outcall')) {
+                                    $q->orWhere('category', 'Outcall');
+                                }
+                            });
+                        }
+                    });
+                }
+
                 $county_data = $county_data->join(
                     \DB::raw($rawSubQuary),
                     'subscriptions.id',
@@ -1340,6 +1441,30 @@ class SubscriptionController extends Controller
                     ->orWhereHas('extraLocations', function ($query) use ($region) {
                         $query->where('region_id', $region->id);
                     });
+
+                    if (!is_null($request->query('rate'))) {
+                        $region_data->whereHas('escort.profile.rates', function ($query) use ($request) {
+                            // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
+    
+    
+                            // Check for a specific rate value
+                            if ($request->query('specific_rate')) {
+                                $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
+                            }
+    
+                            // Check for Incall or Outcall options
+                            if ($request->query('incall') || $request->query('outcall')) {
+                                $query->where(function ($q) use ($request) {
+                                    if ($request->query('incall')) {
+                                        $q->orWhere('category', 'Incall');
+                                    }
+                                    if ($request->query('outcall')) {
+                                        $q->orWhere('category', 'Outcall');
+                                    }
+                                });
+                            }
+                        });
+                    }
 
                 $region_data = $region_data->join(
                     \DB::raw($rawSubQuary),
@@ -1383,6 +1508,31 @@ class SubscriptionController extends Controller
             ->orWhereHas('extraLocations', function ($query) use ($location) {
                 $query->where('region_id', $location->id);
             });
+
+
+            if (!is_null($request->query('rate'))) {
+                $region_data->whereHas('escort.profile.rates', function ($query) use ($request) {
+                    // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
+
+
+                    // Check for a specific rate value
+                    if ($request->query('specific_rate')) {
+                        $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
+                    }
+
+                    // Check for Incall or Outcall options
+                    if ($request->query('incall') || $request->query('outcall')) {
+                        $query->where(function ($q) use ($request) {
+                            if ($request->query('incall')) {
+                                $q->orWhere('category', 'Incall');
+                            }
+                            if ($request->query('outcall')) {
+                                $q->orWhere('category', 'Outcall');
+                            }
+                        });
+                    }
+                });
+            }
 
         $region_data = $region_data->join(
             \DB::raw($rawSubQuary),
