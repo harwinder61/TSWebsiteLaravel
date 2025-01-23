@@ -49,29 +49,69 @@ use App\Models\Media;
 use App\Models\BaseSettings;
 use Google\Service\Walletobjects\Pagination;
 use Modules\Escort\app\Models\Orders;
+use Modules\Admin\app\Models\EmailLog;
 
 
 
 class AdminController extends Controller
 {
+
+    public function emailLogs(Request $request) {
+        auth()->user(); // Ensure the user is authenticated
+    
+        // Start with the base query
+        $query = EmailLog::query();
+    
+        // Apply filters based on query parameters
+        if ($request->has('subject')) {
+            $query->where('subject', 'like', '%' . $request->input('subject') . '%');
+        }
+    
+        if ($request->has('to')) {
+            $query->where('to', $request->input('to'));
+        }
+    
+        if ($request->has('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+    
+        if ($request->has('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+    
+        // Get the filtered results with pagination
+        $emailLogs = $query->orderBy('created_at', 'desc')->paginate(10); // Get 10 records per page
+    
+        return Resp::success([
+            'emailLogs' => $emailLogs->items(), // Get the current page items
+            'pagination' => [
+                'total_results' => $emailLogs->total(),
+                'total_pages' => $emailLogs->lastPage(),
+                'current_page' => $emailLogs->currentPage(),
+                'page_size' => $emailLogs->perPage(),
+            ]
+        ]);
+    }
+
+
     public function getOrders(Request $request)
     {
         // Start with a query builder
         $orders = Orders::query();
-        
+
         // Eager load relationships with specific columns
         $orders->with(['escort:id,username,email', 'plan:code,title,price', 'subscription' => function ($query) {
             $query->select('id', 'order_id', 'plan_code', 'start_date', 'end_date', 'status');
         }]);
-        
+
         // Apply search filter on escort username
-        $s = $request->query('s');  
+        $s = $request->query('s');
         if (!is_null($s)) {
             $orders->whereHas('escort', function ($query) use ($s) {
                 $query->where('username', 'like', '%' . $s . '%');
             });
         }
-        
+
         // Handle 'status' filtering
         $status = $request->input('status') ?? $request->query('status'); // Accept status from both POST and GET
         if (!is_null($status)) {
@@ -82,26 +122,26 @@ class AdminController extends Controller
                 $orders->where('payment_status', 'pending');
             }
         }
-        
+
         // Handle pagination
         $perPage = (int)($request->input('per_page') ?? $request->query('per_page', 10)); // Accept per_page from both POST and GET
         $page = (int)($request->input('page') ?? $request->query('page')); // Accept page from both POST and GET
-        
+
         if (is_null($page)) {
             $perPage = 1000000; // Set per_page to a very large number to disable pagination
             $page = 1;
         } else {
             $page = (int)$page;
         }
-        
+
         // Get total results and calculate total pages
         $totalResults = $orders->count();
         $totalPages = ceil($totalResults / $perPage);
         $offset = ($page - 1) * $perPage;
-        
+
         // Fetch orders with pagination
         $orders = $orders->orderBy('id', 'desc')->skip($offset)->take($perPage)->get();
-        
+
         return Resp::success([
             'orders' => $orders,
             'pagination' => [
@@ -112,8 +152,8 @@ class AdminController extends Controller
             ]
         ]);
     }
-    
-    
+
+
 
     public function addLocation(Request $request)
     {
@@ -346,7 +386,7 @@ class AdminController extends Controller
     }
 
 
-    
+
 
 
     public function getSinglePage(Request $request)
@@ -602,7 +642,7 @@ class AdminController extends Controller
         $user = AuthUser::find($id);
         $user->is_hidden = $request->is_hidden ? 1 : 0; // Update is_hidden to 1 if true, 0 if false
         $user->save();
-        $profile = Profile::where('escort_id',$id)->first();
+        $profile = Profile::where('escort_id', $id)->first();
         $profile->is_hidden = $request->is_hidden ? 1 : 0;
         $profile->save();
 
@@ -655,7 +695,7 @@ class AdminController extends Controller
 
     // public function resetEmail($id, Request $request)
     // {
-        
+
     //     $validator = Validator::make($request->all(), [
     //         'email' => 'required|email|unique:users,email,' . $id,
     //     ]);
@@ -736,35 +776,35 @@ class AdminController extends Controller
     // }
 
     public function resetPassword($id, Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'old_password' => 'required|string',
-        'new_password' => 'required|string|min:8',
-        'confirm_password' => 'required|same:new_password',
-    ]);
-    if ($validator->fails()) {
-        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    {
+        $validator = Validator::make($request->all(), [
+            'old_password' => 'required|string',
+            'new_password' => 'required|string|min:8',
+            'confirm_password' => 'required|same:new_password',
+        ]);
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $user = AuthUser::find($id);
+        if (!$user) {
+            return Resp::error(['message' => 'User not found']);
+        }
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+        $template = EmailTemplates::where('type', 'ts_new_password_notification')->first();
+        if (!$template) {
+            return Resp::error(['message' => 'Email template not found']);
+        }
+        $templateSubject = $template->subject;
+        $templateBody = $template->content;
+        $recipientEmail = $user->email; // You can pass this via API request
+        $dynamicData = [
+            '[USER_LOGIN]' => $user->username,
+            '[USER_EMAIL]' => $user->email,
+        ];
+        $result = EmailHelper::sendDynamicEmail('ts_new_password_notification', $dynamicData, $user->email);
+        return Resp::success(['message' => 'Password reset successfully']);
     }
-    $user = AuthUser::find($id);
-    if (!$user) {
-        return Resp::error(['message' => 'User not found']);
-    }
-    $user->password = Hash::make($request->new_password);
-    $user->save();
-    $template = EmailTemplates::where('type', 'ts_new_password_notification')->first();
-    if (!$template) {
-        return Resp::error(['message' => 'Email template not found']);
-    }
-    $templateSubject = $template->subject;
-    $templateBody = $template->content;
-    $recipientEmail = $user->email; // You can pass this via API request
-    $dynamicData = [
-        '[USER_LOGIN]' => $user->username,
-        '[USER_EMAIL]' => $user->email,
-    ];
-    $result = EmailHelper::sendDynamicEmail('ts_new_password_notification', $dynamicData, $user->email);
-    return Resp::success(['message' => 'Password reset successfully']);
-}
 
     public function profileMedia(Request $request)
     {

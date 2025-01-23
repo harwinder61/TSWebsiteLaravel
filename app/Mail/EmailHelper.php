@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Log;
 use Modules\Admin\app\Models\EmailTemplates;
 use App\Models\User;
 use Carbon\Carbon;
-
+use Illuminate\Http\Request;    
+use Modules\Admin\app\Models\EmailLog;
 
 class EmailHelper
 {
@@ -53,9 +54,19 @@ class EmailHelper
         $subject = str_replace(array_keys($dynamicData), array_values($dynamicData), $emailTemplate->subject);
         $body = str_replace(array_keys($dynamicData), array_values($dynamicData), $emailTemplate->content);
         
+        $user = User::where('email', $recipientEmail)->first();
+        
     
         // Send the email to the recipient
         //Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
+        Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
+
+        EmailLog::create([
+            'subject' => $subject,
+            'message' => $body,
+            'to' => $recipientEmail
+        ]);
+       
     
         return "Email sent successfully!";
     }
