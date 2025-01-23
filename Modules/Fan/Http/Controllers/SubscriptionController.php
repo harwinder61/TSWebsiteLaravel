@@ -783,6 +783,7 @@ class SubscriptionController extends Controller
 
 
 
+    //function for getting adverts list on dashboard
     public function getAdvertLists(Request $request)
     {
         try {
@@ -877,6 +878,10 @@ class SubscriptionController extends Controller
                 $subscriptions->whereHas('escort.profile', function ($query) use ($request) {
                     $query->where('orientation', $request->query('orientation'));
                 });
+            }
+
+            if (!is_null($request->query('end_date'))) {
+                $subscriptions->where('end_date',$request->query('end_date'));
             }
 
 
@@ -1249,6 +1254,23 @@ class SubscriptionController extends Controller
                     });
                 }
 
+                if (!is_null($request->query('ethnicity'))) {
+                    $city_data->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('ethnicity', $request->query('ethnicity'));
+                    });
+                }
+    
+                if (!is_null($request->query('cock_size'))) {
+                    $city_data->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('cock_size', $request->query('cock_size'));
+                    });
+                }
+                if (!is_null($request->query('orientation'))) {
+                    $city_data->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('orientation', $request->query('orientation'));
+                    });
+                }
+
                 $city_data = $city_data->join(
                     \DB::raw($rawSubQuary),
                     'subscriptions.id',
@@ -1294,6 +1316,23 @@ class SubscriptionController extends Controller
                         });
                     }
 
+                    if (!is_null($request->query('ethnicity'))) {
+                        $county_data->whereHas('escort.profile', function ($query) use ($request) {
+                            $query->where('ethnicity', $request->query('ethnicity'));
+                        });
+                    }
+        
+                    if (!is_null($request->query('cock_size'))) {
+                        $county_data->whereHas('escort.profile', function ($query) use ($request) {
+                            $query->where('cock_size', $request->query('cock_size'));
+                        });
+                    }
+                    if (!is_null($request->query('orientation'))) {
+                        $county_data->whereHas('escort.profile', function ($query) use ($request) {
+                            $query->where('orientation', $request->query('orientation'));
+                        });
+                    }
+
                 $county_data = $county_data->join(
                     \DB::raw($rawSubQuary),
                     'subscriptions.id',
@@ -1336,6 +1375,24 @@ class SubscriptionController extends Controller
                                     }
                                 });
                             }
+                        });
+                    }
+
+
+                    if (!is_null($request->query('ethnicity'))) {
+                        $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                            $query->where('ethnicity', $request->query('ethnicity'));
+                        });
+                    }
+        
+                    if (!is_null($request->query('cock_size'))) {
+                        $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                            $query->where('cock_size', $request->query('cock_size'));
+                        });
+                    }
+                    if (!is_null($request->query('orientation'))) {
+                        $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                            $query->where('orientation', $request->query('orientation'));
                         });
                     }
                     
@@ -1421,6 +1478,23 @@ class SubscriptionController extends Controller
                     });
                 }
 
+                if (!is_null($request->query('ethnicity'))) {
+                    $county_data->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('ethnicity', $request->query('ethnicity'));
+                    });
+                }
+    
+                if (!is_null($request->query('cock_size'))) {
+                    $county_data->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('cock_size', $request->query('cock_size'));
+                    });
+                }
+                if (!is_null($request->query('orientation'))) {
+                    $county_data->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('orientation', $request->query('orientation'));
+                    });
+                }
+
                 $county_data = $county_data->join(
                     \DB::raw($rawSubQuary),
                     'subscriptions.id',
@@ -1466,6 +1540,23 @@ class SubscriptionController extends Controller
                         });
                     }
 
+                    if (!is_null($request->query('ethnicity'))) {
+                        $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                            $query->where('ethnicity', $request->query('ethnicity'));
+                        });
+                    }
+        
+                    if (!is_null($request->query('cock_size'))) {
+                        $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                            $query->where('cock_size', $request->query('cock_size'));
+                        });
+                    }
+                    if (!is_null($request->query('orientation'))) {
+                        $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                            $query->where('orientation', $request->query('orientation'));
+                        });
+                    }
+
                 $region_data = $region_data->join(
                     \DB::raw($rawSubQuary),
                     'subscriptions.id',
@@ -1485,7 +1576,7 @@ class SubscriptionController extends Controller
 
                 if ($county_in_extra_location) {
 
-                    $region_data->subscription_count += $county_data->subscription_count;
+                    // $region_data->subscription_count += $county_data->subscription_count;
                 }
 
                 $location['subscription_count'] = $county_data->subscription_count;
@@ -1532,6 +1623,23 @@ class SubscriptionController extends Controller
                             }
                         });
                     }
+                });
+            }
+
+            if (!is_null($request->query('ethnicity'))) {
+                $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('ethnicity', $request->query('ethnicity'));
+                });
+            }
+
+            if (!is_null($request->query('cock_size'))) {
+                $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('cock_size', $request->query('cock_size'));
+                });
+            }
+            if (!is_null($request->query('orientation'))) {
+                $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('orientation', $request->query('orientation'));
                 });
             }
 
