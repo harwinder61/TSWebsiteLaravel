@@ -1508,6 +1508,7 @@ class SubscriptionController extends Controller
             ->orWhereHas('extraLocations', function ($query) use ($location) {
                 $query->where('region_id', $location->id);
             });
+            //return Resp::success(["data" => $region_data]);
 
 
             if (!is_null($request->query('rate'))) {
