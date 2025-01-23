@@ -2889,4 +2889,27 @@ class AdminController extends Controller
             return Resp::error(['message' => $e->getMessage()]);
         }
     }
+    public function changeEmailStatus(Request $request){
+        try{
+
+            $email = EmailTemplates::find($request->email_id);
+            if (!$email) {
+                return Resp::error([
+                    'error' => 'Email not found!'
+                ]);
+            }
+            $email=$email->update([
+                "status"=> $request->status
+            ]);
+            if(!$email){
+                return Resp::error([
+                    'error' => 'Failed to update email status'
+                ]);
+            }
+            return Resp::success(['message' => 'Email status updated successfully', 'data' => $email]);
+            
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
 }

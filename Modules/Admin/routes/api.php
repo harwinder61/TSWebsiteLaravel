@@ -106,6 +106,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/admin-orders',[AdminController::class,'getOrders']);
         Route::get('/email-logs',[AdminController::class,'emailLogs']);
 
+        Route::post('/email-status/update',[AdminController::class,'changeEmailStatus']);
         
     });
 
