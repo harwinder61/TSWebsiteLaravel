@@ -44,7 +44,7 @@ class EmailHelper
             return 'Email template not found';
         }
 
-        if($emailTemplate->status!=1){
+        if($emailTemplate->status==0){
 
             return "Email is disabled";
 
@@ -59,7 +59,10 @@ class EmailHelper
     
         // Send the email to the recipient
         //Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
-        Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
+        if($emailTemplate->status==1){
+            
+            Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
+        }
 
         EmailLog::create([
             'subject' => $subject,
