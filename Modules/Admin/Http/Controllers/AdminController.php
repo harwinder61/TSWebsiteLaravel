@@ -647,9 +647,9 @@ class AdminController extends Controller
         $profile->save();
 
         return Resp::success(['message' => 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully']);
-    }
+    } 
 
-    public function deleteProfile($id)
+    public function deleteProfile($id,Request $request)
     {
         $validator = Validator::make($request->all(), [
             'is_delete' => 'required|boolean'
