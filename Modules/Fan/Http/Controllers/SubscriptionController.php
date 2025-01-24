@@ -1230,29 +1230,54 @@ class SubscriptionController extends Controller
                     });
 
 
-                if (!is_null($request->query('rate'))) {
-                    $city_data->whereHas('escort.profile.rates', function ($query) use ($request) {
-                        // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
+
+                    // Function to apply common filters
+        $applyFilters = function ($query) use ($request) {
+            if (!is_null($request->query('rate'))) {
+                $query->whereHas('escort.profile.rates', function ($q) use ($request) {
+                    if ($request->query('specific_rate')) {
+                        $q->where($request->query('rate_type'), "<=", $request->query('specific_rate'));
+                    }
+                    if ($request->query('incall') || $request->query('outcall')) {
+                        $q->where(function ($q) use ($request) {
+                            if ($request->query('incall')) {
+                                $q->orWhere('category', 'Incall');
+                            }
+                            if ($request->query('outcall')) {
+                                $q->orWhere('category', 'Outcall');
+                            }
+                        });
+                    }
+                });
+            }};
 
 
-                        // Check for a specific rate value
-                        if ($request->query('specific_rate')) {
-                            $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
-                        }
+                // if (!is_null($request->query('rate'))) {
+                //     $city_data->whereHas('escort.profile.rates', function ($query) use ($request) {
+                //         // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
 
-                        // Check for Incall or Outcall options
-                        if ($request->query('incall') || $request->query('outcall')) {
-                            $query->where(function ($q) use ($request) {
-                                if ($request->query('incall')) {
-                                    $q->orWhere('category', 'Incall');
-                                }
-                                if ($request->query('outcall')) {
-                                    $q->orWhere('category', 'Outcall');
-                                }
-                            });
-                        }
-                    });
-                }
+
+                //         // Check for a specific rate value
+                //         if ($request->query('specific_rate')) {
+                //             $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
+                //         }
+
+                //         // Check for Incall or Outcall options
+                //         if ($request->query('incall') || $request->query('outcall')) {
+                //             $query->where(function ($q) use ($request) {
+                //                 if ($request->query('incall')) {
+                //                     $q->orWhere('category', 'Incall');
+                //                 }
+                //                 if ($request->query('outcall')) {
+                //                     $q->orWhere('category', 'Outcall');
+                //                 }
+                //             });
+                //         }
+                //     });
+                // }
+
+                $applyFilters($city_data);
+                
 
                 if (!is_null($request->query('ethnicity'))) {
                     $city_data->whereHas('escort.profile', function ($query) use ($request) {
@@ -1286,35 +1311,42 @@ class SubscriptionController extends Controller
                     ->where('subscriptions.is_hidden', 0)
                     ->where(function ($query) use ($county) {
                         $query->where('profile.county_id', $county->id)
-                            ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$county->id]);
-                    })->orWhereHas('extraLocations', function ($query) use ($county) {
-                        $query->where('county_id', $county->id);
-                    });
+                            ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$county->id])
+                            ->orWhereHas('extraLocations', function ($q) use ($county) {
+                                $q->where('county_id', $county->id);
+                            });
+                    })
+                    // ->orWhereHas('extraLocations', function ($query) use ($county) {
+                    //     $query->where('county_id', $county->id);
+                    // })
+                    ;
 
 
-                    if (!is_null($request->query('rate'))) {
-                        $county_data->whereHas('escort.profile.rates', function ($query) use ($request) {
-                            // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
+                    // if (!is_null($request->query('rate'))) {
+                    //     $county_data->whereHas('escort.profile.rates', function ($query) use ($request) {
+                    //         // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
     
     
-                            // Check for a specific rate value
-                            if ($request->query('specific_rate')) {
-                                $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
-                            }
+                    //         // Check for a specific rate value
+                    //         if ($request->query('specific_rate')) {
+                    //             $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
+                    //         }
     
-                            // Check for Incall or Outcall options
-                            if ($request->query('incall') || $request->query('outcall')) {
-                                $query->where(function ($q) use ($request) {
-                                    if ($request->query('incall')) {
-                                        $q->orWhere('category', 'Incall');
-                                    }
-                                    if ($request->query('outcall')) {
-                                        $q->orWhere('category', 'Outcall');
-                                    }
-                                });
-                            }
-                        });
-                    }
+                    //         // Check for Incall or Outcall options
+                    //         if ($request->query('incall') || $request->query('outcall')) {
+                    //             $query->where(function ($q) use ($request) {
+                    //                 if ($request->query('incall')) {
+                    //                     $q->orWhere('category', 'Incall');
+                    //                 }
+                    //                 if ($request->query('outcall')) {
+                    //                     $q->orWhere('category', 'Outcall');
+                    //                 }
+                    //             });
+                    //         }
+                    //     });
+                    // }
+                    $applyFilters($county_data);
+                    
 
                     if (!is_null($request->query('ethnicity'))) {
                         $county_data->whereHas('escort.profile', function ($query) use ($request) {
@@ -1348,35 +1380,38 @@ class SubscriptionController extends Controller
                     ->where('subscriptions.is_hidden', 0)
                     ->where(function ($query) use ($region) {
                         $query->where('profile.region_id', $region->id)
-                            ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$region->id]);
-                    })->orWhereHas('extraLocations', function ($query) use ($region) {
-                        $query->where('region_id', $region->id);
-                    });
-
-
-                    if (!is_null($request->query('rate'))) {
-                        $region_data->whereHas('escort.profile.rates', function ($query) use ($request) {
-                            // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
-    
-    
-                            // Check for a specific rate value
-                            if ($request->query('specific_rate')) {
-                                $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
-                            }
-    
-                            // Check for Incall or Outcall options
-                            if ($request->query('incall') || $request->query('outcall')) {
-                                $query->where(function ($q) use ($request) {
-                                    if ($request->query('incall')) {
-                                        $q->orWhere('category', 'Incall');
-                                    }
-                                    if ($request->query('outcall')) {
-                                        $q->orWhere('category', 'Outcall');
-                                    }
-                                });
-                            }
+                            ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$region->id])
+                            ->orWhereHas('extraLocations', function ($query) use ($region) {
+                                $query->where('region_id', $region->id);
+                            });
                         });
-                    }
+                    
+
+
+                    // if (!is_null($request->query('rate'))) {
+                    //     $region_data->whereHas('escort.profile.rates', function ($query) use ($request) {
+                    //         // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
+    
+    
+                    //         // Check for a specific rate value
+                    //         if ($request->query('specific_rate')) {
+                    //             $query->where('' . $request->query('rate_type') . '', "<=", $request->query('specific_rate'));
+                    //         }
+    
+                    //         // Check for Incall or Outcall options
+                    //         if ($request->query('incall') || $request->query('outcall')) {
+                    //             $query->where(function ($q) use ($request) {
+                    //                 if ($request->query('incall')) {
+                    //                     $q->orWhere('category', 'Incall');
+                    //                 }
+                    //                 if ($request->query('outcall')) {
+                    //                     $q->orWhere('category', 'Outcall');
+                    //                 }
+                    //             });
+                    //         }
+                    //     });
+                    // }
+                    $applyFilters($region_data);
 
 
                     if (!is_null($request->query('ethnicity'))) {
@@ -1447,11 +1482,12 @@ class SubscriptionController extends Controller
                     ->where('subscriptions.is_hidden', 0)
                     ->where(function ($query) use ($location) {
                         $query->where('profile.county_id', $location->id)
-                            ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
-                    })->orWhereHas('extraLocations', function ($query) use ($location) {
-                        $query->where('county_id', $location->id);
-                    })
-                ;
+                            ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id])
+                            ->orWhereHas('extraLocations', function ($query) use ($location) {
+                                $query->where('county_id', $location->id);
+                            });
+                    });
+                
 
 
                 if (!is_null($request->query('rate'))) {
@@ -1510,11 +1546,12 @@ class SubscriptionController extends Controller
                     ->where('subscriptions.is_hidden', 0)
                     ->where(function ($query) use ($region) {
                         $query->where('profile.region_id', $region->id)
-                            ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$region->id]);
-                    })
-                    ->orWhereHas('extraLocations', function ($query) use ($region) {
-                        $query->where('region_id', $region->id);
+                            ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$region->id])
+                            ->orWhereHas('extraLocations', function ($query) use ($region) {
+                                $query->where('region_id', $region->id);
+                            });
                     });
+
 
                     if (!is_null($request->query('rate'))) {
                         $region_data->whereHas('escort.profile.rates', function ($query) use ($request) {
@@ -1594,11 +1631,12 @@ class SubscriptionController extends Controller
             ->where('subscriptions.is_hidden', 0)
             ->where(function ($query) use ($location) {
                 $query->where('profile.region_id', $location->id)
-                    ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
-            })
-            ->orWhereHas('extraLocations', function ($query) use ($location) {
-                $query->where('region_id', $location->id);
+                    ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id])
+                    ->orWhereHas('extraLocations', function ($query) use ($location) {
+                        $query->where('region_id', $location->id);
+                    });
             });
+
             //return Resp::success(["data" => $region_data]);
 
 
