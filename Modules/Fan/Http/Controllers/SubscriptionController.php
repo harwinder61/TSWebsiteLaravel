@@ -1252,6 +1252,8 @@ class SubscriptionController extends Controller
             }};
 
 
+
+
                 // if (!is_null($request->query('rate'))) {
                 //     $city_data->whereHas('escort.profile.rates', function ($query) use ($request) {
                 //         // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
@@ -1277,6 +1279,11 @@ class SubscriptionController extends Controller
                 // }
 
                 $applyFilters($city_data);
+
+
+                if (!is_null($request->query('plan_code'))) {
+                    $city_data->where('plan_code', $request->query('plan_code'));
+                }
                 
 
                 if (!is_null($request->query('ethnicity'))) {
@@ -1346,6 +1353,10 @@ class SubscriptionController extends Controller
                     //     });
                     // }
                     $applyFilters($county_data);
+
+                    if (!is_null($request->query('plan_code'))) {
+                        $county_data->where('plan_code', $request->query('plan_code'));
+                    }
                     
 
                     if (!is_null($request->query('ethnicity'))) {
@@ -1412,6 +1423,10 @@ class SubscriptionController extends Controller
                     //     });
                     // }
                     $applyFilters($region_data);
+
+                    if (!is_null($request->query('plan_code'))) {
+                        $region_data->where('plan_code', $request->query('plan_code'));
+                    }
 
 
                     if (!is_null($request->query('ethnicity'))) {
@@ -1514,6 +1529,10 @@ class SubscriptionController extends Controller
                     });
                 }
 
+                if (!is_null($request->query('plan_code'))) {
+                    $county_data->where('plan_code', $request->query('plan_code'));
+                }
+
                 if (!is_null($request->query('ethnicity'))) {
                     $county_data->whereHas('escort.profile', function ($query) use ($request) {
                         $query->where('ethnicity', $request->query('ethnicity'));
@@ -1575,6 +1594,11 @@ class SubscriptionController extends Controller
                                 });
                             }
                         });
+                    }
+
+
+                    if (!is_null($request->query('plan_code'))) {
+                        $region_data->where('plan_code', $request->query('plan_code'));
                     }
 
                     if (!is_null($request->query('ethnicity'))) {
@@ -1662,6 +1686,11 @@ class SubscriptionController extends Controller
                         });
                     }
                 });
+            }
+
+
+            if (!is_null($request->query('plan_code'))) {
+                $region_data->where('plan_code', $request->query('plan_code'));
             }
 
             if (!is_null($request->query('ethnicity'))) {
