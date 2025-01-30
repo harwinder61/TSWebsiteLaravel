@@ -105,6 +105,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/location/add',[AdminController::class,'addLocation']);
         Route::get('/admin-orders',[AdminController::class,'getOrders']);
         Route::get('/email-logs',[AdminController::class,'emailLogs']);
+        // Route::post('ads-pages',[AdminController::class,'adsPages']);
+        // Route::post('account-page',[AdminController::class,'accountPage']);
 
         
     });

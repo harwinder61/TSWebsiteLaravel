@@ -119,7 +119,7 @@ class BaseProfile extends Model
         'tiktok_handle' => 'required_if:has_tiktok,1|string|nullable',
         'is_incall_enabled' => 'required|boolean',
         'is_outcall_enabled' => 'required|boolean',
-        'extra_services' => 'required',
+        // 'extra_services' => 'nullable',
         //'extra_services.*.key'=>'in:'.implode(',',ExtraServices::getKeys()),
         'description' => 'nullable|string',
         'city_id' => [

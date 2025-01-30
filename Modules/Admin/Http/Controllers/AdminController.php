@@ -56,6 +56,101 @@ use Modules\Admin\app\Models\EmailLog;
 class AdminController extends Controller
 {
 
+    public function parallaxImage(Request $request)
+    {
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'value_mobile' => 'required|exists:media,id',  // Mobile image ID validation
+            'value_desktop' => 'required|exists:media,id', // Desktop image ID validation
+        ]);
+
+        // If validation fails, return error
+        if ($validator->fails()) {
+            return Resp::error(['message' => $validator->errors()]);
+        }
+
+        // Fetch or create the Setting with type 'home_parallax'
+        $setting_mobile = Setting::where('key', 'mobile_parallax')->first();
+        $setting_desktop = Setting::where('key', 'desktop_parallax')->first();
+        if (!$setting_mobile) {
+            $setting_mobile = new Setting();
+            $setting_mobile->key = 'mobile_parallax';
+        }
+        if (!$setting_desktop) {
+            $setting_desktop = new Setting();
+            $setting_desktop->key = 'desktop_parallax';
+        }
+        $setting_mobile->value = $request->value_mobile;  // Mobile image media ID
+        $setting_desktop->value = $request->value_desktop;  // Desktop image media ID
+        $setting_mobile->save();
+        $setting_desktop->save();
+        $mobileMedia = Media::find($setting_mobile->value);  // Mobile media object
+        $desktopMedia = Media::find($setting_desktop->value);  // Desktop media object
+        return Resp::success([
+            'message' => 'Parallax images updated successfully',
+            'setting_mobile' => $setting_mobile,
+            'setting_desktop' => $setting_desktop,
+            'mobile_image' => $mobileMedia,  // Return mobile image details
+            'desktop_image' => $desktopMedia,  // Return desktop image details
+        ]);
+    }
+
+
+
+    // public function adsPages(Request $request) {
+    //     // Validate the incoming request
+    //     $validator = Validator::make($request->all(), [
+    //         'value' => 'required|exists:media,id',  // Mobile image ID validation
+    //     ]);
+    
+    //     // If validation fails, return error
+    //     if ($validator->fails()) {
+    //         return Resp::error(['message' => $validator->errors()]);
+    //     }
+    //     // Fetch or create the Setting with type 'home_parallax'
+    //     $setting = Setting::where('key', 'ads_pages')->first();
+    //     if (!$setting) {
+    //         $setting = new Setting();
+    //         $setting->key = 'ads_pages';
+    //     }
+    //     $setting->value = $request->value;  // Mobile image media ID
+    //     $setting->save();
+    //     $media = Media::find($setting->value);  // Mobile media object
+    //     return Resp::success([
+    //         'message' => 'Parallax images updated successfully',
+    //         'setting' => $setting,
+    //         'media' => $media,  // Return mobile image details
+    //     ]);
+    // }
+
+    // public function accountPage(Request $request) {
+    //     // Validate the incoming request
+    //     $validator = Validator::make($request->all(), [
+    //         'value' => 'required|exists:media,id',  // Mobile image ID validation
+    //     ]);
+    
+    //     // If validation fails, return error
+    //     if ($validator->fails()) {
+    //         return Resp::error(['message' => $validator->errors()]);
+    //     }
+    
+    //     // Fetch or create the Setting with type 'home_parallax'
+    //     $setting = Setting::where('key', 'account_page')->first();
+    //     if (!$setting) {
+    //         $setting = new Setting();
+    //         $setting->key = 'account_page';
+    //     }
+    //     $setting->value = $request->value;  // Mobile image media ID
+    //     $setting->save();
+    //     $media = Media::find($setting->value);  // Mobile media object
+    //     return Resp::success([
+    //         'message' => 'Parallax images updated successfully',
+    //         'setting' => $setting,
+    //         'media' => $media,  // Return mobile image details
+    //     ]);
+    // }
+
+
     public function emailLogs(Request $request) {
         auth()->user(); // Ensure the user is authenticated
     
@@ -892,44 +987,7 @@ class AdminController extends Controller
 
 
 
-    public function parallaxImage(Request $request)
-    {
-        // Validate the incoming request
-        $validator = Validator::make($request->all(), [
-            'value_mobile' => 'required|exists:media,id',  // Mobile image ID validation
-            'value_desktop' => 'required|exists:media,id', // Desktop image ID validation
-        ]);
-
-        // If validation fails, return error
-        if ($validator->fails()) {
-            return Resp::error(['message' => $validator->errors()]);
-        }
-
-        // Fetch or create the Setting with type 'home_parallax'
-        $setting_mobile = Setting::where('key', 'mobile_parallax')->first();
-        $setting_desktop = Setting::where('key', 'desktop_parallax')->first();
-        if (!$setting_mobile) {
-            $setting_mobile = new Setting();
-            $setting_mobile->key = 'mobile_parallax';
-        }
-        if (!$setting_desktop) {
-            $setting_desktop = new Setting();
-            $setting_desktop->key = 'desktop_parallax';
-        }
-        $setting_mobile->value = $request->value_mobile;  // Mobile image media ID
-        $setting_desktop->value = $request->value_desktop;  // Desktop image media ID
-        $setting_mobile->save();
-        $setting_desktop->save();
-        $mobileMedia = Media::find($setting_mobile->value);  // Mobile media object
-        $desktopMedia = Media::find($setting_desktop->value);  // Desktop media object
-        return Resp::success([
-            'message' => 'Parallax images updated successfully',
-            'setting_mobile' => $setting_mobile,
-            'setting_desktop' => $setting_desktop,
-            'mobile_image' => $mobileMedia,  // Return mobile image details
-            'desktop_image' => $desktopMedia,  // Return desktop image details
-        ]);
-    }
+   
 
 
 
