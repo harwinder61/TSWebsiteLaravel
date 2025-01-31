@@ -37,6 +37,8 @@ class Comment extends Model
     {
         return $this->belongsTo(Comment::class, 'parent_comment_id');
     }
+
+
     
 
 }

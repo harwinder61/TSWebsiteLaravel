@@ -10,6 +10,7 @@ use Modules\Auth\app\Http\Controllers\AuthController;
 use App\Console\Commands\updateLastActiveAt;
 use App\Console\Commands\sendInactivityEmails;
 use App\Console\Commands\ScheduledEmails;
+use App\Console\Commands\DeleteExpiredUsers;
 Route::middleware(['jwt_auth:admin'])->group(function(){
     Route::group(['prefix'=>'admin'],function(){
         Route::post('/plan/{plan_code}',[AdminController::class,'updatePlan']);
@@ -144,6 +145,18 @@ Route::get('/get-last-active-at',function(){
     'mail_sent' => json_decode($output) 
   ]);
 });
+
+Route::get('/30day-expired-users', function () {
+  // Call the Artisan command
+  Artisan::call('users:delete-expired'); 
+  $output = Artisan::output();
+  return response()->json([
+      'message' => 'Command executed successfully.',
+      'expired_subscriptions' => json_decode($output)  
+  ]);
+}
+);
+
 
 Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
 Route::get('/send-inactivity-emails', [AuthController::class, 'sendInactivityEmails']);

@@ -9,6 +9,8 @@ use Illuminate\Notifications\Notifiable;
 use Modules\Escort\app\Models\EscortReviews;
 use Modules\Escort\app\Models\ProfileRates;
 use Modules\Escort\app\Models\Profile;
+use Modules\Admin\app\Models\Comment;
+use Modules\Admin\app\Models\Blog;
 
 class User extends Authenticatable
 {
@@ -33,6 +35,8 @@ class User extends Authenticatable
         'inactivity_email_sent',
         'others',
         'verification_email_sent',
+        'deleted_at',
+        'deleted_on',
     ];
     protected $casts=[
         'user_type'=>'integer',
@@ -78,5 +82,18 @@ class User extends Authenticatable
 
     public function profile(){
         return $this->hasOne(Profile::class,'escort_id','id');
+    }
+
+    public function comments(){
+        return $this->hasMany(Comment::class,'commentator_id','id');
+    }
+
+    public function media(){
+        return $this->hasMany(Media::class,'escort_id','id');   
+    }
+
+    public function blog()
+    {
+        return $this->hasMany(Blog::class, 'escort_id', 'id'); 
     }
 }

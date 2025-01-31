@@ -17,6 +17,11 @@ class Blog extends Model
     public function media(){
         return $this->belongsTo(Media::class,'media_id','id');
     }
+
+    // public function blog(){
+    //     return $this->hasMany(Comment::class,'blog_id','escort_id');
+    // }
+
     
 
 }
