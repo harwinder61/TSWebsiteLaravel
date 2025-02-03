@@ -120,6 +120,26 @@ class OrderController extends Controller
             }
         }
 
+        $plan = Plan::where('code', $request->input('plan_code'))->first();
+        if (!$plan) {
+            return Resp::error(['error' => 'Plan not found']);
+        }
+
+        $extra_locations = $request->input('extra_locations'); // Assuming this is an array
+        $extra_location_count = is_array($extra_locations) ? count($extra_locations) : 0;
+
+        // Calculate the total price
+        $total_price=0;
+
+
+
+        if ($request->input('plan_code') == "P105" && !$sub_exists) {
+            $total_price=0;
+        }else{
+            $total_price = $plan->price + (2 * $extra_location_count);
+        }
+        
+
         $order = Orders::create([
             'escort_id' => $user->id,
             'plan_code' => $request->input('plan_code'),
@@ -131,6 +151,7 @@ class OrderController extends Controller
             'fan_centro_link' => $request->input('fan_centro_link'),
             'image_id' => $request->input('image_id'),
             'extra_location' => $request->input('extra_locations'),
+            'price' => $total_price,
 
         ]);
 

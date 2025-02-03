@@ -109,6 +109,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         // Route::post('ads-pages',[AdminController::class,'adsPages']);
         // Route::post('account-page',[AdminController::class,'accountPage']);
 
+        Route::post('/email-status/update',[AdminController::class,'changeEmailStatus']);
         
     });
 

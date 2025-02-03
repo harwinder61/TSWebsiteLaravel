@@ -742,9 +742,9 @@ class AdminController extends Controller
         $profile->save();
 
         return Resp::success(['message' => 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully']);
-    }
+    } 
 
-    public function deleteProfile($id)
+    public function deleteProfile($id,Request $request)
     {
         $validator = Validator::make($request->all(), [
             'is_delete' => 'required|boolean'
@@ -2944,6 +2944,29 @@ class AdminController extends Controller
             }
             return Resp::success(['data' => $data]);
         } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
+    public function changeEmailStatus(Request $request){
+        try{
+
+            $email = EmailTemplates::find($request->email_id);
+            if (!$email) {
+                return Resp::error([
+                    'error' => 'Email not found!'
+                ]);
+            }
+            $email=$email->update([
+                "status"=> $request->status
+            ]);
+            if(!$email){
+                return Resp::error([
+                    'error' => 'Failed to update email status'
+                ]);
+            }
+            return Resp::success(['message' => 'Email status updated successfully', 'data' => $email]);
+            
+        }catch(\Exception $e){
             return Resp::error(['message' => $e->getMessage()]);
         }
     }
