@@ -600,7 +600,7 @@ public function resetOldEmail(Request $request)
                 'email' => $email,
                 'user_type' => $request->user_type,
                 'password' => 'defaultPassword',
-                'email_verified' => false,
+                'email_verified' => true,
                 'signin_mode' => 'google_sso',
                 'verification_token' => $verification_token,
             ]);
