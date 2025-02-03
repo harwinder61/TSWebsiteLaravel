@@ -583,7 +583,8 @@ public function resetOldEmail(Request $request)
         // print_r($request->all());
         $verification_token = Str::random(30);
 
-        $client = new Google_Client(['client_id' => '554367286106-3knj3b3orb78hh4gj5npg3heiikldtg7.apps.googleusercontent.com']);
+        $client=new Google_Client(['client_id' => env('GOOGLE_SSO_CLIENT_ID')]);
+        //$client = new Google_Client(['client_id' => '554367286106-3knj3b3orb78hh4gj5npg3heiikldtg7.apps.googleusercontent.com']);
         $payload = $client->verifyIdToken($request->google_sso_token);
 
         if (isset($payload['email'])) {
