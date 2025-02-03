@@ -208,7 +208,8 @@ class SubscriptionController extends Controller
             ->leftJoin('users', 'reviews.user_id', '=', 'users.id')
             ->select('reviews.*', 'profile.name as escort_name', 'users.username as fan_name')
             ->without('reviews.fan')
-            ->with(['escort.profile.media']);
+            ->with(['escort.profile.media'])
+            ->where('reviews.status', 1);
 
         $query->where(function ($query) use ($id) {
             $query->where('reviews.escort_id', $id)
