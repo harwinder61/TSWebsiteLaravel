@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use App\Models\Media;
 
 class DeleteExpiredUsers extends Command
 {
@@ -15,11 +17,31 @@ class DeleteExpiredUsers extends Command
     {
         $thresholdDate = now()->subDays(30);
         
-        // Delete users marked as deleted for more than 30 days
-        $deletedUsersCount = User::where('is_delete', 1)
-            ->where('deleted_on', '<', $thresholdDate) // Use 'deleted_at' instead of 'deleted_on'
+        // Log the threshold date
+        Log::info("Threshold date: {$thresholdDate}");
+        
+        // Retrieve users marked as deleted for more than 30 days
+        $users = User::where('is_delete', 1)
+            ->where('delete_on', '<', $thresholdDate)
+            ->get(); // Get the collection of users
+
+        // Log the IDs of users to be deleted
+        Log::info("Users to delete: " . $users->pluck('id')->toJson());
+    
+        // Delete related media records for each user
+        foreach ($users as $user) {
+            Media::where('escort_id', $user->id)->delete();
+        }
+    
+        // Now delete the users
+        $deletedUsersCount = $users->count();
+        User::where('is_delete', 1)
+            ->where('delete_on', '<', $thresholdDate)
             ->delete();
     
+        Log::info("Number of users deleted: {$deletedUsersCount}");
         $this->info("Deleted {$deletedUsersCount} expired users successfully.");
     }
 }
+
+

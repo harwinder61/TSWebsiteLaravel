@@ -35,11 +35,10 @@ class EscortController extends Controller
     } 
  
     public function deleteProfile(Request $request)
-    {
-
-         $validator = Validator::make($request->all(), [
-            'is_delete' => 'required|boolean'
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'is_delete' => 'required|boolean'
+    ]);
 
     if ($validator->fails()) {
         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
@@ -47,21 +46,38 @@ class EscortController extends Controller
 
     $user = auth()->user();
     // Only update if is_delete is true
-    if ($request->is_delete) {
-        $user->delete_on = now();
-        $user->is_delete = $request->is_delete; 
-        $user->save();
-        $profile = Profile::where('escort_id', $user->id)->first();
-        $profile->delete();
-        EmailHelper::sendDynamicEmail('ts_delete_profile', 
-        ['[USER_LOGIN]' => $user->username], 
-        $user->email);
+    // if ($request->is_delete) {
+    //     $user->delete_on = now()->subDays(30); // Set to 30 days ago for immediate eligibility
+    //     $user->is_delete = $request->is_delete; 
+    //     $user->save();
+
+        // $profile = Profile::where('escort_id', $user->id)->first();
+        // if ($profile) {
+        //     $profile->delete();
+        // }
+
+        if ($user->is_delete) {
+            $user->is_delete = 0; // Restore the account
+            $user->delete_on = null; // Clear the delete_on date
+            $user->save();
         
-        return Resp::success(['user'=>$user],'Profile deleted successfully');
+            return Resp::success(['user' => $user], 'Profile restored successfully');
+        } else {
+            // Only update if is_delete is true
+            if ($request->is_delete) {
+                $user->delete_on = now()->subDays(30); // Set to 30 days ago for immediate eligibility
+                $user->is_delete = 1; // Mark for deletion
+                $user->save();
+
+        EmailHelper::sendDynamicEmail('ts_delete_profile', 
+            ['[USER_LOGIN]' => $user->username], 
+            $user->email);
+        
+        return Resp::success(['user' => $user], 'Profile deleted successfully');
     }
-        return Resp::error(['message' => 'Invalid request']);
-    }
-    
+    return Resp::error(['message' => 'Invalid request']);
+}
+}
 
 
     public function hideProfile(Request $request)
@@ -413,6 +429,9 @@ class EscortController extends Controller
 
         $user = auth()->user();
         $userType = $user->user_type;
+        $user->is_delete = 0; // Restore the account
+        $user->delete_on = null; // Clear the delete_on date
+        $user->save();
 
         if ($userType == 1) {   
             return Resp::error(['Unauthorized user is not an escort']);
@@ -598,7 +617,12 @@ class EscortController extends Controller
             return Resp::error(['Invalid user type']);
         }
         return Resp::error(['No user type found']);
+
+
+
     }
+
+
 
 
 }
