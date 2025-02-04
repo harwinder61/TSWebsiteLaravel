@@ -1748,37 +1748,92 @@ class AdminController extends Controller
         return $slug;
     }
 
+    // public function userProfile($id, Request $request)
+    // {  
+        
+
+    //     $validator = Validator::make($request->all(), [
+    //         'first_name' => 'required|string|max:255',
+    //         'last_name' => 'required|string|max:255',
+    //         'password' => 'required|string|min:8',
+    //         'user_type' => 'required|integer|in:1,2,3', // Only allow 1 (fan) or 2 (escort)
+    //         'username' => 'required|string|max:255',
+    //         'email' => 'required|email',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return Resp::error(['message' => $validator->errors()]);
+    //     }
+
+    //     $admin = auth()->user();
+    //     $user = AuthUser::find($id);
+
+    //     if (!$user) {
+    //         return Resp::error(['message' => 'User not found']);
+    //     }
+
+    //     // Check if user_type is the same as the current user's type
+    //     if ($user->user_type !== $request->input('user_type')) {
+    //         return Resp::error(['message' => 'User type cannot be changed']);
+    //     }
+
+    //     //    if ($user->username == $request->input('username')) {
+    //     //        return Resp::error(['message' => 'Username cannot be the same as the current username']);
+    //     //    }
+
+    //     $user->update([
+    //         'username' => $request->input('username'),
+    //         'email' => $request->input('email'),
+    //         'password' => Hash::make($request->input('password')),
+    //         'firstname' => $request->input('first_name'),
+    //         'lastname' => $request->input('last_name'),
+    //     ]);
+
+    //     return Resp::success(['message' => 'Profile updated successfully']);
+    // }
+
     public function userProfile($id, Request $request)
-    {
+    {  
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'password' => 'required|string|min:8',
-            'user_type' => 'required|integer|in:1,2,3', // Only allow 1 (fan) or 2 (escort)
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|email|unique:users,email',
+            'user_type' => 'required|integer|in:1,2,3',
+            'username' => 'required|string|max:255',
+            'email' => 'required|email',
         ]);
-
+    
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
-
+    
         $admin = auth()->user();
         $user = AuthUser::find($id);
-
+    
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
         }
-
+    
         // Check if user_type is the same as the current user's type
         if ($user->user_type !== $request->input('user_type')) {
             return Resp::error(['message' => 'User type cannot be changed']);
         }
-
-        //    if ($user->username == $request->input('username')) {
-        //        return Resp::error(['message' => 'Username cannot be the same as the current username']);
-        //    }
-
+    
+        // Check if the username is being changed and if it already exists
+        if ($user->username !== $request->input('username')) {
+            $existingUser = AuthUser::where('username', $request->input('username'))->first();
+            if ($existingUser) {
+                return Resp::error(['message' => 'Username already taken']);
+            }
+        }
+           // Check if the username is being changed and if it already exists
+           if ($user->email !== $request->input('email')) {
+            $existingUser = AuthUser::where('email', $request->input('email'))->first();
+            if ($existingUser) {
+                return Resp::error(['message' => 'email already taken']);
+            }
+        }
+    // Update only if the username is different or not being changed
         $user->update([
             'username' => $request->input('username'),
             'email' => $request->input('email'),
@@ -1786,9 +1841,12 @@ class AdminController extends Controller
             'firstname' => $request->input('first_name'),
             'lastname' => $request->input('last_name'),
         ]);
-
+    
         return Resp::success(['message' => 'Profile updated successfully']);
     }
+
+
+    
     public function newUser(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -1947,6 +2005,7 @@ class AdminController extends Controller
             'seo_title' => 'nullable|string',
             'seo_description' => 'nullable|string',
             'seo_keywords' => 'nullable|string',
+            'redirect_url' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -1964,6 +2023,7 @@ class AdminController extends Controller
             'seo_title' => $request->input('seo_title'),
             'seo_description' => $request->input('seo_description'),
             'seo_keywords' => $request->input('seo_keywords'),
+            'redirect_url' => $request->input('redirect_url'),
         ]);
 
         return Resp::success(['message' => 'Blog created successfully']);
@@ -2900,8 +2960,6 @@ class AdminController extends Controller
     public function updateHomeImages(Request $request)
     {
         try {
-
-
             $valiadtor = Validator::make($request->all(), [
                 'image_id' => 'required|exists:media,id',
                 'key' => 'required|exists:settings,key',
@@ -2909,7 +2967,6 @@ class AdminController extends Controller
             if ($valiadtor->fails()) {
                 return Resp::error([$valiadtor->errors()]);
             }
-
             $data = BaseSettings::with('media')->where('key', '=', $request->key)->first();
             if (!$data) {
                 return Resp::error([
@@ -2919,7 +2976,6 @@ class AdminController extends Controller
             $updatedData = $data->update([
                 'value' => $request->image_id
             ]);
-
             return Resp::success(['message' => 'Home page images updated successfully', 'data' => $data]);
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);

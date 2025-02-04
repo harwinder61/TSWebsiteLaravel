@@ -7,8 +7,9 @@ use Modules\Escort\Http\Controllers\MasterController;
 use Modules\Escort\Http\Controllers\MastersController;
 use Modules\Escort\Http\Controllers\MediaController;
 use Modules\Escort\Http\Controllers\OrderController;
-
-
+use Illuminate\Support\Facades\Mail;
+use Modules\Admin\app\Models\User;
+use Modules\Escort\Notifications\ReviewSubmitted;
 
 Route::middleware(['jwt_auth'])->group(function(){
 Route::group(['prefix' => 'escort'],function(){
@@ -55,7 +56,10 @@ Route::get('/escort-profile-id/{id}',[EscortController::class,'getEscortProfile'
 Route::get('/get-all-media',[MediaController::class,'getAllMedia']);
 Route::get('/search/header',[OrderController::class,'getLocationAndSubscriptions']);
 Route::post('/location-id-to-name',[OrderController::class,'locationIdsToLocationNames']);
-
-
-
+// Route::get('/test-email-review', function () {
+//     Mail::raw('This is a test email.', function ($message) {
+//         $message->to('adminTs0011@yopmail.com')
+//                 ->subject('Test Email');
+//     });
+// });
 

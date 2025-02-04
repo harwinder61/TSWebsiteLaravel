@@ -31,7 +31,7 @@ class EscortController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['profileViews']);
+        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm']);
     } 
  
     // public function deleteProfile(Request $request)
@@ -96,9 +96,8 @@ public function deleteProfile(Request $request)
     }
 
     $user = auth()->user();
-
     if ($request->is_delete) {
-        $user->delete_on = now()->subDays(30); // Set to 30 days ago for immediate eligibility
+        $user->delete_on = now(); // Set to 30 days ago for immediate eligibility
         $user->is_delete = 1;
         $user->save();
 

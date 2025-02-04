@@ -24,7 +24,7 @@ class DeleteExpiredUsers extends Command
     
         // Retrieve users marked as deleted for more than 30 days
         $users = User::where('is_delete', 1)
-            ->where('delete_on', '<=', $thresholdDate)
+            ->where('delete_on', '>', $thresholdDate)
             ->get();
     
         if ($users->isEmpty()) {
@@ -44,7 +44,7 @@ class DeleteExpiredUsers extends Command
         // Now delete the users
         $deletedUsersCount = $users->count();
         User::where('is_delete', 1)
-            ->where('delete_on', '<=', $thresholdDate)
+            ->where('delete_on', '>', $thresholdDate)
             ->delete();
     
         Log::info("Number of users deleted: {$deletedUsersCount}");
