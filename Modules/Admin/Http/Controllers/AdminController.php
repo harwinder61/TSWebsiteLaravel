@@ -50,6 +50,7 @@ use App\Models\BaseSettings;
 use Google\Service\Walletobjects\Pagination;
 use Modules\Escort\app\Models\Orders;
 use Modules\Admin\app\Models\EmailLog;
+use Carbon\Carbon;
 
 
 
@@ -3025,5 +3026,51 @@ class AdminController extends Controller
         }catch(\Exception $e){
             return Resp::error(['message' => $e->getMessage()]);
         }
+    }
+
+
+    public function register(Request $request)
+    {
+        // Validate the incoming request data
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string|max:255|unique:users,username',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'password_confirmation' => 'required|same:password',
+          
+        ], [
+            
+            'password.confirmed' => 'The password and confirm password do not match',
+        ]);
+
+        // If validation fails, return field errors
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+
+        // Generate a verification token
+        $verification_token = Str::random(30);
+
+        // Create the user record
+        $user = AuthUser::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'user_type' => 3,
+            'verification_token' => $verification_token,
+            'email_verified' => true,
+            'last_active_at' => Carbon::now(),
+            // 'others' => $request->others,
+        ]);
+
+
+        // Create user profile
+        $escort = Profile::create([
+            'name' => $user->username,
+            'escort_id' => $user->id,
+        ]);
+
+        // Return success response
+        return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
     }
 }
