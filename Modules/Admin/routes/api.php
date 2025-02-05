@@ -108,9 +108,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/email-logs',[AdminController::class,'emailLogs']);
         // Route::post('ads-pages',[AdminController::class,'adsPages']);
         // Route::post('account-page',[AdminController::class,'accountPage']);
-
         Route::post('/email-status/update',[AdminController::class,'changeEmailStatus']);
-        
     });
 
 
@@ -161,5 +159,4 @@ Route::get('/30day-expired-users', function () {
 
 Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
 Route::get('/send-inactivity-emails', [AuthController::class, 'sendInactivityEmails']);
-
 Route::post('/admin/register', [AdminController::class, 'register']);

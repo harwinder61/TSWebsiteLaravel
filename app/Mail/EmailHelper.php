@@ -80,6 +80,11 @@ class EmailHelper
         $user->last_active_at = Carbon::now();
         $user->save();
     }
+
+
+
+
+    
 }
 
 

@@ -436,7 +436,7 @@ public function deleteProfile(Request $request)
     public function inquiryForm(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'subject' => 'required|string|in:' . implode(',', InqueryFormSubject::getValues()),
+            'subject' => 'required|string',
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'message' => 'required|string',
