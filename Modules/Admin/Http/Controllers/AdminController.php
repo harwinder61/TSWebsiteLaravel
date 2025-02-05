@@ -51,6 +51,7 @@ use Google\Service\Walletobjects\Pagination;
 use Modules\Escort\app\Models\Orders;
 use Modules\Admin\app\Models\EmailLog;
 use Carbon\Carbon;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 
 
@@ -3063,6 +3064,13 @@ class AdminController extends Controller
             // 'others' => $request->others,
         ]);
 
+        // Generate a JWT token for auto-login
+        $token = JWTAuth::fromUser($user);
+
+        // Generate the login URL
+        $loginUrl = url("/api/admin/auto-login?token={$token}");
+
+
 
         // Create user profile
         $escort = Profile::create([
@@ -3070,7 +3078,61 @@ class AdminController extends Controller
             'escort_id' => $user->id,
         ]);
 
+         // One-liner call to send dynamic email
+            EmailHelper::sendDynamicEmail(
+                'ts_admin_welcome',
+                [
+                    '[ADMIN_NAME]' => $user->username,
+                    '[LOGIN_URL]' => $loginUrl,
+                    '[RESET_PASSWORD_URL]' => "/forget-password",
+                ],
+                $user->email
+            );
+
         // Return success response
         return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
+    }
+
+
+    public function autoLogin(Request $request){
+        // Get the token from the query string
+        $token = $request->query('token');
+
+        try {
+            // Validate the token
+            $user = JWTAuth::setToken($token)->authenticate();
+
+            if (!$user) {
+                return response()->json(['error' => 'Invalid or expired token.'], 401);
+            }
+
+            // Redirect to the frontend with the token
+            return redirect(env("WEBAPP_URL")."/admin/dashboard");
+        } catch (\Exception $e) {
+        return response()->json(['error' => 'Invalid or expired token.'], 401);
+        }
+    }
+
+    public function recoverAdminPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email|max:255',
+        ]);
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        $token = Str::random(30);
+        $user = AuthUser::where('email', $request->email)->first();
+        if (!$user) {
+            return Resp::error(['error' => 'No user found']);
+        }
+        $user->recovery_token = $token;
+        $user->save();
+        $email = new Mailer();
+        $email->to($user->email);
+        $email->subject('Password Recovery');
+        $email->setBodyRecoveryEmail('recover-password-admin', ['recovery_token' => $token, 'user' => $user]);
+        $email->send();
+        return Resp::success(['message' => 'Password recovery token sent successfully']);
     }
 }
