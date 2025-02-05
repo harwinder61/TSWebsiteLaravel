@@ -29,4 +29,7 @@ class AuthUser extends User implements JWTSubject
     {
         return [];
     }
+
+
+
 }

@@ -26,6 +26,7 @@ use Modules\Admin\app\Models\Setting;
 use App\Notifications\ReviewSubmitted;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\EmailHelper;
 
 
 class FanController extends Controller
@@ -70,23 +71,103 @@ class FanController extends Controller
             'comment' => $request->comment,
             'escort_id' => $request->escort_id,
         ]);
-        $admin = User::where('user_type', '3')->first(); // Adjust this query based on your user model
+        
+        $escort_exists = AuthUser::find($request->escort_id);
+        if (!$escort_exists) {
+            return Resp::error(['Escort user not found']);
+        }
+        $fan_exists = AuthUser::find($user->id);
+        if (!$fan_exists) {
+            return Resp::error(['Fan user not found']);
+        }
+    
+        $dynamicData = [
+            '[ESCORT_NAME]' => $escort_exists->username,
+            '[fAN_NAME]' => $fan_exists->username,
+        
+        ];
+        try {
+            EmailHelper::sendDynamicEmail(
+                'a_new_review_added',
+                $dynamicData,
+                env('ADMIN_EMAIL')
+            );
+            Log::info('Verification email sent to: ' . $user->email);
 
-        // Send notification to the admin
-        if ($admin) {
-            Log::info('Sending notification to admin: >>>>>><<<<<<<' . $admin->email);
-            $admin->notify(new ReviewSubmitted($review));
-        } 
-
-        else {
-            Log::warning('Admin user not found.');
+        } catch (\Exception $e) {
+            Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
         }
 
-        // Mail::to('your_email@example.com')->send(new ReviewSubmitted($review));
 
+    
         return Resp::success(['message' => 'Review created successfully', 'review' => $review]);
+        $review->save();
     }
 
+
+//     public function create(Request $request)
+// {
+//     $user = auth()->user();
+
+//     Validator::make($request->all(), [
+//         'photo_accuracy' => 'nullable|integer',
+//         'service' => 'nullable|integer',
+//         'clean_liness' => 'nullable|integer',
+//         'location' => 'nullable|integer',
+//         'value_for_money' => 'nullable|integer',
+//         'comment' => 'required|string',
+//         'escort_name' => 'required|string',
+//         'fan_name' => 'required|string',
+//     ]);
+
+//     // Get escort by name
+  
+
+//     if (!$escort_exists) {
+//         return Resp::error(['Escort user not found']);
+//     }
+
+//     if ($escort_exists->user_type != 2) {
+//         return Resp::error(["This user is not an escort"]);
+//     }
+
+//     // Check if the user has already submitted a review for this escort
+//     if (EscortReviews::where('user_id', $user->id)->where('escort_id', $escort_exists->id)->exists()) {
+//         return Resp::success(['Error' => 'You have already submitted a review for this escort']);
+//     }
+
+//     $review = EscortReviews::create([
+//         'user_id' => $user->id,
+//         'photo_accuracy' => $request->photo_accuracy,
+//         'service' => $request->service,
+//         'clean_liness' => $request->clean_liness,
+//         'location' => $request->location,
+//         'value_for_money' => $request->value_for_money,
+//         'comment' => $request->comment,
+//         'escort_id' => $escort_exists->id,
+//     ]);
+
+//     // Prepare dynamic data for the email
+//     $dynamicData = [
+//         '[ESCORT_NAME]' => $escort_exists->username,
+//         '[FAN_NAME]' => $fan_exists->username,
+//     ];
+
+//     try {
+//         // Send the email notification
+//         EmailHelper::sendDynamicEmail(
+//             'ts_fan_review_submitted',
+//             $dynamicData,
+//             env('ADMIN_EMAIL')
+//         );
+//         Log::info('Review submission email sent to: ' . env('ADMIN_EMAIL'));
+
+//     } catch (\Exception $e) {
+//         Log::error('Failed to send review submission email: ' . $e->getMessage());
+//     }
+
+//     return Resp::success(['message' => 'Review created successfully', 'review' => $review]);
+// }
 
 
 

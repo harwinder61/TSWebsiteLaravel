@@ -10,6 +10,10 @@ use App\Services\Resp;
 use Carbon\Carbon;
 use App\Models\BaseProfile;
 use App\Models\Plan;
+use App\Notifications\ReviewSubmitted;
+use Illuminate\Support\Facades\Mail;
+use Modules\Escort\app\Models\Reviews;
+
 
 class ScheduledEmails extends Command
 {
@@ -23,9 +27,6 @@ class ScheduledEmails extends Command
     {
         parent::__construct();
     }
-
-
-
 
     
 

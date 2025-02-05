@@ -1876,8 +1876,31 @@ class AdminController extends Controller
         $escort = Profile::create([
             'name' => $user->username,
             'escort_id' => $user->id,
-
         ]);
+
+        if($request->user_type == 3){
+            $dynamicData = [
+                '[USER_LOGIN]' => $user->username,
+                '[USER_PASSWORD]' => $request->password,
+                '[LOGIN_URL]' => env('LOGIN_URL')
+            ];
+
+            try {
+                EmailHelper::sendDynamicEmail(
+                    'ts_admin_welcome_email',
+                    $dynamicData,
+                    $user->email
+                );
+                Log::info('Verification email sent to: ' . $user->email);
+    
+            } catch (\Exception $e) {
+                Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
+            }
+        }
+
+        
+        
+    
         return Resp::success(['message' => 'User created successfully', 'user' => $user]);
     }
 
@@ -2983,6 +3006,36 @@ class AdminController extends Controller
             return Resp::error(['message' => $e->getMessage()]);
         }
     }
+
+    // public function updateHomeImages(Request $request)
+    // {
+    //     try {
+    //         $validator = Validator::make($request->all(), [
+    //             'key' => 'required|exists:settings,key',
+    //             'value' => 'required|array',
+    //             'value.image_id' => 'required|exists:media,id',
+    //             'value.url' => 'required|url',
+    //         ]);
+    //         if ($validator->fails()) {
+    //             return Resp::error([$validator->errors()]);
+    //         }
+    //         $data = BaseSettings::with('media')->where('key', '=', $request->key)->first();
+    //         if (!$data) {
+    //             return Resp::error([
+    //                 'error' => 'No Advert Image found!'
+    //             ]);
+    //         }
+    //         // Update the value with the new structure
+    //         $updatedData = $data->update([
+    //             'value' => json_encode($request->value)
+    //         ]);
+    //         Log::info('Incoming request data: ', $request->all());
+    //         return Resp::success(['message' => 'Home page images updated successfully', 'data' => $data]);
+    //     } catch (\Exception $e) {
+    //         return Resp::error(['message' => $e->getMessage()]);
+    //     }
+    
+    // }
 
     public function getHomeImages(Request $request)
     {
