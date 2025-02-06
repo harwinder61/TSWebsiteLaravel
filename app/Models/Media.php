@@ -16,5 +16,11 @@ class Media extends Model
     }
 
 
-    
+    public function user(){
+        return $this->belongsTo(User::class,'escort_id','id');
+    }
+
+    public function media(){
+        return $this->hasMany(Media::class,'escort_id','id');
+    }
 }

@@ -543,10 +543,99 @@ class AdminController extends Controller
         return Resp::success(['message' => 'Category deleted successfully']);
     }
 
+    // public function profileUpdateMedia($id, Request $request)
+    // {
+    //     try {
+
+    //         // Validate the input
+    //         $validator = Validator::make($request->all(), [
+    //             'gallery' => 'array',
+    //             'gallery.*' => 'exists:media,id',
+    //             'private_gallery' => 'array',
+    //             'private_gallery.*' => 'exists:media,id',
+    //             'promo_video' => 'exists:media,id',
+    //             'description' => 'nullable|string',
+    //         ]);
+
+    //         if ($validator->fails()) {
+    //             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //         }
+
+    //         // Find the profile
+    //         $user = Profile::where('escort_id', $id)->first();
+    //         if (!$user) {
+    //             return Resp::error(['message' => 'User not found']);
+    //         }
+
+    //         // Update gallery and private gallery
+    //         if ($request->has('gallery')) {
+    //             $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
+
+    //             Media::where('escort_id', $user->id)
+    //                 ->where('type', 'gallery')
+    //                 ->whereIn('id', $galleryIds)
+    //                 ->update(['is_temp' => false]);
+
+    //             Media::where('escort_id', $user->id)
+    //                 ->where('type', 'gallery')
+    //                 ->whereNotIn('id', $galleryIds)
+    //                 ->forceDelete();
+    //         }
+
+    //         if ($request->has('private_gallery')) {
+    //             $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
+
+    //             Media::where('escort_id', $user->id)
+    //                 ->where('type', 'private_gallery')
+    //                 ->whereIn('id', $privateGalleryIds)
+    //                 ->update(['is_temp' => false]);
+
+    //             Media::where('escort_id', $user->id)
+    //                 ->where('type', 'private_gallery')
+    //                 ->whereNotIn('id', $privateGalleryIds)
+    //                 ->forceDelete();
+    //         }
+
+    //         // Update promo video
+    //         if ($request->has('promo_video')) {
+    //             $promoVideoId = $request->input('promo_video');
+
+    //             Media::where('escort_id', $user->id)
+    //                 ->where('type', 'promo_video')
+    //                 ->where('id', $promoVideoId)
+    //                 ->update(['is_temp' => false]);
+
+    //             Media::where('escort_id', $user->id)
+    //                 ->where('type', 'promo_video')
+    //                 ->where('id', '!=', $promoVideoId)
+    //                 ->forceDelete();
+    //         }
+    //         // Update description
+    //         if ($request->input('description')) {
+    //             $user->description = $request->input('description');
+    //             $user->save();
+    //         }
+
+    //         if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
+    //             $user->is_media = 1;
+    //             $user->save();
+    //         }
+    //         $media = Media::where('escort_id', $id)->first();
+    //         if (!$media) {
+    //             return Resp::error(['message' => 'Media not found']);
+    //         }
+    //         $user->load('media');
+    //         return Resp::success(['message' => 'Media updated successfully', 'media' => $media, 'profile' => $user]);
+    //     } catch (\Exception $e) {
+    //         return Resp::error(['message' => $e->getMessage()]);
+    //     }
+    // }
+
+
+
     public function profileUpdateMedia($id, Request $request)
     {
         try {
-
             // Validate the input
             $validator = Validator::make($request->all(), [
                 'gallery' => 'array',
@@ -556,177 +645,98 @@ class AdminController extends Controller
                 'promo_video' => 'exists:media,id',
                 'description' => 'nullable|string',
             ]);
-
+    
             if ($validator->fails()) {
                 return Resp::fieldErrors(['field_errors' => $validator->errors()]);
             }
-
+    
             // Find the profile
             $user = Profile::where('escort_id', $id)->first();
             if (!$user) {
                 return Resp::error(['message' => 'User not found']);
             }
-
-            // Update gallery and private gallery
+    
+            // Update gallery
             if ($request->has('gallery')) {
                 $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
-
+    
+                // Check for references in the blog table
+                $referencedMediaIds = Blog::whereIn('media_id', $galleryIds)->pluck('media_id')->toArray();
+                $idsToDelete = array_diff($galleryIds, $referencedMediaIds);
+    
                 Media::where('escort_id', $user->id)
                     ->where('type', 'gallery')
                     ->whereIn('id', $galleryIds)
                     ->update(['is_temp' => false]);
-
-                Media::where('escort_id', $user->id)
-                    ->where('type', 'gallery')
-                    ->whereNotIn('id', $galleryIds)
-                    ->forceDelete();
+    
+                if (!empty($idsToDelete)) {
+                    Media::where('escort_id', $user->id)
+                        ->where('type', 'gallery')
+                        ->whereIn('id', $idsToDelete)
+                        ->forceDelete();
+                }
             }
-
+    
+            // Update private gallery
             if ($request->has('private_gallery')) {
                 $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
-
+    
+                // Check for references in the blog table
+                $referencedPrivateMediaIds = Blog::whereIn('media_id', $privateGalleryIds)->pluck('media_id')->toArray();
+                $privateIdsToDelete = array_diff($privateGalleryIds, $referencedPrivateMediaIds);
+    
                 Media::where('escort_id', $user->id)
                     ->where('type', 'private_gallery')
                     ->whereIn('id', $privateGalleryIds)
                     ->update(['is_temp' => false]);
-
-                Media::where('escort_id', $user->id)
-                    ->where('type', 'private_gallery')
-                    ->whereNotIn('id', $privateGalleryIds)
-                    ->forceDelete();
+    
+                if (!empty($privateIdsToDelete)) {
+                    Media::where('escort_id', $user->id)
+                        ->where('type', 'private_gallery')
+                        ->whereIn('id', $privateIdsToDelete)
+                        ->forceDelete();
+                }
             }
-
+    
             // Update promo video
             if ($request->has('promo_video')) {
                 $promoVideoId = $request->input('promo_video');
-
+    
                 Media::where('escort_id', $user->id)
                     ->where('type', 'promo_video')
                     ->where('id', $promoVideoId)
                     ->update(['is_temp' => false]);
-
+    
                 Media::where('escort_id', $user->id)
                     ->where('type', 'promo_video')
                     ->where('id', '!=', $promoVideoId)
                     ->forceDelete();
             }
-
+    
             // Update description
             if ($request->input('description')) {
                 $user->description = $request->input('description');
                 $user->save();
             }
-
-            // Update is_media
+    
+            // Update media status
             if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
                 $user->is_media = 1;
                 $user->save();
             }
-
+    
             $media = Media::where('escort_id', $id)->first();
             if (!$media) {
                 return Resp::error(['message' => 'Media not found']);
             }
+            
             $user->load('media');
-
-
             return Resp::success(['message' => 'Media updated successfully', 'media' => $media, 'profile' => $user]);
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
         }
     }
-
-
-
-
-    //     public function profileUpdateMedia($id, Request $request)
-    // {
-    //     // Validate the input
-    //     $validator = Validator::make($request->all(), [
-    //         'gallery' => 'array',
-    //         'gallery.*' => 'exists:media,id',
-    //         'private_gallery' => 'array',
-    //         'private_gallery.*' => 'exists:media,id',
-    //         'promo_video' => 'exists:media,id',
-    //         'description' => 'nullable|string',
-    //     ]);
-
-
-    //     if ($validator->fails()) {
-    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    //     }
-
-    //     // Find the profile
-    //     $user = Profile::find($id);
-    //     if (!$user) {
-    //         return Resp::error(['message' => 'User not found']);
-    //     }
-
-    //     // Update gallery and private gallery
-    //     if ($request->has('gallery')) {
-    //         $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
-
-    //         Media::where('escort_id', $user->id)
-    //             ->where('type', 'gallery')
-    //             ->whereIn('id', $galleryIds)
-    //             ->update(['is_temp' => false]);
-
-    //         Media::where('escort_id', $user->id)
-    //             ->where('type', 'gallery')
-    //             ->whereNotIn('id', $galleryIds)
-    //             ->forceDelete();
-    //     }
-
-    //     if ($request->has('private_gallery')) {
-    //         $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
-
-    //         Media::where('escort_id', $user->id)
-    //             ->where('type', 'private_gallery')
-    //             ->whereIn('id', $privateGalleryIds)
-    //             ->update(['is_temp' => false]);
-
-    //         Media::where('escort_id', $user->id)
-    //             ->where('type', 'private_gallery')
-    //             ->whereNotIn('id', $privateGalleryIds)
-    //             ->forceDelete();
-    //     }
-
-    //     // Update promo video
-    //     if ($request->has('promo_video')) {
-    //         $promoVideoId = $request->input('promo_video');
-
-    //         Media::where('escort_id', $user->id)
-    //             ->where('type', 'promo_video')
-    //             ->where('id', $promoVideoId)
-    //             ->update(['is_temp' => false]);
-
-    //         Media::where('escort_id', $user->id)
-    //             ->where('type', 'promo_video')
-    //             ->where('id', '!=', $promoVideoId)
-    //             ->forceDelete();
-    //     }
-
-    //     // Update description
-    //     if ($request->input('description')) {
-    //         $profile = Profile::where('escort_id',$id)->first();
-    //         if ($profile) {
-    //             $profile->description = $request->input('description');
-    //             $profile->save();
-    //         }
-    //     }
-
-    //     // Check if all fields are present and update is_media
-    // // Check if all fields are present and update is_media
-    // if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
-    //     $profile = Profile::where('escort_id',$id)->first();
-    //     if ($profile) {
-    //         $profile->is_media = 1;
-    //         $profile->save();
-    //     }
-    // }
-
-    //     return Resp::success(['message' => 'Media updated successfully']);
-    // }
+    
     public function hideProfile($id, Request $request)
     {
         $validator = Validator::make($request->all(), [

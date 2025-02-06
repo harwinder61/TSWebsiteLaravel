@@ -27,6 +27,7 @@ use App\Models\Plan;
 use App\Models\BaseSubscription;
 use App\Models\BaseReviews;
 use App\Mail\EmailHelper;
+use App\Models\User;
 class EscortController extends Controller
 {
     public function __construct()
@@ -410,8 +411,9 @@ public function deleteProfile(Request $request)
             }
         }
     
-        return Resp::success(['message' => 'Media updated successfully']);
+        return Resp::success(['message' => 'Media updated successfully' ,'profile' => $profile]);
     }
+
 
     public function getEscortProfile($id,Request $request)
     {
