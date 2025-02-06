@@ -34,7 +34,7 @@ class FanController extends Controller
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except('blog', 'allBlogList', 'getDynamicPagesList');
+        $this->middleware(AuthMiddleware::class)->except('blog', 'allBlogList', 'getDynamicPagesList','getMultipleProfiles');
     }
     public function create(Request $request)
     {
@@ -347,4 +347,60 @@ class FanController extends Controller
         return response()->json(['users' => $users], 200);
     }
 
+    public function getMultipleProfiles(Request $request){
+        $validator = Validator::make($request->all(), [
+          'ids' => 'required|array',
+        ]);
+        if($validator->fails()){
+            return Resp::error(['message' => $validator->errors()]);
+        }
+        try{
+            $ids=$request->input('ids');
+            $data=Profile::with(['media','city','county','region','reviews','rates'])->whereIn('escort_id',$ids)->get();
+            if(!$data){
+                return Resp::error(['message' => 'No profiles found']);
+
+            }
+
+
+            foreach ($data as $profile){
+                $reviews = $profile->reviews?? [] ;
+                $totalPhotoAccuracy = 0;
+                $totalService = 0;
+                $totalCleanliness = 0;
+                $totalLocation = 0;
+                $totalValueForMoney = 0;
+                $totalReviews = count($reviews);
+
+                // If there are reviews, calculate the sum for each field
+                if ($totalReviews > 0) {
+                    foreach ($reviews as $review) {
+                        $totalPhotoAccuracy += $review->photo_accuracy;
+                        $totalService += $review->service;
+                        $totalCleanliness += $review->clean_liness;
+                        $totalLocation += $review->location;
+                        $totalValueForMoney += $review->value_for_money;
+                    }
+
+
+                    $averageRating = (
+                        $totalPhotoAccuracy +
+                        $totalService +
+                        $totalCleanliness +
+                        $totalLocation +
+                        $totalValueForMoney
+                    ) / (5 * $totalReviews);
+
+
+                    $profile->avg_rating = round($averageRating, 2);
+                }else{
+                    $profile->avg_rating = 0;
+                }
+            }
+            return Resp::success(['data'=>$data]);
+            
+
+        }catch(\Exception $e){}
+            return Resp::error(['message' => $e->getMessage()]);
+        }
 }
