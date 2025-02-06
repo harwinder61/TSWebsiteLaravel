@@ -11,6 +11,7 @@ use App\Console\Commands\updateLastActiveAt;
 use App\Console\Commands\sendInactivityEmails;
 use App\Console\Commands\ScheduledEmails;
 use App\Console\Commands\DeleteExpiredUsers;
+
 Route::middleware(['jwt_auth:admin'])->group(function(){
     Route::group(['prefix'=>'admin'],function(){
         Route::post('/plan/{plan_code}',[AdminController::class,'updatePlan']);
@@ -160,3 +161,5 @@ Route::get('/30day-expired-users', function () {
 Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
 Route::get('/send-inactivity-emails', [AuthController::class, 'sendInactivityEmails']);
 Route::post('/admin/register', [AdminController::class, 'register']);
+Route::get('/admin/auto-login', [AdminController::class, 'autoLogin']);
+Route::post('/admin/recover-password', [AdminController::class, 'recoverAdminPassword']);

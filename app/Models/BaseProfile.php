@@ -136,7 +136,7 @@ class BaseProfile extends Model
         return $this->belongsTo(AuthUser::class,'escort_id','id');
     }
     public function reviews(){
-        return $this->hasMany(BaseReviews::class,'escort_id','escort_id');
+        return $this->hasMany(BaseReviews::class,'escort_id','escort_id')->where('status',1);
     }
     public function media(){
         return $this->hasMany(Media::class,'escort_id','escort_id')
