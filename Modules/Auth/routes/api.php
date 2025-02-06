@@ -21,6 +21,7 @@ Route::post('login-with-gmail', [AuthController::class, 'loginWithGmail']);
 Route::post('register-with-gmail', [AuthController::class, 'registerWithGmail']);
 // Route::get('backend.com-email-change-confirm-token',[AuthController::class,'backendToken']);
 Route::get('/email/change/confirm/{token}', [AuthController::class, 'backendToken']);
+Route::post('admin-login', [AuthController::class, 'adminLogin']);
 
 
 

@@ -118,11 +118,9 @@ public function deleteProfile(Request $request)
             $user->is_delete = 0; // Restore the account
             $user->delete_on = null; // Clear the delete_on date
             $user->save();
-        
             return Resp::success(['user' => $user], 'Profile restored successfully');
         }
     }
-
     return Resp::error(['message' => 'Invalid request']);
 }
 
