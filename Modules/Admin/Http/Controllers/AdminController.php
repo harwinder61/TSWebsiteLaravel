@@ -104,7 +104,7 @@ class AdminController extends Controller
     //     $validator = Validator::make($request->all(), [
     //         'value' => 'required|exists:media,id',  // Mobile image ID validation
     //     ]);
-    
+
     //     // If validation fails, return error
     //     if ($validator->fails()) {
     //         return Resp::error(['message' => $validator->errors()]);
@@ -130,12 +130,12 @@ class AdminController extends Controller
     //     $validator = Validator::make($request->all(), [
     //         'value' => 'required|exists:media,id',  // Mobile image ID validation
     //     ]);
-    
+
     //     // If validation fails, return error
     //     if ($validator->fails()) {
     //         return Resp::error(['message' => $validator->errors()]);
     //     }
-    
+
     //     // Fetch or create the Setting with type 'home_parallax'
     //     $setting = Setting::where('key', 'account_page')->first();
     //     if (!$setting) {
@@ -153,32 +153,33 @@ class AdminController extends Controller
     // }
 
 
-    public function emailLogs(Request $request) {
+    public function emailLogs(Request $request)
+    {
         auth()->user(); // Ensure the user is authenticated
-    
+
         // Start with the base query
         $query = EmailLog::query();
-    
+
         // Apply filters based on query parameters
         if ($request->has('subject')) {
             $query->where('subject', 'like', '%' . $request->input('subject') . '%');
         }
-    
+
         if ($request->has('to')) {
             $query->where('to', $request->input('to'));
         }
-    
+
         if ($request->has('date_from')) {
             $query->whereDate('created_at', '>=', $request->input('date_from'));
         }
-    
+
         if ($request->has('date_to')) {
             $query->whereDate('created_at', '<=', $request->input('date_to'));
         }
-    
+
         // Get the filtered results with pagination
         $emailLogs = $query->orderBy('created_at', 'desc')->paginate(10); // Get 10 records per page
-    
+
         return Resp::success([
             'emailLogs' => $emailLogs->items(), // Get the current page items
             'pagination' => [
@@ -719,6 +720,11 @@ class AdminController extends Controller
                 $user->save();
             }
     
+            // Check if any media entries are temporary and set them to not temporary
+            Media::where('escort_id', $user->id)
+                ->where('is_temp', 1)
+                ->update(['is_temp' => 0]);
+    
             // Update media status
             if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
                 $user->is_media = 1;
@@ -729,14 +735,14 @@ class AdminController extends Controller
             if (!$media) {
                 return Resp::error(['message' => 'Media not found']);
             }
-            
+    
             $user->load('media');
             return Resp::success(['message' => 'Media updated successfully', 'media' => $media, 'profile' => $user]);
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
         }
     }
-    
+
     public function hideProfile($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -754,9 +760,9 @@ class AdminController extends Controller
         $profile->save();
 
         return Resp::success(['message' => 'Profile ' . ($request->is_hidden ? 'hidden' : 'unhidden') . ' successfully']);
-    } 
+    }
 
-    public function deleteProfile($id,Request $request)
+    public function deleteProfile($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
             'is_delete' => 'required|boolean'
@@ -999,7 +1005,7 @@ class AdminController extends Controller
 
 
 
-   
+
 
 
 
@@ -1762,7 +1768,7 @@ class AdminController extends Controller
 
     // public function userProfile($id, Request $request)
     // {  
-        
+
 
     //     $validator = Validator::make($request->all(), [
     //         'first_name' => 'required|string|max:255',
@@ -1805,7 +1811,7 @@ class AdminController extends Controller
     // }
 
     public function userProfile($id, Request $request)
-    {  
+    {
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -1814,23 +1820,23 @@ class AdminController extends Controller
             'username' => 'required|string|max:255',
             'email' => 'required|email',
         ]);
-    
+
         if ($validator->fails()) {
             return Resp::error(['message' => $validator->errors()]);
         }
-    
+
         $admin = auth()->user();
         $user = AuthUser::find($id);
-    
+
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
         }
-    
+
         // Check if user_type is the same as the current user's type
         if ($user->user_type !== $request->input('user_type')) {
             return Resp::error(['message' => 'User type cannot be changed']);
         }
-    
+
         // Check if the username is being changed and if it already exists
         if ($user->username !== $request->input('username')) {
             $existingUser = AuthUser::where('username', $request->input('username'))->first();
@@ -1838,14 +1844,14 @@ class AdminController extends Controller
                 return Resp::error(['message' => 'Username already taken']);
             }
         }
-           // Check if the username is being changed and if it already exists
-           if ($user->email !== $request->input('email')) {
+        // Check if the username is being changed and if it already exists
+        if ($user->email !== $request->input('email')) {
             $existingUser = AuthUser::where('email', $request->input('email'))->first();
             if ($existingUser) {
                 return Resp::error(['message' => 'email already taken']);
             }
         }
-    // Update only if the username is different or not being changed
+        // Update only if the username is different or not being changed
         $user->update([
             'username' => $request->input('username'),
             'email' => $request->input('email'),
@@ -1853,12 +1859,12 @@ class AdminController extends Controller
             'firstname' => $request->input('first_name'),
             'lastname' => $request->input('last_name'),
         ]);
-    
+
         return Resp::success(['message' => 'Profile updated successfully']);
     }
 
 
-    
+
     public function newUser(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -1888,7 +1894,7 @@ class AdminController extends Controller
             'escort_id' => $user->id,
         ]);
 
-        if($request->user_type == 3){
+        if ($request->user_type == 3) {
             $dynamicData = [
                 '[USER_LOGIN]' => $user->username,
                 '[USER_PASSWORD]' => $request->password,
@@ -1902,15 +1908,14 @@ class AdminController extends Controller
                     $user->email
                 );
                 Log::info('Verification email sent to: ' . $user->email);
-    
             } catch (\Exception $e) {
                 Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
             }
         }
 
-        
-        
-    
+
+
+
         return Resp::success(['message' => 'User created successfully', 'user' => $user]);
     }
 
@@ -2782,7 +2787,9 @@ class AdminController extends Controller
                 return Resp::error(['Media not found']);
             }
             $media->delete();
-            return Resp::success(['message' => 'Media deleted successfully']);
+            return Resp::success(['message' => '
+            
+            deleted successfully']);
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
         }
@@ -3044,7 +3051,7 @@ class AdminController extends Controller
     //     } catch (\Exception $e) {
     //         return Resp::error(['message' => $e->getMessage()]);
     //     }
-    
+
     // }
 
     public function getHomeImages(Request $request)
@@ -3068,8 +3075,9 @@ class AdminController extends Controller
             return Resp::error(['message' => $e->getMessage()]);
         }
     }
-    public function changeEmailStatus(Request $request){
-        try{
+    public function changeEmailStatus(Request $request)
+    {
+        try {
 
             $email = EmailTemplates::find($request->email_id);
             if (!$email) {
@@ -3077,17 +3085,16 @@ class AdminController extends Controller
                     'error' => 'Email not found!'
                 ]);
             }
-            $email=$email->update([
-                "status"=> $request->status
+            $email = $email->update([
+                "status" => $request->status
             ]);
-            if(!$email){
+            if (!$email) {
                 return Resp::error([
                     'error' => 'Failed to update email status'
                 ]);
             }
             return Resp::success(['message' => 'Email status updated successfully', 'data' => $email]);
-            
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
         }
     }
@@ -3101,9 +3108,9 @@ class AdminController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
             'password_confirmation' => 'required|same:password',
-          
+
         ], [
-            
+
             'password.confirmed' => 'The password and confirm password do not match',
         ]);
 
@@ -3141,23 +3148,24 @@ class AdminController extends Controller
             'escort_id' => $user->id,
         ]);
 
-         // One-liner call to send dynamic email
-            EmailHelper::sendDynamicEmail(
-                'ts_admin_welcome',
-                [
-                    '[ADMIN_NAME]' => $user->username,
-                    '[LOGIN_URL]' => $loginUrl,
-                    '[RESET_PASSWORD_URL]' => "/forget-password",
-                ],
-                $user->email
-            );
+        // One-liner call to send dynamic email
+        EmailHelper::sendDynamicEmail(
+            'ts_admin_welcome',
+            [
+                '[ADMIN_NAME]' => $user->username,
+                '[LOGIN_URL]' => $loginUrl,
+                '[RESET_PASSWORD_URL]' => "/forget-password",
+            ],
+            $user->email
+        );
 
         // Return success response
         return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
     }
 
 
-    public function autoLogin(Request $request){
+    public function autoLogin(Request $request)
+    {
         // Get the token from the query string
         $token = $request->query('token');
 
@@ -3170,9 +3178,9 @@ class AdminController extends Controller
             }
 
             // Redirect to the frontend with the token
-            return redirect(env("WEBAPP_URL")."/admin/dashboard");
+            return redirect(env("WEBAPP_URL") . "/admin/dashboard");
         } catch (\Exception $e) {
-        return response()->json(['error' => 'Invalid or expired token.'], 401);
+            return response()->json(['error' => 'Invalid or expired token.'], 401);
         }
     }
 
