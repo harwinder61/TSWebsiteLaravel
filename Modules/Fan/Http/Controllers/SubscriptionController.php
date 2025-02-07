@@ -560,6 +560,29 @@ class SubscriptionController extends Controller
                 });
             }
 
+            if(!is_null($request->query('locationORName'))){
+                $locationORName = $request->query('locationORName');
+                // $subscriptions->whereHas('escort.profile', function ($query) use ($locationORName) {
+                //     $query->whereHas('city', function ($q) use ($locationORName) {
+                //         $q->where('name', 'like', '%' . $locationORName . '%');
+                //     })->orWhereHas('region', function ($q) use ($locationORName) {
+                //         $q->where('name', 'like', '%' . $locationORName . '%');
+                //     })->orWhereHas('county', function ($q) use ($locationORName) {
+                //         $q->where('name', 'like', '%' . $locationORName . '%');
+                //     });
+                // });
+                $subscriptions->whereHas('escort.profile', function ($query) use ($locationORName) {
+                    $query->whereHas('city', function ($q) use ($locationORName) {
+                        $q->where('name', 'like', '%' . $locationORName . '%');
+                    })->orWhereHas('region', function ($q) use ($locationORName) {
+                        $q->where('name', 'like', '%' . $locationORName . '%');
+                    })->orWhereHas('county', function ($q) use ($locationORName) {
+                        $q->where('name', 'like', '%' . $locationORName . '%');
+                    })->orWhere('name', 'like', '%' . $locationORName . '%'); // Add this line
+                });
+
+            }
+
             if (!is_null($request->query('rate'))) {
                 $subscriptions->whereHas('escort.profile.rates', function ($query) use ($request) {
                     // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
