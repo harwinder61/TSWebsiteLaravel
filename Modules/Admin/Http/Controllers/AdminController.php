@@ -2195,6 +2195,14 @@ class AdminController extends Controller
         try {
 
             $plan = Plan::where('code', $request->input('plan_code'))->first();
+            $order=Orders::create([
+                'escort_id' => $request->input('user_id'),
+                'plan_code' => $request->input('plan_code'),
+                'start_date' => $request->input('start_date'),
+                'end_date'=>$request->input('end_date'),
+                'payment_status'=>'PAID',
+
+            ]);
             $subscription = Subscription::create([
                 'escort_id' => $request->input('user_id'),
                 'plan_code' => $request->input('plan_code'),
@@ -2204,8 +2212,19 @@ class AdminController extends Controller
                 'created_by' => auth()->user()->id,
                 'image_id' => $request->input('image_id'),
                 'created_mode' => 'Admin',
+                'order_id'=>$order->id
 
             ]);
+            if(!$subscription){
+                return Resp::error(['message' => 'Failed to create subscription']);
+            }
+            if($request->input('onlyfans')!=null || $request->input('manyvids')!="" || $request->input('fancentro')!="" ){
+                $subscription->orders->update([
+                    'only_fans_link' => $request->input('onlyfans'),
+                    'many_vids_link' => $request->input('manyvids'),
+                    'fan_centro_link' => $request->input('fancentro'),
+                ]);
+            }
             return Resp::success([
 
                 'message' => 'Subscription created successfully',
