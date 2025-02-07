@@ -2265,8 +2265,8 @@ class AdminController extends Controller
     public function assignPermissions($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'permissions_ids' => 'required|array',
-            'permissions_ids.*' => 'required|exists:permissions,code'
+            'permissions_id' => 'required|array',
+            'permissions_id.*' => 'required|exists:permissions,code'
         ]);
         
         if ($validator->fails()) {
@@ -2286,7 +2286,7 @@ class AdminController extends Controller
         $user->permission_ids = $request->permissions_ids;
         $user->save();
         
-        return Resp::success(['message' => 'Permissions assigned successfully']);
+        return Resp::success(['message' => 'Permission assigned successfully']);
     }
 
     public function getPermissions(Request $request)
