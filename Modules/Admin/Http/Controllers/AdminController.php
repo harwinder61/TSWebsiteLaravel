@@ -2265,8 +2265,8 @@ class AdminController extends Controller
     public function assignPermissions($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'permissions_id' => 'required|array',
-            'permissions_id.*' => 'required|exists:permissions,code'
+            'permission_id' => 'required|array',
+            'permission_id.*' => 'required|exists:permissions,code'
         ]);
         
         if ($validator->fails()) {
