@@ -2265,8 +2265,8 @@ class AdminController extends Controller
     public function assignPermissions($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'code' => 'required|array',
-            'code.*' => 'required|exists:permissions,code'
+            'permissions_ids' => 'required|array',
+            'permissions_ids.*' => 'required|exists:permissions,code'
         ]);
         
         if ($validator->fails()) {
@@ -2283,7 +2283,7 @@ class AdminController extends Controller
         }
         
         // Convert the array to a JSON string before saving
-        $user->permission_ids = json_encode($request->code); // Ensure this field is properly defined in your model
+        $user->permission_ids = $request->permissions_ids;
         $user->save();
         
         return Resp::success(['message' => 'Permissions assigned successfully']);
