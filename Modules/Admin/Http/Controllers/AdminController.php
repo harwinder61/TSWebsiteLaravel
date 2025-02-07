@@ -2216,30 +2216,57 @@ class AdminController extends Controller
         }
     }
 
+    // public function assignPermissions($id, Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'code' => 'required|array',
+    //         'code.*' => 'required|integer|min:1|max:100',
+    //         'code.*' => 'exists:permissions,code'
+    //     ]);
+    //     if ($validator->fails()) {
+    //         return Resp::error([$validator->errors()]);
+    //     }
+    //     $user = AuthUser::find($id);
+    //     if (!$user || $user->user_type != 3) {
+    //         return Resp::error(['Invalid user or user type']);
+    //     }
+    //     $updated_user = $user->update([
+    //         "firstname" => $request->first_name,
+    //         "lastname" => $request->last_name,
+    //         "email" => $request->user_email,
+    //         "username" => $request->user_name,
+    //         "password" => Hash::make($request->user_pass)
+    //     ]);
+    //     $user->permission_ids = $request->permission_ids;
+    //     $user->save();
+    //     return Resp::success(['message' => 'Permissions assigned successfully']);
+    // }
+
+
     public function assignPermissions($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'permission_ids' => 'required|array',
-            'permission_ids.*' => 'required|integer|min:1|max:100',
-            'permission_ids.*' => 'exists:permissions,id'
+            'code' => 'required|array',
+            'code.*' => 'required|exists:permissions,code'
         ]);
+        
         if ($validator->fails()) {
-            return Resp::error([$validator->errors()]);
+            return Resp::error($validator->errors()->all());
         }
+        
         $user = AuthUser::find($id);
-        if (!$user || $user->user_type != 3) {
-            return Resp::error(['Invalid user or user type']);
+        if (!$user) {
+            return Resp::error(['User not found']);
         }
-
-        $updated_user = $user->update([
-            "firstname" => $request->first_name,
-            "lastname" => $request->last_name,
-            "email" => $request->user_email,
-            "username" => $request->user_name,
-            "password" => Hash::make($request->user_pass)
-        ]);
-        $user->permission_ids = $request->permission_ids;
+        
+        if ($user->user_type != 3) {
+            return Resp::error(['Invalid user type, expected user_type 3']);
+        }
+        
+        // Convert the array to a JSON string before saving
+        $user->permission_ids = json_encode($request->code); // Ensure this field is properly defined in your model
         $user->save();
+        
         return Resp::success(['message' => 'Permissions assigned successfully']);
     }
 

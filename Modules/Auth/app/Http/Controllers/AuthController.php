@@ -78,12 +78,6 @@ class AuthController extends Controller
             return Resp::error(['error' => 'Email not verified']);
         }
     
-        // Check user type for login restrictions
-        // if ($user->user_type === 3) { // Admin user type
-        //     return Resp::error(['error' => 'Admins cannot log in to the website.']);
-        // }
-    
-        // Check if the user is trying to access the admin portal
         if (($user->user_type === 1 || $user->user_type === 2)) {
             return Resp::error(['error' => 'Fans and Escorts cannot log in to the admin portal.']);
         }
