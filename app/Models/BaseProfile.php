@@ -87,7 +87,7 @@ class BaseProfile extends Model
     public static function rules () {
         return [
         'name' => 'string|max:255',
-        'phone_number' => 'required|integer',
+        'phone_number' => 'integer',
         'allow_whatsapp' => 'boolean',
         //'gender' => 'required|in:'.implode(',',Gender::getValues()),
         'date_of_birth' => 'required|string',
