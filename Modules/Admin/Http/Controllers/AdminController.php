@@ -2283,7 +2283,7 @@ class AdminController extends Controller
         }
         
         // Convert the array to a JSON string before saving
-        $user->permission_ids = $request->permissions_ids;
+        $user->permission_ids = $request->permission_id;
         $user->save();
         
         return Resp::success(['message' => 'Permission assigned successfully']);
