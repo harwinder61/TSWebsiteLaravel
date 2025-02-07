@@ -447,7 +447,9 @@ class OrderController extends Controller
         $location = Location::with('county')->where('name', 'LIKE', '%' . $search . '%')->get();
 
         $subscriptions = Subscription::with('escort.profile', 'media', 'escort.profile.city', 'escort.profile.region', 'escort.profile.county')->whereHas('escort.profile', function ($query) use ($search) {
-            $query->where('name', 'LIKE', '%' . $search . '%');
+            $query->where('name', 'LIKE', '%' . $search . '%')
+            ->where('subscriptions.end_date', '>', now())
+            ->where('subscriptions.is_hidden', 0);
         })
             ->get();
 
