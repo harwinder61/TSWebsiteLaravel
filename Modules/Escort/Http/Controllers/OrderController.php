@@ -445,13 +445,52 @@ class OrderController extends Controller
         }
         $search = $request->query('s');
         $location = Location::with('county')->where('name', 'LIKE', '%' . $search . '%')->get();
-
+        // $subscriptions=Subscription::query();
         $subscriptions = Subscription::with('escort.profile', 'media', 'escort.profile.city', 'escort.profile.region', 'escort.profile.county')->whereHas('escort.profile', function ($query) use ($search) {
             $query->where('name', 'LIKE', '%' . $search . '%')
             ->where('subscriptions.end_date', '>', now())
             ->where('subscriptions.is_hidden', 0);
-        })
-            ->get();
+        })->get();
+
+
+        $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($byPlanOrder) {
+                // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                // as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
+                $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+
+
+            } else {
+                // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+
+
+                $rawSubQuary = '(
+                    SELECT t.escort_id, t.latest_end_date, t.max_id
+                    FROM (
+                        SELECT escort_id, end_date as latest_end_date, id as max_id,
+                               ROW_NUMBER() OVER (PARTITION BY escort_id ORDER BY FIELD(plan_code, "P101", "P102", "P103", "P104","P105","P106")) as rn
+                        FROM subscriptions
+                        WHERE end_date > NOW()
+                    ) t
+                    WHERE t.rn = 1
+                ) as latest_subscription';
+            }
+
+
+            //  $subscriptions->join(
+            //     \DB::raw($rawSubQuary),
+            //     'subscriptions.id',
+            //     '=',
+            //     'latest_subscription.max_id'
+
+            // )
+            //     ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+
+
+
+            
 
         return Resp::success(["locations" => $location, "subscriptions" => $subscriptions]);
     }
