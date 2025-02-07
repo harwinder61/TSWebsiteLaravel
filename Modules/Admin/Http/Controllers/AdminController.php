@@ -87,7 +87,7 @@ class AdminController extends Controller
         $setting_mobile->save();
         $setting_desktop->save();
         $mobileMedia = Media::find($setting_mobile->value);  // Mobile media object
-        $desktopMedia = Media::find($setting_desktop->value);  // Desktop media object
+        $desktopMedia = Media::find($setting_desktop->value); 
         return Resp::success([
             'message' => 'Parallax images updated successfully',
             'setting_mobile' => $setting_mobile,
@@ -2265,8 +2265,8 @@ class AdminController extends Controller
     public function assignPermissions($id, Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'code' => 'required|array',
-            'code.*' => 'required|exists:permissions,code'
+            'permission_id' => 'required|array',
+            'permission_id.*' => 'required|exists:permissions,code'
         ]);
         
         if ($validator->fails()) {
@@ -2283,10 +2283,10 @@ class AdminController extends Controller
         }
         
         // Convert the array to a JSON string before saving
-        $user->permission_ids = json_encode($request->code); // Ensure this field is properly defined in your model
+        $user->permission_ids = $request->permissions_ids;
         $user->save();
         
-        return Resp::success(['message' => 'Permissions assigned successfully']);
+        return Resp::success(['message' => 'Permission assigned successfully']);
     }
 
     public function getPermissions(Request $request)

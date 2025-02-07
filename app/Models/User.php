@@ -40,6 +40,7 @@ class User extends Authenticatable
     ];
     protected $casts=[
         'user_type'=>'integer',
+        'permissions_ids'=>'array',
     ];
 
     /**
