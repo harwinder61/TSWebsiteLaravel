@@ -87,7 +87,7 @@ class AdminController extends Controller
         $setting_mobile->save();
         $setting_desktop->save();
         $mobileMedia = Media::find($setting_mobile->value);  // Mobile media object
-        $desktopMedia = Media::find($setting_desktop->value);  // Desktop media object
+        $desktopMedia = Media::find($setting_desktop->value); 
         return Resp::success([
             'message' => 'Parallax images updated successfully',
             'setting_mobile' => $setting_mobile,

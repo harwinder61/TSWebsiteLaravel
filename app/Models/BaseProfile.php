@@ -80,14 +80,14 @@ class BaseProfile extends Model
         'offer_services_to' => 'json',
         'extra_services' => 'json',
         'whatsapp_number' => 'integer',
-        'phone_number' => 'integer',
+        'phone_number' => 'string',
     ];
 
 
     public static function rules () {
         return [
         'name' => 'string|max:255',
-        'phone_number' => 'integer',
+        'phone_number' => 'required|string',
         'allow_whatsapp' => 'boolean',
         //'gender' => 'required|in:'.implode(',',Gender::getValues()),
         'date_of_birth' => 'required|string',
