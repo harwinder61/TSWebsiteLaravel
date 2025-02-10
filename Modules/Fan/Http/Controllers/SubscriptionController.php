@@ -460,6 +460,7 @@ class SubscriptionController extends Controller
         try {
             $user = auth()->user();
             $locationType = "";
+            $searchedlocationType="";
             $subscriptions = EscortSubscription::query();
 
 
@@ -562,6 +563,26 @@ class SubscriptionController extends Controller
 
             if(!is_null($request->query('locationName'))){
                 $locationORName = $request->query('locationName');
+                // $searchedlocationType=null;
+
+                // Check if the location name exists in City, County, or Region (in order of priority)
+                $cityExists = Location::where('name', 'like', '%' . $locationORName . '%')
+                                        ->where('type','city')->exists();
+                if ($cityExists) {
+                    $searchedlocationType = 'city';
+                } else {
+                    $regionExists = Location::where('name', 'like', '%' . $locationORName . '%')
+                                            ->where('type','region')->exists();
+                    if ($regionExists) {
+                        $searchedlocationType = 'region';
+                    } else {
+                        $countyExists = Location::where('name', 'like', '%' . $locationORName . '%')
+                                                ->where('type','county')->exists();
+                        if ($countyExists) {
+                            $searchedlocationType = 'county';
+                        }
+                    }
+                }
 
                 $subscriptions->whereHas('escort.profile', function ($query) use ($locationORName) {
                     $query->whereHas('city', function ($q) use ($locationORName) {
@@ -804,7 +825,7 @@ class SubscriptionController extends Controller
 
 
 
-            return Resp::success(["list" => $result, 'location_type' => $locationType, 'pagination' => ['total_results' => $totalCount, 'total_pages' => ceil($totalCount / $perPage), 'page_number' => $page, 'page_size' => $perPage]]);
+            return Resp::success(["list" => $result,'searched_location_type' => $searchedlocationType, 'location_type' => $locationType, 'pagination' => ['total_results' => $totalCount, 'total_pages' => ceil($totalCount / $perPage), 'page_number' => $page, 'page_size' => $perPage]]);
 
             // Retrieve subscriptions with related escort and profile
         } catch (\Exception $e) {
