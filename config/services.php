@@ -41,4 +41,13 @@ return [
     'redirect' => env('TWITTER_REDIRECT_URI'),
 ],
 
+
+'twilio' => [
+    'sid' => env('TWILIO_SID'),
+    'token' => env('TWILIO_TOKEN'),
+    'from' => env('TWILIO_PHONE_NUMBER'),
+],
+
+
+
 ];

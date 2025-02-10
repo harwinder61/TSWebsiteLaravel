@@ -34,9 +34,7 @@ use App\Models\ExtraLocation;
 
 class OrderController extends Controller
 {
-    public function __construct()
-    {
-    }
+        public function __construct() {}
 
     function createOrder(Request $request)
     {
@@ -129,16 +127,16 @@ class OrderController extends Controller
         $extra_location_count = is_array($extra_locations) ? count($extra_locations) : 0;
 
         // Calculate the total price
-        $total_price=0;
+        $total_price = 0;
 
 
 
         if ($request->input('plan_code') == "P105" && !$sub_exists) {
-            $total_price=0;
-        }else{
+            $total_price = 0;
+        } else {
             $total_price = $plan->price + (2 * $extra_location_count);
         }
-        
+
 
         $order = Orders::create([
             'escort_id' => $user->id,
@@ -393,10 +391,6 @@ class OrderController extends Controller
                 }
             }
 
-
-
-
-
             EmailHelper::sendDynamicEmail(
                 'ts_new_order_notification',
                 [
@@ -447,9 +441,7 @@ class OrderController extends Controller
         $location = Location::with('county')->where('name', 'LIKE', '%' . $search . '%')->get();
 
         $subscriptions = Subscription::with('escort.profile', 'media', 'escort.profile.city', 'escort.profile.region', 'escort.profile.county')->whereHas('escort.profile', function ($query) use ($search) {
-            $query->where('name', 'LIKE', '%' . $search . '%')
-            ->where('subscriptions.end_date', '>', now())
-            ->where('subscriptions.is_hidden', 0);
+            $query->where('name', 'LIKE', '%' . $search . '%');
         })
             ->get();
 
@@ -494,8 +486,6 @@ class OrderController extends Controller
             if (!$updated_locations) {
                 return Resp::error(['Failed to update extra locations']);
             }
-
-            
         }
         if ($request->has('onlyfans_link')) {
             $updateData['only_fans_link'] = $request->input('onlyfans_link');
@@ -652,7 +642,7 @@ class OrderController extends Controller
                 return Resp::error(['Failed to update subscription']);
             }
             $subscription = Subscription::find($request->input('subscription_id'));
-            if(!$subscription){
+            if (!$subscription) {
                 return Resp::error(['Subscription not found']);
             }
             $locationIds = $request->input('extra_locations'); // e.g., [1, 2, 3]

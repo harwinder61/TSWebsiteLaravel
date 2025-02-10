@@ -25,14 +25,8 @@ return new class extends Migration
         }
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        // If you need to revert the changes, you can drop the column here
-        // Schema::table('permissions', function (Blueprint $table) {
-        //     $table->dropColumn('new_column_name'); // Uncomment if needed
-        // });
+       
     }
 };

@@ -52,11 +52,265 @@ use Modules\Escort\app\Models\Orders;
 use Modules\Admin\app\Models\EmailLog;
 use Carbon\Carbon;
 use Tymon\JWTAuth\Facades\JWTAuth;
-
-
+use App\Services\TwilioSmsService;
+use Illuminate\Support\Facades\Config;
+use Modules\Admin\app\Models\Sms;
+use App\Mail\SmsHelper;
+use Modules\Admin\app\Models\SmsTemplates;
 
 class AdminController extends Controller
 {
+    private $smsService;
+
+    public function __construct(TwilioSmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
+
+    // public function newUser(Request $request)
+    // {
+    //     // Validate the incoming request
+    //     $validator = Validator::make($request->all(), [
+    //         'username' => 'required|string|max:255|unique:users,username',
+    //         'email' => 'required|string|email|max:255|unique:users,email',
+    //         'password' => 'required|string|min:8',
+    //         'user_type' => 'required|integer|in:1,2,3',
+    //         'first_name' => 'required|string|max:255',
+    //         'last_name' => 'required|string|max:255',
+    //     ]);
+    
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    
+    //     // Create the user
+    //     $user = AuthUser::create([
+    //         'username' => $request->username,
+    //         'email' => $request->email,
+    //         'password' => Hash::make($request->password),
+    //         'user_type' => $request->user_type,
+    //         'firstname' => $request->first_name,
+    //         'lastname' => $request->last_name,
+    //         'email_verified' => 1, // Automatically verify the email
+    //     ]);
+    
+    //     $user_id = $user->id;
+    //     $escort = Profile::create([
+    //         'name' => $user->username,
+    //         'escort_id' => $user->id,
+    //     ]);
+    
+    //     // Send SMS notification if user type is 2 (escort)
+    //     if ($request->user_type == 2) {
+    //         $to = '+441234567890'; // Replace with the actual phone number
+    //         $template = SmsHelper::getSmsTemplate(1); // Replace 1 with the actual template ID you want to use
+    //         if ($template) {
+    //             $message = str_replace('[USER_LOGIN]', $user->username, $template->content);
+    //             // Add any other replacements here
+    
+    //             Log::info('Sending SMS: ' . $message);
+                
+    //             try {
+    //                 $this->smsService->sendSms($to, $message);  
+    //                 Log::info('SMS sent to: ' . $to);
+    
+    //                 // Save SMS details to the database
+    //                 Sms::create([
+    //                     'to' => $to,
+    //                     'message' => $message,
+    //                     'status' => 'sent',
+    //                     'user_id' => $user->id,
+    //                 ]);
+    //             } catch (\Exception $e) {
+    //                 Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
+    
+    //                 // Save failed SMS attempt
+    //                 Sms::create([
+    //                     'to' => $to,
+    //                     'message' => $message,
+    //                     'status' => 'failed',
+    //                     'user_id' => $user->id,
+    //                 ]);
+    //             }
+    //         }
+    //     } // Closing brace for user_type == 2
+    
+    //     // Handle user type 3
+    //     if ($request->user_type == 3) {
+    //         $dynamicData = [
+    //             '[USER_LOGIN]' => $user->username,
+    //             '[USER_PASSWORD]' => $request->password,
+    //             '[LOGIN_URL]' => env('LOGIN_URL')
+    //         ];
+    
+    //         try {
+    //             EmailHelper::sendDynamicEmail(
+    //                 'ts_admin_welcome_email',
+    //                 $dynamicData,
+    //                 $user->email
+    //             );
+    //             Log::info('Verification email sent to: ' . $user->email);
+    //         } catch (\Exception $e) {
+    //             Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
+    //         }
+    //     }
+    
+    //     return Resp::success(['message' => 'User created successfully', 'user' => $user]);
+    // }
+
+
+    public function getSmsLogs(Request $request)
+    {
+        // Initialize the query
+        $query = Sms::query();
+    
+        // Apply filters based on request parameters
+        if ($request->has('id')) {
+            $query->where('id', $request->input('id'));
+        }
+    
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+    
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('created_at', [$request->input('start_date'), $request->input('end_date')]);
+        }
+
+        // Get the paginated results
+        $smsLogs = $query->paginate($request->input('per_page', 10));
+    
+        return Resp::success(['message' => 'SMS logs fetched successfully', 'smsLogs' => $smsLogs]);
+    }
+
+
+
+
+    public function newUser(Request $request)
+    {
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string|max:255|unique:users,username',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8',
+            'user_type' => 'required|integer|in:1,2,3',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'phone_number' =>'nullable',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        // Create the user
+        $user = AuthUser::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'user_type' => $request->user_type,
+            'firstname' => $request->first_name,
+            'lastname' => $request->last_name,
+            'email_verified' => 1,
+            'phone_number' => $request->phone_number
+        ]);
+    
+        $user_id = $user->id;
+        $escort = Profile::create([
+            'name' => $user->username,
+            'escort_id' => $user->id,
+        ]);
+    
+        // Send SMS notification if user type is 2
+      // Send SMS notification if user type is 2
+if ($request->user_type == 2) {
+    $to = !empty($request->phone_number) ? $request->phone_number : '+441234567890'; // Use the provided phone number or a static number
+    $template = SmsHelper::getSmsTemplateByType('admin_new_user_added'); // Use the new method to get the template by type
+    
+    if ($template) {
+        $message = str_replace('[USER_LOGIN]', $user->username, $template->content);
+        
+        // Ensure that message is not empty before sending
+        if (empty($message)) {
+            Log::error('Generated SMS message is empty for user: ' . $user->username);
+            return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
+        }
+
+        Log::info('Sending SMS: ' . $message);
+
+        try {
+            // Send SMS via Twilio
+            $this->smsService->sendSms($to, $message);  
+            Log::info('SMS sent to: ' . $to);
+
+            // Save SMS details to the database
+            Sms::create([
+                'to' => $to,
+                'message' => $message,
+                'status' => 'sent',
+                'user_id' => $user->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
+
+            // Save failed SMS attempt
+            Sms::create([
+                'to' => $to,
+                'message' => $message,
+                'status' => 'failed',
+                'user_id' => $user->id,
+            ]);
+        }
+    } else {
+        Log::error('Failed to fetch SMS template for user: ' . $user->username);
+        return Resp::error(['message' => 'Failed to fetch SMS template.']);
+    }
+}
+    
+        // Handle user type 3 (Email Notification)
+        if ($request->user_type == 3) {
+            $dynamicData = [
+                '[USER_LOGIN]' => $user->username,
+                '[USER_PASSWORD]' => $request->password,
+                '[LOGIN_URL]' => env('LOGIN_URL')
+            ];
+    
+            try {
+                EmailHelper::sendDynamicEmail(
+                    'ts_admin_welcome_email',
+                    $dynamicData,
+                    $user->email
+                );
+                Log::info('Verification email sent to: ' . $user->email);
+            } catch (\Exception $e) {
+                Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
+            }
+        }
+    
+        return Resp::success(['message' => 'User created successfully', 'user' => $user]);
+    }
+    
+
+
+    public function sendSms(Request $request)
+    {
+        $to = $request->input('to');
+        $message = $request->input('message');
+
+        $this->smsService->sendSms($to, $message);
+        return response()->json(['status' => 'Message sent!']);
+    }
+
+    public function getPhoneNumberEscort()
+    {
+        $users = User::where('user_type', 2)->get();
+        $phoneNumbers = $users->pluck('phone_number');
+        return response()->json($phoneNumbers);
+    }
+
+
+
 
     public function parallaxImage(Request $request)
     {
@@ -643,7 +897,7 @@ class AdminController extends Controller
                 'gallery.*' => 'exists:media,id',
                 'private_gallery' => 'array',
                 'private_gallery.*' => 'exists:media,id',
-                'promo_video' => 'exists:media,id',
+                'promo_video' => 'exists:media,id|nullable',
                 'description' => 'nullable|string',
             ]);
     
@@ -1865,59 +2119,60 @@ class AdminController extends Controller
 
 
 
-    public function newUser(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8',
-            'user_type' => 'required|integer|in:1,2,3',
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-        ]);
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-        $user = AuthUser::create([
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'user_type' => $request->user_type,
-            'firstname' => $request->first_name,
-            'lastname' => $request->last_name,
-            'email_verified' => 1, // Add this line
-        ]); //->load('profile'); // eager load the profile relationship
+    // public function newUser(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'username' => 'required|string|max:255|unique:users,username',
+    //         'email' => 'required|string|email|max:255|unique:users,email',
+    //         'password' => 'required|string|min:8',
+    //         'user_type' => 'required|integer|in:1,2,3',
+    //         'first_name' => 'required|string|max:255',
+    //         'last_name' => 'required|string|max:255',
+    //     ]);
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    //     $user = AuthUser::create([
+    //         'username' => $request->username,
+    //         'email' => $request->email,
+    //         'password' => Hash::make($request->password),
+    //         'user_type' => $request->user_type,
+    //         'firstname' => $request->first_name,
+    //         'lastname' => $request->last_name,
+    //         'email_verified' => 1, // Add this line
+    //     ]); //->load('profile'); // eager load the profile relationship
 
-        $user_id = $user->id;
-        $escort = Profile::create([
-            'name' => $user->username,
-            'escort_id' => $user->id,
-        ]);
+    //     $user_id = $user->id;
+    //     $escort = Profile::create([
+    //         'name' => $user->username,
+    //         'escort_id' => $user->id,
+    //     ]);
 
-        if ($request->user_type == 3) {
-            $dynamicData = [
-                '[USER_LOGIN]' => $user->username,
-                '[USER_PASSWORD]' => $request->password,
-                '[LOGIN_URL]' => env('LOGIN_URL')
-            ];
+    //     if ($request->user_type == 3) {
+    //         $dynamicData = [
+    //             '[USER_LOGIN]' => $user->username,
+    //             '[USER_PASSWORD]' => $request->password,
+    //             '[LOGIN_URL]' => env('LOGIN_URL')
+    //         ];
 
-            try {
-                EmailHelper::sendDynamicEmail(
-                    'ts_admin_welcome_email',
-                    $dynamicData,
-                    $user->email
-                );
-                Log::info('Verification email sent to: ' . $user->email);
-            } catch (\Exception $e) {
-                Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
-            }
-        }
-
-
+    //         try {
+    //             EmailHelper::sendDynamicEmail(
+    //                 'ts_admin_welcome_email',
+    //                 $dynamicData,
+    //                 $user->email
+    //             );
+    //             Log::info('Verification email sent to: ' . $user->email);
+    //         } catch (\Exception $e) {
+    //             Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
+    //         }
+    //     }
 
 
-        return Resp::success(['message' => 'User created successfully', 'user' => $user]);
-    }
+
+
+    //     return Resp::success(['message' => 'User created successfully', 'user' => $user]);
+    // }
+
 
 
     public function deleteBlog($id, Request $request)
@@ -2282,7 +2537,13 @@ class AdminController extends Controller
             return Resp::error(['Invalid user type, expected user_type 3']);
         }
         
-        // Convert the array to a JSON string before saving
+        $updated_user = $user->update([
+                    "firstname" => $request->first_name,
+                    "lastname" => $request->last_name,
+                    "email" => $request->user_email,
+                    "username" => $request->user_name,
+                    "password" => Hash::make($request->user_pass)
+                ]);
         $user->permission_ids = $request->permission_id;
         $user->save();
         

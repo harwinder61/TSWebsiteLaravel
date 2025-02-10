@@ -19,6 +19,7 @@
         "stripe/stripe-php": "^16.1",
         "symfony/http-client": "*",
         "symfony/mailgun-mailer": "*",
+        "twilio/sdk": "^8.3",
         "tymon/jwt-auth": "^2.1"
     },
     "require-dev": {
