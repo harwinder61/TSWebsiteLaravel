@@ -2521,7 +2521,13 @@ if ($request->user_type == 2) {
     {
         $validator = Validator::make($request->all(), [
             'permission_id' => 'required|array',
-            'permission_id.*' => 'required|exists:permissions,code'
+            'permission_id.*' => 'required|exists:permissions,code',
+            'firstname' => 'required|string',
+            'lastname' => 'required|string',
+            'email' => 'required|string',
+            'username' => 'required|string',
+            'password' => 'required|string',
+
         ]);
         
         if ($validator->fails()) {
@@ -2537,12 +2543,12 @@ if ($request->user_type == 2) {
             return Resp::error(['Invalid user type, expected user_type 3']);
         }
         
-        $updated_user = $user->update([
-                    "firstname" => $request->first_name,
-                    "lastname" => $request->last_name,
-                    "email" => $request->user_email,
-                    "username" => $request->user_name,
-                    "password" => Hash::make($request->user_pass)
+         $user->update([
+                    "firstname" => $request->firstname,
+                    "lastname" => $request->lastname,
+                    "email" => $request->email,
+                    "username" => $request->username,
+                    "password" => Hash::make($request->password)
                 ]);
         $user->permission_ids = $request->permission_id;
         $user->save();
