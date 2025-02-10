@@ -560,6 +560,32 @@ class SubscriptionController extends Controller
                 });
             }
 
+            if(!is_null($request->query('locationName'))){
+                $locationORName = $request->query('locationName');
+
+                $subscriptions->whereHas('escort.profile', function ($query) use ($locationORName) {
+                    $query->whereHas('city', function ($q) use ($locationORName) {
+                        $q->where('name', 'like', '%' . $locationORName . '%');
+                    })->orWhereHas('region', function ($q) use ($locationORName) {
+                        $q->where('name', 'like', '%' . $locationORName . '%');
+                    })->orWhereHas('county', function ($q) use ($locationORName) {
+                        $q->where('name', 'like', '%' . $locationORName . '%');
+                    });
+                });
+
+            }
+
+            if(!is_null($request->query('profileName'))){
+                $profileName = $request->query('profileName');
+
+                $subscriptions->whereHas('escort.profile', function ($query) use ($profileName) {
+                    $query->where('name', 'like', '%' . $profileName . '%');
+                })->orWhereHas('escort', function ($query) use ($profileName) {
+                    $query->where('username', 'like', '%' . $profileName . '%');
+                });
+
+            }
+
             if (!is_null($request->query('rate'))) {
                 $subscriptions->whereHas('escort.profile.rates', function ($query) use ($request) {
                     // Check for the selected rate type (e.g., '15_min', '30_min', etc.)
