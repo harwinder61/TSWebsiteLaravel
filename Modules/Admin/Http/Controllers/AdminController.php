@@ -57,6 +57,7 @@ use Illuminate\Support\Facades\Config;
 use Modules\Admin\app\Models\Sms;
 use App\Mail\SmsHelper;
 use Modules\Admin\app\Models\SmsTemplates;
+use PhpParser\Node\Stmt\TryCatch;
 use Twilio\Rest\Client;
 
 
@@ -69,6 +70,227 @@ class AdminController extends Controller
         $this->smsService = $smsService;
     }
 
+
+
+    // public function sendSmsToUser(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'user_id' => 'required|exists:users,id',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+
+    //     $user = AuthUser::with('profile')->find($request->user_id);
+
+    //     if (!$user) {
+    //         return Resp::error(['message' => 'User not found']);
+    //     }
+
+    //     $smstemplate = SmsTemplates::where('type', 'admin_new_user_added')->first();
+    //     if (!$smstemplate) {
+    //         return Resp::error(['message' => 'SMS template not found']);
+    //     }
+
+    //     $sid = env('TWILIO_SID');
+    //     $token = env('TWILIO_TOKEN');
+    //     $twilioNumber = env('TWILIO_PHONE_NUMBER');
+    //     $to = $user->profile->phone_number;
+    //     $message = $smstemplate->message;
+    //     $status = $request->status ?? true;
+
+    //     try {
+    //         $client = new Client($sid, $token);
+
+    //         Log::info('Sending SMS: ' . $message);
+
+    //         // Send SMS via Twilio
+    //         $twilioMessage = $client->messages->create(
+    //             $to,
+    //             [
+    //                 'from' => $twilioNumber,
+    //                 'body' => $message,
+    //                 'to' => $to
+    //             ]
+    //         );
+
+    //         Log::info('SMS sent to: ' . $to);
+
+    //         // Save SMS details to the database
+    //         $sms = Sms::create([
+    //             'to' => $to,
+    //             'message' => $message,
+    //             'user_id' => $user->id,
+    //             'from' => $twilioNumber,
+    //             'status' => $status,
+    //             'twilio_sid' => $twilioMessage->sid // Store Twilio message SID
+    //         ]);
+
+    //         return Resp::success([
+    //             'message' => 'SMS sent successfully',
+    //             'sms_id' => $sms->id
+    //         ]);
+    //     } catch (\Twilio\Exceptions\TwilioException $e) {
+    //         Log::error('Twilio SMS Error: ' . $e->getMessage());
+
+    //         // Save failed SMS to database
+    //         Sms::create([
+    //             'to' => $to,
+    //             'message' => $message,
+    //             'user_id' => $user->id,
+    //             'from' => $twilioNumber,
+    //             'status' => false,
+    //             'error_message' => $e->getMessage()
+    //         ]);
+
+    //         return Resp::error([
+    //             'message' => 'Failed to send SMS',
+    //             'error' => $e->getMessage()
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('Unexpected SMS Error: ' . $e->getMessage());
+
+    //         return Resp::error([
+    //             'message' => 'Unexpected error occurred',
+    //             'error' => $e->getMessage()
+    //         ]);
+    //     }
+    // }
+
+
+    public function sendSmsToUser(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+
+        $user = AuthUser::with('profile')->find($request->user_id);
+
+        if (!$user) {
+            return Resp::error(['message' => 'User not found']);
+        }
+
+        // Validate phone number
+        if (!$user->profile || !$user->profile->phone_number) {
+            return Resp::error(['message' => 'User phone number not found']);
+        }
+
+        $smstemplate = SmsTemplates::where('type', 'admin_new_user_added')->first();
+        if (!$smstemplate) {
+            return Resp::error(['message' => 'SMS template not found']);
+        }
+
+        $sid = env('TWILIO_SID');
+        $token = env('TWILIO_TOKEN');
+        $twilioNumber = env('TWILIO_PHONE_NUMBER');
+        $to = $user->profile->phone_number;
+        $message = $smstemplate->content;
+        $status = $request->status ?? true;
+
+        try {
+            $client = new Client($sid, $token);
+
+            Log::info('Sending SMS: ' . $message);
+
+            // Send SMS via Twilio
+            // $twilioMessage = $client->messages->create(
+            //     $to,
+            //     [
+            //         'from' => $twilioNumber,
+            //         'body' => $message
+            //     ]
+            // );
+
+            Log::info('SMS sent to: ' . $to);
+
+            // Save SMS details to the database
+            $sms = Sms::create([
+                'to' => $to,
+                'message' => $message,
+                'user_id' => $user->id,
+                'from' => $twilioNumber,
+                'status' => $status,
+                // 'twilio_sid' => $twilioMessage->sid // Store Twilio message SID
+            ]);
+
+            return Resp::success([
+                'message' => 'SMS sent successfully',
+                'sms_id' => $sms->id
+            ]);
+        } catch (\Twilio\Exceptions\TwilioException $e) {
+            Log::error('Twilio SMS Error: ' . $e->getMessage());
+
+            // Save failed SMS to database
+            Sms::create([
+                'to' => $to,
+                'message' => $message,
+                'user_id' => $user->id,
+                'from' => $twilioNumber,
+                'status' => false,
+                'error_message' => $e->getMessage()
+            ]);
+
+            return Resp::error([
+                'message' => 'Failed to send SMS',
+                'error' => $e->getMessage()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Unexpected SMS Error: ' . $e->getMessage());
+
+            return Resp::error([
+                'message' => 'Unexpected error occurred',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getSmsTemplates(Request $request)
+    {
+
+        $smsTemplates = SmsTemplates::all();
+        return response()->json(['smsTemplates' => $smsTemplates]);
+    }
+
+
+
+
+    public function SmsStatus(Request $request)
+    {
+        $sms = SmsTemplates::find($request->input('id'));
+        $sms->status = $request->input('status') === false ? 0 : 1;
+        $sms->save();
+        return response()->json(['message' => 'Status changed successfully', 'status' => $sms->status]);
+    }
+
+    public function getSmsLogs(Request $request)
+    {
+        // Initialize the query
+        $query = Sms::query();
+
+        // Apply filters based on request parameters
+        if ($request->has('id')) {
+            $query->where('id', $request->input('id'));
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('created_at', [$request->input('start_date'), $request->input('end_date')]);
+        }
+
+        // Get the paginated results
+        $smsLogs = $query->paginate($request->input('per_page', 10));
+
+        return Resp::success(['message' => 'SMS logs fetched successfully', 'smsLogs' => $smsLogs]);
+    }
+
     public function newUser(Request $request)
     {
         // Validate the incoming request
@@ -79,14 +301,15 @@ class AdminController extends Controller
             'user_type' => 'required|integer|in:1,2,3',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'phone_number' =>'nullable',
+            'phone_number' => 'nullable',
             'account_origin' => 'string|in:admin,site',
+            'sms' => 'required|integer|in:0,1'
         ]);
-    
+
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-    
+        $status = $request->sms;
         // Create the user
         $user = AuthUser::create([
             'username' => $request->username,
@@ -97,30 +320,25 @@ class AdminController extends Controller
             'lastname' => $request->last_name,
             'email_verified' => 1,
             'phone_number' => $request->phone_number,
-            'account_origin' => $request->account_origin
+            'account_origin' => $request->account_origin,
+            'status' => $status
         ]);
-    
+
         $user_id = $user->id;
-    
-        // Check if phone_number is provided before creating the Profile
-        if (!empty($request->phone_number)) {
-            $escort = Profile::create([
-                'name' => $user->username,
-                'escort_id' => $user->id,   
-                'phone_number' => $request->phone_number
-            ]);
-        }
-    
-        // SMS Logging for user type 2
+        $escort = Profile::create([
+            'name' => $user->username,
+            'escort_id' => $user->id,
+            'phone_number' => $request->phone_number
+        ]);
 
         if ($request->user_type == 2) {
             $to = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER'); // Use the provided phone number or the default from .env
             $template = SmsHelper::getSmsTemplateByType('admin_new_user_added'); // Use the new method to get the template by type
-        
+
             if ($template) {
                 // $message = str_replace('[USER_LOGIN]', $user->username, $template->content);
                 $message = "HI";
-        
+
                 // Ensure that message is not empty before sending
                 if (empty($message)) {
                     Log::error('Generated SMS message is empty for user: ' . $user->username);
@@ -128,10 +346,10 @@ class AdminController extends Controller
                 }
                 $sid = env('TWILIO_SID');
                 $token = env('TWILIO_TOKEN');
-        
+
                 $client = new Client($sid, $token);
-        
-                // Use the Client to make requests to the Twilio REST API
+
+    
                 // $client->messages->create(
                 //     // The number you'd like to send the message to
                 //     '+447893929281',
@@ -142,30 +360,30 @@ class AdminController extends Controller
                 //         'body' => "Hey test"
                 //     ]
                 // );
-                
+
                 Log::info('Sending SMS: ' . $message);
-        
+
                 try {
-                    // Send SMS via Twilio
-                    $this->smsService->sendSms($to, $message);
+                    // // Send SMS via Twilio
+                    // $this->smsService->sendSms($to, $message);
                     Log::info('SMS sent to: ' . $to);
-        
+
                     // Save SMS details to the database
                     Sms::create([
                         'to' => $to,
                         'message' => $message,
-                        // 'status' => 'sent',
+                        'status' => 'sent',
                         'user_id' => $user->id,
                         'From' => env('TWILIO_PHONE_NUMBER'),
                     ]);
                 } catch (\Exception $e) {
                     Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
-        
+
                     // Save failed SMS attempt
                     Sms::create([
                         'to' => $to,
                         'message' => $message,
-                        // 'status' => 'failed',
+                        'status' => 'failed',
                         'user_id' => $user->id,
                         'From' => env('TWILIO_PHONE_NUMBER'),
                     ]);
@@ -175,7 +393,7 @@ class AdminController extends Controller
                 return Resp::error(['message' => 'Failed to fetch SMS template.']);
             }
         }
-    
+
         // Handle user type 3 (Email Notification)
         if ($request->user_type == 3) {
             $dynamicData = [
@@ -183,7 +401,7 @@ class AdminController extends Controller
                 '[USER_PASSWORD]' => $request->password,
                 '[LOGIN_URL]' => env('LOGIN_URL')
             ];
-    
+
             try {
                 EmailHelper::sendDynamicEmail(
                     'ts_admin_welcome_email',
@@ -195,289 +413,14 @@ class AdminController extends Controller
                 Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
             }
         }
-        return Resp::success(['message' => 'User created successfully', 'user' => $user]);
+
+
+
+
+
+        return Resp::success(['message' => 'User created successfully', 'user' => $user]  );
     }
 
-
-
-    public function sendSmsToUser(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
-            'status' => 'sometimes|boolean',
-        ]);
-    
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-
-    }
-
-  public function getSmsTemplates(Request $request){
-
-    $smsTemplates = SmsTemplates::all();
-    return response()->json(['smsTemplates' => $smsTemplates]);
-  }
-
-
-
-
-    public function SmsStatus(Request $request)
-    {
-        $sms = SmsTemplates::find($request->input('id'));
-        $sms->status = $request->input('status') === false ? 0 : 1; 
-        $sms->save();
-        return response()->json(['message' => 'Status changed successfully' , 'status' => $sms->status]);
-    }
-
-    public function getSmsLogs(Request $request)
-    {
-        // Initialize the query
-        $query = Sms::query();
-    
-        // Apply filters based on request parameters
-        if ($request->has('id')) {
-            $query->where('id', $request->input('id'));
-        }
-    
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-    
-        if ($request->has('start_date') && $request->has('end_date')) {
-            $query->whereBetween('created_at', [$request->input('start_date'), $request->input('end_date')]);
-        }
-
-        // Get the paginated results
-        $smsLogs = $query->paginate($request->input('per_page', 10));
-    
-        return Resp::success(['message' => 'SMS logs fetched successfully', 'smsLogs' => $smsLogs]);
-    }
-
-
-
-    // public function newUser(Request $request)
-    // {
-    //     // Validate the incoming request
-    //     $validator = Validator::make($request->all(), [
-    //         'username' => 'required|string|max:255|unique:users,username',
-    //         'email' => 'required|string|email|max:255|unique:users,email',
-    //         'password' => 'required|string|min:8',
-    //         'user_type' => 'required|integer|in:1,2,3',
-    //         'first_name' => 'required|string|max:255',
-    //         'last_name' => 'required|string|max:255',
-    //         'phone_number' =>'nullable',
-    //         'account_origin' => 'string|in:admin,site',
-    //     ]);
-    
-    //     if ($validator->fails()) {
-    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    //     }
-    
-    //     // Create the user
-    //     $user = AuthUser::create([
-    //         'username' => $request->username,
-    //         'email' => $request->email,
-    //         'password' => Hash::make($request->password),
-    //         'user_type' => $request->user_type,
-    //         'firstname' => $request->first_name,
-    //         'lastname' => $request->last_name,
-    //         'email_verified' => 1,
-    //         'phone_number' => $request->phone_number,
-    //         'account_origin' => $request->account_origin
-    //     ]);
-    
-    //     $user_id = $user->id;
-    
-    //     // Check if phone_number is provided before creating the Profile
-    //     if (!empty($request->phone_number)) {
-    //         $escort = Profile::create([
-    //             'name' => $user->username,
-    //             'escort_id' => $user->id,   
-    //             'phone_number' => $request->phone_number
-    //         ]);
-    //     }
-    
-    //     // if ($request->user_type == 2) {
-    //     //     $to = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER');
-    //     //     $template = SmsHelper::getSmsTemplateByType('admin_new_user_added');
-    
-    //     //     if ($template) {
-    //     //         $message = "HI";
-    
-    //     //         if (empty($message)) {
-    //     //             Log::error('Generated SMS message is empty for user: ' . $user->username);
-    //     //             return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
-    //     //         }
-    //     //         $sid = env('TWILIO_SID');
-    //     //         $token = env('TWILIO_TOKEN');
-    
-    //     //         $client = new Client($sid, $token);
-    
-    //     //         $client->messages->create(
-    //     //             '+447893929281',
-    //     //             [
-    //     //                 'from' => '+447367000735',
-    //     //                 'body' => "Hey test"
-    //     //             ]
-    //     //         );
-    //     //         Log::info('Sending SMS: ' . $message);
-    //     //     } else {
-
-    //     //         Log::error('Failed to fetch SMS template for user: ' . $user->username);
-    //     //         return Resp::error(['message' => 'Failed to fetch SMS template.']);
-    //     //     }
-    //     // }
-    
-
-    //     // Handle user type 3 (Email Notification)
-    //     if ($request->user_type == 3) {
-    //         $dynamicData = [
-    //             '[USER_LOGIN]' => $user->username,
-    //             '[USER_PASSWORD]' => $request->password,
-    //             '[LOGIN_URL]' => env('LOGIN_URL')
-    //         ];
-    
-    //         try {
-    //             EmailHelper::sendDynamicEmail(
-    //                 'ts_admin_welcome_email',
-    //                 $dynamicData,
-    //                 $user->email
-    //             );
-    //             Log::info('Verification email sent to: ' . $user->email);
-    //         } catch (\Exception $e) {
-    //             Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
-    //         }
-    //     }
-    
-    //     return Resp::success(['message' => 'User created successfully', 'user' => $user]);
-    // }
-
-
-
-//     public function newUser(Request $request)
-//     {
-//         // Validate the incoming request
-//         $validator = Validator::make($request->all(), [
-//             'username' => 'required|string|max:255|unique:users,username',
-//             'email' => 'required|string|email|max:255|unique:users,email',
-//             'password' => 'required|string|min:8',
-//             'user_type' => 'required|integer|in:1,2,3',
-//             'first_name' => 'required|string|max:255',
-//             'last_name' => 'required|string|max:255',
-//             'phone_number' =>'nullable',
-//             'account_origin' => 'string|in:admin,site',
-//         ]);
-    
-//         if ($validator->fails()) {
-//             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-//         }
-    
-//         // Create the user
-//         $user = AuthUser::create([
-//             'username' => $request->username,
-//             'email' => $request->email,
-//             'password' => Hash::make($request->password),
-//             'user_type' => $request->user_type,
-//             'firstname' => $request->first_name,
-//             'lastname' => $request->last_name,
-//             'email_verified' => 1,
-//             'phone_number' => $request->phone_number,
-//             'account_origin' => $request->account_origin
-//         ]);
-    
-//         $user_id = $user->id;
-//         $escort = Profile::create([
-//             'name' => $user->username,
-//             'escort_id' => $user->id,
-//         ]);
-
-// if ($request->user_type == 2) {
-//     $to = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER'); // Use the provided phone number or the default from .env
-//     $template = SmsHelper::getSmsTemplateByType('admin_new_user_added'); // Use the new method to get the template by type
-
-//     if ($template) {
-//         // $message = str_replace('[USER_LOGIN]', $user->username, $template->content);
-//         $message = "HI";
-
-//         // Ensure that message is not empty before sending
-//         if (empty($message)) {
-//             Log::error('Generated SMS message is empty for user: ' . $user->username);
-//             return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
-//         }
-//         $sid = env('TWILIO_SID');
-//         $token = env('TWILIO_TOKEN');
-
-//         $client = new Client($sid, $token);
-
-//         // Use the Client to make requests to the Twilio REST API
-//         $client->messages->create(
-//             // The number you'd like to send the message to
-//             '+447893929281',
-//             [
-//                 // A Twilio phone number you purchased at https://console.twilio.com
-//                 'from' => '+447367000735',
-//                 // The body of the text message you'd like to send
-//                 'body' => "Hey test"
-//             ]
-//         );
-
-//         Log::info('Sending SMS: ' . $message);
-
-//         try {
-//             // Send SMS via Twilio
-//             $this->smsService->sendSms($to, $message);
-//             Log::info('SMS sent to: ' . $to);
-
-//             // Save SMS details to the database
-//             Sms::create([
-//                 'to' => $to,
-//                 'message' => $message,
-//                 'status' => 'sent',
-//                 'user_id' => $user->id,
-//                 'From' => env('TWILIO_PHONE_NUMBER'),
-//             ]);
-//         } catch (\Exception $e) {
-//             Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
-
-//             // Save failed SMS attempt
-//             Sms::create([
-//                 'to' => $to,
-//                 'message' => $message,
-//                 'status' => 'failed',
-//                 'user_id' => $user->id,
-//                 'From' => env('TWILIO_PHONE_NUMBER'),
-//             ]);
-//         }
-//     } else {
-//         Log::error('Failed to fetch SMS template for user: ' . $user->username);
-//         return Resp::error(['message' => 'Failed to fetch SMS template.']);
-//     }
-// }
-    
-//         // Handle user type 3 (Email Notification)
-//         if ($request->user_type == 3) {
-//             $dynamicData = [
-//                 '[USER_LOGIN]' => $user->username,
-//                 '[USER_PASSWORD]' => $request->password,
-//                 '[LOGIN_URL]' => env('LOGIN_URL')
-//             ];
-    
-//             try {
-//                 EmailHelper::sendDynamicEmail(
-//                     'ts_admin_welcome_email',
-//                     $dynamicData,
-//                     $user->email
-//                 );
-//                 Log::info('Verification email sent to: ' . $user->email);
-//             } catch (\Exception $e) {
-//                 Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
-//             }
-//         }
-    
-//         return Resp::success(['message' => 'User created successfully', 'user' => $user]);
-//     }
-    
 
 
     public function sendSms(Request $request)
@@ -528,7 +471,7 @@ class AdminController extends Controller
         $setting_mobile->save();
         $setting_desktop->save();
         $mobileMedia = Media::find($setting_mobile->value);  // Mobile media object
-        $desktopMedia = Media::find($setting_desktop->value); 
+        $desktopMedia = Media::find($setting_desktop->value);
         return Resp::success([
             'message' => 'Parallax images updated successfully',
             'setting_mobile' => $setting_mobile,
@@ -851,6 +794,7 @@ class AdminController extends Controller
                 ->orderBy('id', 'desc')
                 ->skip($offset)
                 ->take($perPage)
+                ->with('sms_logs')
                 ->get();
 
             return Resp::success([
@@ -1087,30 +1031,30 @@ class AdminController extends Controller
                 'promo_video' => 'exists:media,id|nullable',
                 'description' => 'nullable|string',
             ]);
-    
+
             if ($validator->fails()) {
                 return Resp::fieldErrors(['field_errors' => $validator->errors()]);
             }
-    
+
             // Find the profile
             $user = Profile::where('escort_id', $id)->first();
             if (!$user) {
                 return Resp::error(['message' => 'User not found']);
             }
-    
+
             // Update gallery
             if ($request->has('gallery')) {
                 $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
-    
+
                 // Check for references in the blog table
                 $referencedMediaIds = Blog::whereIn('media_id', $galleryIds)->pluck('media_id')->toArray();
                 $idsToDelete = array_diff($galleryIds, $referencedMediaIds);
-    
+
                 Media::where('escort_id', $user->id)
                     ->where('type', 'gallery')
                     ->whereIn('id', $galleryIds)
                     ->update(['is_temp' => false]);
-    
+
                 if (!empty($idsToDelete)) {
                     Media::where('escort_id', $user->id)
                         ->where('type', 'gallery')
@@ -1118,20 +1062,20 @@ class AdminController extends Controller
                         ->forceDelete();
                 }
             }
-    
+
             // Update private gallery
             if ($request->has('private_gallery')) {
                 $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
-    
+
                 // Check for references in the blog table
                 $referencedPrivateMediaIds = Blog::whereIn('media_id', $privateGalleryIds)->pluck('media_id')->toArray();
                 $privateIdsToDelete = array_diff($privateGalleryIds, $referencedPrivateMediaIds);
-    
+
                 Media::where('escort_id', $user->id)
                     ->where('type', 'private_gallery')
                     ->whereIn('id', $privateGalleryIds)
                     ->update(['is_temp' => false]);
-    
+
                 if (!empty($privateIdsToDelete)) {
                     Media::where('escort_id', $user->id)
                         ->where('type', 'private_gallery')
@@ -1139,44 +1083,44 @@ class AdminController extends Controller
                         ->forceDelete();
                 }
             }
-    
+
             // Update promo video
             if ($request->has('promo_video')) {
                 $promoVideoId = $request->input('promo_video');
-    
+
                 Media::where('escort_id', $user->id)
                     ->where('type', 'promo_video')
                     ->where('id', $promoVideoId)
                     ->update(['is_temp' => false]);
-    
+
                 Media::where('escort_id', $user->id)
                     ->where('type', 'promo_video')
                     ->where('id', '!=', $promoVideoId)
                     ->forceDelete();
             }
-    
+
             // Update description
             if ($request->input('description')) {
                 $user->description = $request->input('description');
                 $user->save();
             }
-    
+
             // Check if any media entries are temporary and set them to not temporary
             Media::where('escort_id', $user->id)
                 ->where('is_temp', 1)
                 ->update(['is_temp' => 0]);
-    
+
             // Update media status
             if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
                 $user->is_media = 1;
                 $user->save();
             }
-    
+
             $media = Media::where('escort_id', $id)->first();
             // if (!$media) {
             //     return Resp::error(['message' => 'Media not found']);
             // }
-    
+
             $user->load('media');
             return Resp::success(['message' => 'Media updated successfully', 'media' => $media, 'profile' => $user]);
         } catch (\Exception $e) {
@@ -2637,12 +2581,12 @@ class AdminController extends Controller
         try {
 
             $plan = Plan::where('code', $request->input('plan_code'))->first();
-            $order=Orders::create([
+            $order = Orders::create([
                 'escort_id' => $request->input('user_id'),
                 'plan_code' => $request->input('plan_code'),
                 'start_date' => $request->input('start_date'),
-                'end_date'=>$request->input('end_date'),
-                'payment_status'=>'PAID',
+                'end_date' => $request->input('end_date'),
+                'payment_status' => 'PAID',
 
             ]);
             $subscription = Subscription::create([
@@ -2654,13 +2598,13 @@ class AdminController extends Controller
                 'created_by' => auth()->user()->id,
                 'image_id' => $request->input('image_id'),
                 'created_mode' => 'Admin',
-                'order_id'=>$order->id
+                'order_id' => $order->id
 
             ]);
-            if(!$subscription){
+            if (!$subscription) {
                 return Resp::error(['message' => 'Failed to create subscription']);
             }
-            if($request->input('onlyfans')!=null || $request->input('manyvids')!="" || $request->input('fancentro')!="" ){
+            if ($request->input('onlyfans') != null || $request->input('manyvids') != "" || $request->input('fancentro') != "") {
                 $subscription->orders->update([
                     'only_fans_link' => $request->input('onlyfans'),
                     'many_vids_link' => $request->input('manyvids'),
@@ -2712,34 +2656,34 @@ class AdminController extends Controller
             'firstname' => 'required|string',
             'lastname' => 'required|string',
             'email' => 'required|string',
-            'username' => 'required|string',
+            'username' => 'string',
             'password' => 'required|string',
 
         ]);
-        
+
         if ($validator->fails()) {
             return Resp::error($validator->errors()->all());
         }
-        
+
         $user = AuthUser::find($id);
         if (!$user) {
             return Resp::error(['User not found']);
         }
-        
+
         if ($user->user_type != 3) {
             return Resp::error(['Invalid user type, expected user_type 3']);
         }
-        
-         $user->update([
-                    "firstname" => $request->firstname,
-                    "lastname" => $request->lastname,
-                    "email" => $request->email,
-                    "username" => $request->username,
-                    "password" => Hash::make($request->password)
-                ]);
+
+        $user->update([
+            "firstname" => $request->firstname,
+            "lastname" => $request->lastname,
+            "email" => $request->email,
+            "username" => $request->username,
+            "password" => Hash::make($request->password)
+        ]);
         $user->permission_ids = $request->permission_id;
         $user->save();
-        
+
         return Resp::success(['message' => 'Permission assigned successfully']);
     }
 

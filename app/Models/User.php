@@ -102,4 +102,8 @@ class User extends Authenticatable
     public function sms(){
         return $this->hasMany(Sms::class,'user_id','id');
     }
+
+    public function sms_logs(){
+        return $this->hasMany(Sms::class,'user_id','id');
+    }
 }
