@@ -303,7 +303,7 @@ class AdminController extends Controller
             'last_name' => 'required|string|max:255',
             'phone_number' => 'nullable',
             'account_origin' => 'string|in:admin,site',
-            'sms' => 'required|integer|in:0,1'
+            'sms' => 'nullable|integer|in:0,1'
         ]);
 
         if ($validator->fails()) {
