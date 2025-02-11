@@ -116,6 +116,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/sms-status',[AdminController::class,'SmsStatus']);
         Route::post('/send-sms-user', [AdminController::class, 'sendSmstoUser']);
         Route::get('sms-template',[AdminController::class,'getSmsTemplates']);
+        // Route::post('/new-user', [AdminController::class, 'newUser']);
     });
 
 
