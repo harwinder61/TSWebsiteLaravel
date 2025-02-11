@@ -114,7 +114,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::get('/get-phone-number-escort', [AdminController::class, 'getPhoneNumberEscort']);
         Route::get('/sms-logs', [AdminController::class, 'getSmsLogs']);
         Route::post('/sms-status',[AdminController::class,'SmsStatus']);
-        Route::post('/send-sms-to-escort', [AdminController::class, 'sendSmsToEscort']);
+        Route::post('/user/send-sms', [AdminController::class, 'sendSmstoUser']);
         Route::get('sms-template',[AdminController::class,'getSmsTemplates']);
     });
 

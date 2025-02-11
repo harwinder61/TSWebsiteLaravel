@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sms_logs', function (Blueprint $table) {
-            // $table->string('to')->default(0)->after('message');
-            $table->string('from')->default(0)->after('to');
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('account_origin')->nullable();
         });
     }
 
@@ -22,9 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sms_logs', function (Blueprint $table) {
-            $table->dropColumn('to');
-            $table->dropColumn('from');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('account_origin');
         });
     }
 };
