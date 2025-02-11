@@ -2656,7 +2656,6 @@ class AdminController extends Controller
             'firstname' => 'required|string',
             'lastname' => 'required|string',
             'email' => 'required|string',
-            'username' => 'string',
             'password' => 'required|string',
 
         ]);
@@ -2678,7 +2677,6 @@ class AdminController extends Controller
             "firstname" => $request->firstname,
             "lastname" => $request->lastname,
             "email" => $request->email,
-            "username" => $request->username,
             "password" => Hash::make($request->password)
         ]);
         $user->permission_ids = $request->permission_id;
