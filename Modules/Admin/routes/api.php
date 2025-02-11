@@ -113,6 +113,9 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/send-sms', [AdminController::class, 'sendSms']);
         Route::get('/get-phone-number-escort', [AdminController::class, 'getPhoneNumberEscort']);
         Route::get('/sms-logs', [AdminController::class, 'getSmsLogs']);
+        Route::post('/sms-status',[AdminController::class,'SmsStatus']);
+        Route::post('/send-sms-to-escort', [AdminController::class, 'sendSmsToEscort']);
+        Route::get('sms-template',[AdminController::class,'getSmsTemplates']);
     });
 
 
@@ -166,7 +169,7 @@ Route::get('/send-inactivity-emails', [AuthController::class, 'sendInactivityEma
 Route::post('/admin/register', [AdminController::class, 'register']);
 Route::get('/admin/auto-login', [AdminController::class, 'autoLogin']);
 Route::post('/admin/recover-password', [AdminController::class, 'recoverAdminPassword']);
-Route::get('/test-sms', function () {
-  $smsService = new \App\Services\TwilioSmsService();
-  return $smsService->sendSms('+441234567890', 'Test message from Twilio!');
-});
+// Route::get('/test-sms', function () {
+//   $smsService = new \App\Services\TwilioSmsService();
+//   return $smsService->sendSms('+441234567890', 'Test message from Twilio!');
+// });

@@ -57,6 +57,7 @@ use Illuminate\Support\Facades\Config;
 use Modules\Admin\app\Models\Sms;
 use App\Mail\SmsHelper;
 use Modules\Admin\app\Models\SmsTemplates;
+use Twilio\Rest\Client;
 
 class AdminController extends Controller
 {
@@ -67,98 +68,33 @@ class AdminController extends Controller
         $this->smsService = $smsService;
     }
 
+  public function sendSmsToEscort(Request $request){
 
-    // public function newUser(Request $request)
-    // {
-    //     // Validate the incoming request
-    //     $validator = Validator::make($request->all(), [
-    //         'username' => 'required|string|max:255|unique:users,username',
-    //         'email' => 'required|string|email|max:255|unique:users,email',
-    //         'password' => 'required|string|min:8',
-    //         'user_type' => 'required|integer|in:1,2,3',
-    //         'first_name' => 'required|string|max:255',
-    //         'last_name' => 'required|string|max:255',
-    //     ]);
-    
-    //     if ($validator->fails()) {
-    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    //     }
-    
-    //     // Create the user
-    //     $user = AuthUser::create([
-    //         'username' => $request->username,
-    //         'email' => $request->email,
-    //         'password' => Hash::make($request->password),
-    //         'user_type' => $request->user_type,
-    //         'firstname' => $request->first_name,
-    //         'lastname' => $request->last_name,
-    //         'email_verified' => 1, // Automatically verify the email
-    //     ]);
-    
-    //     $user_id = $user->id;
-    //     $escort = Profile::create([
-    //         'name' => $user->username,
-    //         'escort_id' => $user->id,
-    //     ]);
-    
-    //     // Send SMS notification if user type is 2 (escort)
-    //     if ($request->user_type == 2) {
-    //         $to = '+441234567890'; // Replace with the actual phone number
-    //         $template = SmsHelper::getSmsTemplate(1); // Replace 1 with the actual template ID you want to use
-    //         if ($template) {
-    //             $message = str_replace('[USER_LOGIN]', $user->username, $template->content);
-    //             // Add any other replacements here
-    
-    //             Log::info('Sending SMS: ' . $message);
-                
-    //             try {
-    //                 $this->smsService->sendSms($to, $message);  
-    //                 Log::info('SMS sent to: ' . $to);
-    
-    //                 // Save SMS details to the database
-    //                 Sms::create([
-    //                     'to' => $to,
-    //                     'message' => $message,
-    //                     'status' => 'sent',
-    //                     'user_id' => $user->id,
-    //                 ]);
-    //             } catch (\Exception $e) {
-    //                 Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
-    
-    //                 // Save failed SMS attempt
-    //                 Sms::create([
-    //                     'to' => $to,
-    //                     'message' => $message,
-    //                     'status' => 'failed',
-    //                     'user_id' => $user->id,
-    //                 ]);
-    //             }
-    //         }
-    //     } // Closing brace for user_type == 2
-    
-    //     // Handle user type 3
-    //     if ($request->user_type == 3) {
-    //         $dynamicData = [
-    //             '[USER_LOGIN]' => $user->username,
-    //             '[USER_PASSWORD]' => $request->password,
-    //             '[LOGIN_URL]' => env('LOGIN_URL')
-    //         ];
-    
-    //         try {
-    //             EmailHelper::sendDynamicEmail(
-    //                 'ts_admin_welcome_email',
-    //                 $dynamicData,
-    //                 $user->email
-    //             );
-    //             Log::info('Verification email sent to: ' . $user->email);
-    //         } catch (\Exception $e) {
-    //             Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
-    //         }
-    //     }
-    
-    //     return Resp::success(['message' => 'User created successfully', 'user' => $user]);
-    // }
+    $to = $request->input('to');
+    $message = $request->input('message');
 
+    // Send SMS notification
+    $this->smsService->sendSms($to, $message);
+
+    return response()->json(['message' => 'SMS sent successfully']);
+  }
+
+  public function getSmsTemplates(Request $request){
+
+    $smsTemplates = SmsTemplates::all();
+    return response()->json(['smsTemplates' => $smsTemplates]);
+  }
+
+
+
+
+    public function SmsStatus(Request $request)
+    {
+        $sms = SmsTemplates::find($request->input('id'));
+        $sms->status = $request->input('status') === false ? 0 : 1; 
+        $sms->save();
+        return response()->json(['message' => 'Status changed successfully']);
+    }
 
     public function getSmsLogs(Request $request)
     {
@@ -224,49 +160,68 @@ class AdminController extends Controller
     
         // Send SMS notification if user type is 2
       // Send SMS notification if user type is 2
-if ($request->user_type == 2) {
-    $to = !empty($request->phone_number) ? $request->phone_number : '+441234567890'; // Use the provided phone number or a static number
-    $template = SmsHelper::getSmsTemplateByType('admin_new_user_added'); // Use the new method to get the template by type
-    
-    if ($template) {
-        $message = str_replace('[USER_LOGIN]', $user->username, $template->content);
-        
-        // Ensure that message is not empty before sending
-        if (empty($message)) {
-            Log::error('Generated SMS message is empty for user: ' . $user->username);
-            return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
-        }
+// // Send SMS notification if user type is 2
+// if ($request->user_type == 2) {
+//     $to = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER'); // Use the provided phone number or the default from .env
+//     $template = SmsHelper::getSmsTemplateByType('admin_new_user_added'); // Use the new method to get the template by type
 
-        Log::info('Sending SMS: ' . $message);
+//     if ($template) {
+//         // $message = str_replace('[USER_LOGIN]', $user->username, $template->content);
+//         $message = "HI";
 
-        try {
-            // Send SMS via Twilio
-            $this->smsService->sendSms($to, $message);  
-            Log::info('SMS sent to: ' . $to);
+//         // Ensure that message is not empty before sending
+//         if (empty($message)) {
+//             Log::error('Generated SMS message is empty for user: ' . $user->username);
+//             return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
+//         }
+//         $sid = env('TWILIO_SID');
+//         $token = env('TWILIO_TOKEN');
 
-            // Save SMS details to the database
-            Sms::create([
-                'to' => $to,
-                'message' => $message,
-                'status' => 'sent',
-                'user_id' => $user->id,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
+//         $client = new Client($sid, $token);
 
-            // Save failed SMS attempt
-            Sms::create([
-                'to' => $to,
-                'message' => $message,
-                'status' => 'failed',
-                'user_id' => $user->id,
-            ]);
-        }
-    } else {
-        Log::error('Failed to fetch SMS template for user: ' . $user->username);
-        return Resp::error(['message' => 'Failed to fetch SMS template.']);
-    }
-}
+//         // Use the Client to make requests to the Twilio REST API
+//         $client->messages->create(
+//             // The number you'd like to send the message to
+//             '+447893929281',
+//             [
+//                 // A Twilio phone number you purchased at https://console.twilio.com
+//                 'from' => '+447367000735',
+//                 // The body of the text message you'd like to send
+//                 'body' => "Hey test"
+//             ]
+//         );
+//         Log::info('Sending SMS: ' . $message);
+
+//         // try {
+//         //     // Send SMS via Twilio
+//         //     $this->smsService->sendSms($to, $message);
+//         //     Log::info('SMS sent to: ' . $to);
+
+//         //     // Save SMS details to the database
+//         //     Sms::create([
+//         //         'to' => $to,
+//         //         'message' => $message,
+//         //         'status' => 'sent',
+//         //         'user_id' => $user->id,
+//         //         'From' => env('TWILIO_PHONE_NUMBER'),
+//         //     ]);
+//         // } catch (\Exception $e) {
+//         //     Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
+
+//         //     // Save failed SMS attempt
+//         //     Sms::create([
+//         //         'to' => $to,
+//         //         'message' => $message,
+//         //         'status' => 'failed',
+//         //         'user_id' => $user->id,
+//         //         'From' => env('TWILIO_PHONE_NUMBER'),
+//         //     ]);
+//         // }
+//     } else {
+//         Log::error('Failed to fetch SMS template for user: ' . $user->username);
+//         return Resp::error(['message' => 'Failed to fetch SMS template.']);
+//     }
+// }
     
         // Handle user type 3 (Email Notification)
         if ($request->user_type == 3) {
@@ -986,9 +941,9 @@ if ($request->user_type == 2) {
             }
     
             $media = Media::where('escort_id', $id)->first();
-            if (!$media) {
-                return Resp::error(['message' => 'Media not found']);
-            }
+            // if (!$media) {
+            //     return Resp::error(['message' => 'Media not found']);
+            // }
     
             $user->load('media');
             return Resp::success(['message' => 'Media updated successfully', 'media' => $media, 'profile' => $user]);
