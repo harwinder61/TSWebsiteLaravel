@@ -69,10 +69,149 @@ class AdminController extends Controller
         $this->smsService = $smsService;
     }
 
-    // public function sendSmsToUser(Request $request)
-    // {
-    //   $validator = Validator::make($request->all(),
-    // }
+    public function newUser(Request $request)
+    {
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string|max:255|unique:users,username',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8',
+            'user_type' => 'required|integer|in:1,2,3',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'phone_number' =>'nullable',
+            'account_origin' => 'string|in:admin,site',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        // Create the user
+        $user = AuthUser::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'user_type' => $request->user_type,
+            'firstname' => $request->first_name,
+            'lastname' => $request->last_name,
+            'email_verified' => 1,
+            'phone_number' => $request->phone_number,
+            'account_origin' => $request->account_origin
+        ]);
+    
+        $user_id = $user->id;
+    
+        // Check if phone_number is provided before creating the Profile
+        if (!empty($request->phone_number)) {
+            $escort = Profile::create([
+                'name' => $user->username,
+                'escort_id' => $user->id,   
+                'phone_number' => $request->phone_number
+            ]);
+        }
+    
+        // SMS Logging for user type 2
+
+        if ($request->user_type == 2) {
+            $to = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER'); // Use the provided phone number or the default from .env
+            $template = SmsHelper::getSmsTemplateByType('admin_new_user_added'); // Use the new method to get the template by type
+        
+            if ($template) {
+                // $message = str_replace('[USER_LOGIN]', $user->username, $template->content);
+                $message = "HI";
+        
+                // Ensure that message is not empty before sending
+                if (empty($message)) {
+                    Log::error('Generated SMS message is empty for user: ' . $user->username);
+                    return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
+                }
+                $sid = env('TWILIO_SID');
+                $token = env('TWILIO_TOKEN');
+        
+                $client = new Client($sid, $token);
+        
+                // Use the Client to make requests to the Twilio REST API
+                // $client->messages->create(
+                //     // The number you'd like to send the message to
+                //     '+447893929281',
+                //     [
+                //         // A Twilio phone number you purchased at https://console.twilio.com
+                //         'from' => '+447367000735',
+                //         // The body of the text message you'd like to send
+                //         'body' => "Hey test"
+                //     ]
+                // );
+                
+                Log::info('Sending SMS: ' . $message);
+        
+                try {
+                    // Send SMS via Twilio
+                    $this->smsService->sendSms($to, $message);
+                    Log::info('SMS sent to: ' . $to);
+        
+                    // Save SMS details to the database
+                    Sms::create([
+                        'to' => $to,
+                        'message' => $message,
+                        // 'status' => 'sent',
+                        'user_id' => $user->id,
+                        'From' => env('TWILIO_PHONE_NUMBER'),
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
+        
+                    // Save failed SMS attempt
+                    Sms::create([
+                        'to' => $to,
+                        'message' => $message,
+                        // 'status' => 'failed',
+                        'user_id' => $user->id,
+                        'From' => env('TWILIO_PHONE_NUMBER'),
+                    ]);
+                }
+            } else {
+                Log::error('Failed to fetch SMS template for user: ' . $user->username);
+                return Resp::error(['message' => 'Failed to fetch SMS template.']);
+            }
+        }
+    
+        // Handle user type 3 (Email Notification)
+        if ($request->user_type == 3) {
+            $dynamicData = [
+                '[USER_LOGIN]' => $user->username,
+                '[USER_PASSWORD]' => $request->password,
+                '[LOGIN_URL]' => env('LOGIN_URL')
+            ];
+    
+            try {
+                EmailHelper::sendDynamicEmail(
+                    'ts_admin_welcome_email',
+                    $dynamicData,
+                    $user->email
+                );
+                Log::info('Verification email sent to: ' . $user->email);
+            } catch (\Exception $e) {
+                Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
+            }
+        }
+        return Resp::success(['message' => 'User created successfully', 'user' => $user]);
+    }
+
+
+
+    public function sendSmsToUser(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'status' => 'sometimes|boolean',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+
+    }
 
   public function getSmsTemplates(Request $request){
 
@@ -117,102 +256,102 @@ class AdminController extends Controller
 
 
 
-    public function newUser(Request $request)
-    {
-        // Validate the incoming request
-        $validator = Validator::make($request->all(), [
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8',
-            'user_type' => 'required|integer|in:1,2,3',
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'phone_number' =>'nullable',
-            'account_origin' => 'string|in:admin,site',
-        ]);
+    // public function newUser(Request $request)
+    // {
+    //     // Validate the incoming request
+    //     $validator = Validator::make($request->all(), [
+    //         'username' => 'required|string|max:255|unique:users,username',
+    //         'email' => 'required|string|email|max:255|unique:users,email',
+    //         'password' => 'required|string|min:8',
+    //         'user_type' => 'required|integer|in:1,2,3',
+    //         'first_name' => 'required|string|max:255',
+    //         'last_name' => 'required|string|max:255',
+    //         'phone_number' =>'nullable',
+    //         'account_origin' => 'string|in:admin,site',
+    //     ]);
     
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
     
-        // Create the user
-        $user = AuthUser::create([
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'user_type' => $request->user_type,
-            'firstname' => $request->first_name,
-            'lastname' => $request->last_name,
-            'email_verified' => 1,
-            'phone_number' => $request->phone_number,
-            'account_origin' => $request->account_origin
-        ]);
+    //     // Create the user
+    //     $user = AuthUser::create([
+    //         'username' => $request->username,
+    //         'email' => $request->email,
+    //         'password' => Hash::make($request->password),
+    //         'user_type' => $request->user_type,
+    //         'firstname' => $request->first_name,
+    //         'lastname' => $request->last_name,
+    //         'email_verified' => 1,
+    //         'phone_number' => $request->phone_number,
+    //         'account_origin' => $request->account_origin
+    //     ]);
     
-        $user_id = $user->id;
+    //     $user_id = $user->id;
     
-        // Check if phone_number is provided before creating the Profile
-        if (!empty($request->phone_number)) {
-            $escort = Profile::create([
-                'name' => $user->username,
-                'escort_id' => $user->id,   
-                'phone_number' => $request->phone_number
-            ]);
-        }
+    //     // Check if phone_number is provided before creating the Profile
+    //     if (!empty($request->phone_number)) {
+    //         $escort = Profile::create([
+    //             'name' => $user->username,
+    //             'escort_id' => $user->id,   
+    //             'phone_number' => $request->phone_number
+    //         ]);
+    //     }
     
-        // if ($request->user_type == 2) {
-        //     $to = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER');
-        //     $template = SmsHelper::getSmsTemplateByType('admin_new_user_added');
+    //     // if ($request->user_type == 2) {
+    //     //     $to = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER');
+    //     //     $template = SmsHelper::getSmsTemplateByType('admin_new_user_added');
     
-        //     if ($template) {
-        //         $message = "HI";
+    //     //     if ($template) {
+    //     //         $message = "HI";
     
-        //         if (empty($message)) {
-        //             Log::error('Generated SMS message is empty for user: ' . $user->username);
-        //             return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
-        //         }
-        //         $sid = env('TWILIO_SID');
-        //         $token = env('TWILIO_TOKEN');
+    //     //         if (empty($message)) {
+    //     //             Log::error('Generated SMS message is empty for user: ' . $user->username);
+    //     //             return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
+    //     //         }
+    //     //         $sid = env('TWILIO_SID');
+    //     //         $token = env('TWILIO_TOKEN');
     
-        //         $client = new Client($sid, $token);
+    //     //         $client = new Client($sid, $token);
     
-        //         $client->messages->create(
-        //             '+447893929281',
-        //             [
-        //                 'from' => '+447367000735',
-        //                 'body' => "Hey test"
-        //             ]
-        //         );
-        //         Log::info('Sending SMS: ' . $message);
-        //     } else {
+    //     //         $client->messages->create(
+    //     //             '+447893929281',
+    //     //             [
+    //     //                 'from' => '+447367000735',
+    //     //                 'body' => "Hey test"
+    //     //             ]
+    //     //         );
+    //     //         Log::info('Sending SMS: ' . $message);
+    //     //     } else {
 
-        //         Log::error('Failed to fetch SMS template for user: ' . $user->username);
-        //         return Resp::error(['message' => 'Failed to fetch SMS template.']);
-        //     }
-        // }
+    //     //         Log::error('Failed to fetch SMS template for user: ' . $user->username);
+    //     //         return Resp::error(['message' => 'Failed to fetch SMS template.']);
+    //     //     }
+    //     // }
     
 
-        // Handle user type 3 (Email Notification)
-        if ($request->user_type == 3) {
-            $dynamicData = [
-                '[USER_LOGIN]' => $user->username,
-                '[USER_PASSWORD]' => $request->password,
-                '[LOGIN_URL]' => env('LOGIN_URL')
-            ];
+    //     // Handle user type 3 (Email Notification)
+    //     if ($request->user_type == 3) {
+    //         $dynamicData = [
+    //             '[USER_LOGIN]' => $user->username,
+    //             '[USER_PASSWORD]' => $request->password,
+    //             '[LOGIN_URL]' => env('LOGIN_URL')
+    //         ];
     
-            try {
-                EmailHelper::sendDynamicEmail(
-                    'ts_admin_welcome_email',
-                    $dynamicData,
-                    $user->email
-                );
-                Log::info('Verification email sent to: ' . $user->email);
-            } catch (\Exception $e) {
-                Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
-            }
-        }
+    //         try {
+    //             EmailHelper::sendDynamicEmail(
+    //                 'ts_admin_welcome_email',
+    //                 $dynamicData,
+    //                 $user->email
+    //             );
+    //             Log::info('Verification email sent to: ' . $user->email);
+    //         } catch (\Exception $e) {
+    //             Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
+    //         }
+    //     }
     
-        return Resp::success(['message' => 'User created successfully', 'user' => $user]);
-    }
+    //     return Resp::success(['message' => 'User created successfully', 'user' => $user]);
+    // }
 
 
 
@@ -227,6 +366,7 @@ class AdminController extends Controller
 //             'first_name' => 'required|string|max:255',
 //             'last_name' => 'required|string|max:255',
 //             'phone_number' =>'nullable',
+//             'account_origin' => 'string|in:admin,site',
 //         ]);
     
 //         if ($validator->fails()) {
@@ -242,7 +382,8 @@ class AdminController extends Controller
 //             'firstname' => $request->first_name,
 //             'lastname' => $request->last_name,
 //             'email_verified' => 1,
-//             'phone_number' => $request->phone_number
+//             'phone_number' => $request->phone_number,
+//             'account_origin' => $request->account_origin
 //         ]);
     
 //         $user_id = $user->id;
@@ -280,33 +421,34 @@ class AdminController extends Controller
 //                 'body' => "Hey test"
 //             ]
 //         );
+
 //         Log::info('Sending SMS: ' . $message);
 
-//         // try {
-//         //     // Send SMS via Twilio
-//         //     $this->smsService->sendSms($to, $message);
-//         //     Log::info('SMS sent to: ' . $to);
+//         try {
+//             // Send SMS via Twilio
+//             $this->smsService->sendSms($to, $message);
+//             Log::info('SMS sent to: ' . $to);
 
-//         //     // Save SMS details to the database
-//         //     Sms::create([
-//         //         'to' => $to,
-//         //         'message' => $message,
-//         //         'status' => 'sent',
-//         //         'user_id' => $user->id,
-//         //         'From' => env('TWILIO_PHONE_NUMBER'),
-//         //     ]);
-//         // } catch (\Exception $e) {
-//         //     Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
+//             // Save SMS details to the database
+//             Sms::create([
+//                 'to' => $to,
+//                 'message' => $message,
+//                 'status' => 'sent',
+//                 'user_id' => $user->id,
+//                 'From' => env('TWILIO_PHONE_NUMBER'),
+//             ]);
+//         } catch (\Exception $e) {
+//             Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
 
-//         //     // Save failed SMS attempt
-//         //     Sms::create([
-//         //         'to' => $to,
-//         //         'message' => $message,
-//         //         'status' => 'failed',
-//         //         'user_id' => $user->id,
-//         //         'From' => env('TWILIO_PHONE_NUMBER'),
-//         //     ]);
-//         // }
+//             // Save failed SMS attempt
+//             Sms::create([
+//                 'to' => $to,
+//                 'message' => $message,
+//                 'status' => 'failed',
+//                 'user_id' => $user->id,
+//                 'From' => env('TWILIO_PHONE_NUMBER'),
+//             ]);
+//         }
 //     } else {
 //         Log::error('Failed to fetch SMS template for user: ' . $user->username);
 //         return Resp::error(['message' => 'Failed to fetch SMS template.']);

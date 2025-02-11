@@ -11,6 +11,7 @@ use Modules\Escort\app\Models\ProfileRates;
 use Modules\Escort\app\Models\Profile;
 use Modules\Admin\app\Models\Comment;
 use Modules\Admin\app\Models\Blog;
+use Modules\Admin\app\Models\Sms;
 
 class User extends Authenticatable
 {
@@ -97,5 +98,8 @@ class User extends Authenticatable
     public function blog()
     {
         return $this->hasMany(Blog::class, 'escort_id', 'id'); 
+    }
+    public function sms(){
+        return $this->hasMany(Sms::class,'user_id','id');
     }
 }
