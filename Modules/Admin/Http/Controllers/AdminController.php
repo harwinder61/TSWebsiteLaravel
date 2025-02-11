@@ -58,7 +58,7 @@ use Modules\Admin\app\Models\Sms;
 use App\Mail\SmsHelper;
 use Modules\Admin\app\Models\SmsTemplates;
 use Twilio\Rest\Client;
-use DB;
+
 
 class AdminController extends Controller
 {
@@ -69,10 +69,10 @@ class AdminController extends Controller
         $this->smsService = $smsService;
     }
 
-    public function sendSmsToUser(Request $request)
-    {
-        $validator = Validator::make($request->all(),
-    }
+    // public function sendSmsToUser(Request $request)
+    // {
+    //   $validator = Validator::make($request->all(),
+    // }
 
   public function getSmsTemplates(Request $request){
 
