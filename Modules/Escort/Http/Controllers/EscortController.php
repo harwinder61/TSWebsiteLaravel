@@ -32,29 +32,51 @@ class EscortController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm']);
+        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm','newVerifyEmail']);
     } 
  
 
 
-    public function verifyEmail($token, Request $request){
+    public function newVerifyEmail($token, Request $request)
+    {
+        $user = auth()->user();
+        
         $validator = Validator::make($request->all(), [
-           'email' => 'required|email',
-       ]);
-       
-       if ($validator->fails()) {
-           return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-       }
-       $user = AuthUser::where('verification_token', $token)->first();
-       if (!$user) {
-           return Resp::error(['message' => 'Email verification failed.']);
-       }
-       $user->email_verified_at = now();
-       $user->verification_token = null;
-       $user->save();
-   
-     }
-     
+            'email' => 'required|email',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        // Log the token being verified
+        Log::info('Verifying email with token: ' . $token);
+        
+        $user = AuthUser::where('verification_token', $token)->first();
+    
+        if (!$user) {
+            return Resp::error(['message' => 'Email verification failed. Invalid token.']);
+        }
+    
+        // Update the user's email without checking for a match
+        $user->email = $request->input('email');
+        $user->save(); // Save the updated user
+    
+        EmailHelper::sendDynamicEmail(
+            'ts_email_verification',
+            [
+                '[USER_LOGIN]' => $user->username,
+                '[USER_EMAIL]' => $user->email,
+                '[VERIFIED_EMAIL_LINK]' => env('WEBAPP_URL') . "/account-verification?token=" . $token
+            ],
+            $user->email
+        );
+    
+        // Return success response
+        return Resp::success(['message' => 'Email verified and updated successfully']);
+    }
+
+
    
 
 

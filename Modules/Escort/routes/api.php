@@ -40,11 +40,12 @@ Route::group(['prefix' => 'escort'],function(){
     Route::patch('/update-latest-subscription',[OrderController::class,'updateLatestEscortSubscription']);
     Route::post('/add-extra-locations',[OrderController::class,'extraLocationsUpdatedOrder']);
     Route::get('reviws-escort-fanlist',[ReviewsController::class,'getEscortFanlist']);
-    Route::post('/verify-email',[EscortController::class,'verifyEmail']);
+
 
 
 });
 });
+Route::post('/verify-email/{token}',[EscortController::class,'newVerifyEmail']);
 Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
 Route::get('/locations/countries',[MasterController::class,'countries']);
 Route::get('/locations/regions',[MasterController::class,'regions']);
