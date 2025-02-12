@@ -685,7 +685,8 @@ public function newUser(Request $request)
         }
 
         // Get the filtered results with pagination
-        $emailLogs = $query->orderBy('created_at', 'desc')->paginate(10); // Get 10 records per page
+        $emailLogs = $query->orderBy('created_at', 'desc')->paginate(10);
+         // Get 10 records per page
 
         return Resp::success([
             'emailLogs' => $emailLogs->items(), // Get the current page items
@@ -3248,10 +3249,14 @@ public function newUser(Request $request)
             ->when($request->query('username'), function ($query, $username) {
                 $query->where('username', 'like', '%' . $username . '%');
             })
+            ->orderBy('created_at', 'desc')
             ->distinct('username') // Retrieve unique usernames
             ->offset($offset)
             ->limit($perPage)
             ->get();
+            
+            
+
 
         $totalCount = AuthUser::where('user_type', 3)->distinct('username')->count();
 
