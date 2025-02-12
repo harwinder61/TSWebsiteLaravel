@@ -74,6 +74,41 @@ class AdminController extends Controller
         $this->smsService = $smsService;
     }   
 
+
+
+
+    public function whatsappLogs(Request $request)
+    {
+        // Initialize the query
+        $query = whatsappLogs::query();
+    
+        // Apply filters based on request parameters
+        if ($request->has('id')) {
+            $query->where('id', $request->input('id'));
+        }
+    
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('created_at', [$request->input('start_date'), $request->input('end_date')]);
+        }
+        // Fetch SMS logs with pagination
+        $whatsappLogs = $query->orderBy('created_at', 'desc')->paginate(10);
+    
+        return Resp::success([
+            'message' => 'whatsapp logs fetched successfully', 
+            'whatsappLogs' => $whatsappLogs,
+            'pagination' => [
+                'total_results' => $whatsappLogs->total(),
+                'total_pages' => $whatsappLogs->lastPage(),
+                'current_page' => $whatsappLogs->currentPage(),
+                'page_size' => $whatsappLogs->perPage(),
+            ]
+        ]);
+    }
+
+
   public function updateSmsTemplate($id, Request $request){
     $smsTemplate = SmsTemplates::find($id);
     if (!$smsTemplate) {

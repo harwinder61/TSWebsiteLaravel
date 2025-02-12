@@ -123,6 +123,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::put('/update-sms-template/{id}',[AdminController::class,'updateSmsTemplate']);
         Route::put('/update-whatsapp-template/{id}',[AdminController::class,'updateWhatsappTemplate']);
         // Route::post('/measege',[AdminController::class,'sendMeaasge']);
+       Route::get('/whatsapp-logs',[AdminController::class,'whatsappLogs']);
     });
 
 
