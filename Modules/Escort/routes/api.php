@@ -45,7 +45,7 @@ Route::group(['prefix' => 'escort'],function(){
 
 });
 });
-Route::post('/verify-email/{token}',[EscortController::class,'newVerifyEmail']);
+Route::post('/verify-email',[EscortController::class,'newVerifyEmail']);
 Route::post('/profile-views/{id}',[EscortController::class,'profileViews']);
 Route::get('/locations/countries',[MasterController::class,'countries']);
 Route::get('/locations/regions',[MasterController::class,'regions']);

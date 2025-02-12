@@ -434,6 +434,7 @@ public function newUser(Request $request)
     // Determine status for the new user
     $status = $request->sms;
 
+    $verification_token = Str::random(30);
     // Create the user
     $user = AuthUser::create([
         'username' => $request->username,
@@ -445,6 +446,7 @@ public function newUser(Request $request)
         'email_verified' => 1,
         'phone_number' => $request->phone_number,
         'account_origin' => $request->account_origin,
+        'verification_token' => $verification_token,
         'status' => $status
     ]);
 

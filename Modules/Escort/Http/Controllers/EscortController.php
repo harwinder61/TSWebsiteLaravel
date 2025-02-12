@@ -28,6 +28,7 @@ use App\Models\BaseSubscription;
 use App\Models\BaseReviews;
 use App\Mail\EmailHelper;
 use App\Models\User;
+use Illuminate\Support\Str;
 class EscortController extends Controller
 {
     public function __construct()
@@ -37,10 +38,9 @@ class EscortController extends Controller
  
 
 
-    public function newVerifyEmail($token, Request $request)
+    public function newVerifyEmail(Request $request)
     {
         $user = auth()->user();
-        
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
         ]);
@@ -50,24 +50,31 @@ class EscortController extends Controller
         }
     
         // Log the token being verified
-        Log::info('Verifying email with token: ' . $token);
+        // Log::info('Verifying email with token: ' . $token);
         
-        $user = AuthUser::where('verification_token', $token)->first();
-    
+        // $user = AuthUser::where('verification_token')->first();
+
+        
         if (!$user) {
             return Resp::error(['message' => 'Email verification failed. Invalid token.']);
         }
-    
         // Update the user's email without checking for a match
         $user->email = $request->input('email');
         $user->save(); // Save the updated user
+        $verification_token = $user->verification_token;
+
+        if($verification_token == ""){
+            $verification_token = Str::random(30);
+            $user->verification_token = $verification_token;
+            $user->save();
+        }
     
         EmailHelper::sendDynamicEmail(
             'ts_email_verification',
             [
                 '[USER_LOGIN]' => $user->username,
                 '[USER_EMAIL]' => $user->email,
-                '[VERIFIED_EMAIL_LINK]' => env('WEBAPP_URL') . "/account-verification?token=" . $token
+                '[VERIFIED_EMAIL_LINK]' => env('WEBAPP_URL') . "/account-verification?token=" . $verification_token
             ],
             $user->email
         );

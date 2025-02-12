@@ -235,7 +235,15 @@ class AuthController extends Controller
     
         // Retrieve the authenticated user
         $user = JWTAuth::user()->load('profile');
-    
+        if($user->account_origin == 'admin' && $user->user_type == 2){
+            $scheduledEmails = new ScheduledEmails();
+            $scheduledEmails->sendInactivityEmails();
+            return Resp::success([
+                'message' => 'Login successful',
+                'token' => $token,
+                'user' => $user
+            ]);
+        }
         // Check if email is verified
         if (!$user->email_verified && $user->account_origin != 'admin') {
             return Resp::error(['error' => 'Email not verified']);
@@ -245,6 +253,8 @@ class AuthController extends Controller
         if ($user->user_type === 3) { // Admin user type
             return Resp::error(['error' => 'Admins cannot log in to the website.']);
         }
+
+  
     
         // Check if the user is trying to access the admin portal
         // if ($request->is('admin/*') && ($user->user_type === 1 || $user->user_type === 2)) {
