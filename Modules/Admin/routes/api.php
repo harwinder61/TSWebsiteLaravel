@@ -12,6 +12,7 @@ use App\Console\Commands\sendInactivityEmails;
 use App\Console\Commands\ScheduledEmails;
 use App\Console\Commands\DeleteExpiredUsers;
 
+
 Route::middleware(['jwt_auth:admin'])->group(function(){
     Route::group(['prefix'=>'admin'],function(){
         Route::post('/plan/{plan_code}',[AdminController::class,'updatePlan']);
@@ -117,6 +118,10 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/send-sms-user', [AdminController::class, 'sendSmstoUser']);
         Route::get('sms-template',[AdminController::class,'getSmsTemplates']);
         // Route::post('/new-user', [AdminController::class, 'newUser']);
+        Route::get('/whatsapp-templates',[AdminController::class,'getWhatsappTemplates']);
+        Route::post('/send-whatsapp', [AdminController::class, 'sendWhatsappToUser']);
+        Route::put('/update-sms-template/{id}',[AdminController::class,'updateSmsTemplate']);
+        Route::put('/update-whatsapp-template/{id}',[AdminController::class,'updateWhatsappTemplate']);
     });
 
 

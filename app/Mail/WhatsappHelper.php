@@ -9,21 +9,21 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;    
 use Modules\Admin\app\Models\EmailLog;  
-use Modules\Admin\app\Models\SmsTemplates;
+use Modules\Admin\app\Models\whatsappTemplates;
 
-class SmsHelper
+class WhatsappHelper
 {
-    public static function getSmsTemplateByType($type)
+    public static function getWhatsappTemplateByType($type)
     {
-        $template = SmsTemplates::where('type', $type)->first();
+        $template = whatsappTemplates::where('type', $type)->first();
         
         if (!$template) {
-            Log::error('SMS template not found for type: ' . $type);
+            Log::error('Whatsapp template not found for type: ' . $type);
             return null; // Return null if the template is not found
         }
         
         if (empty($template->content)) {
-            Log::error('SMS template content is empty for type: ' . $type);
+            Log::error('Whatsapp template content is empty for type: ' . $type);
             return null; // Return null if the content is empty
         }
     
