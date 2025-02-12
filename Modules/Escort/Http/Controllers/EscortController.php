@@ -47,7 +47,7 @@ class EscortController extends Controller
        }
        $user = AuthUser::where('verification_token', $token)->first();
        if (!$user) {
-       
+           return Resp::error(['message' => 'Email verification failed.']);
        }
        $user->email_verified_at = now();
        $user->verification_token = null;

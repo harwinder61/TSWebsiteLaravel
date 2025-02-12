@@ -16,7 +16,9 @@ class Sms extends Model
     protected $fillable=['phone_number','message','to','From' ,'user_id','status'] ;
 
  
-
+    public function user(){
+        return $this->belongsTo(User::class,'user_id','id');
+    }
    
 }
 

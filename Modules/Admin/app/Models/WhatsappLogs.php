@@ -5,7 +5,7 @@ namespace Modules\Admin\app\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class whatsappLogs extends Model
+class WhatsappLogs extends Model
 {
     use HasFactory;
 

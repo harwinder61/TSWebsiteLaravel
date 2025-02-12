@@ -60,8 +60,7 @@ use Modules\Admin\app\Models\SmsTemplates;
 use PhpParser\Node\Stmt\TryCatch;
 use Twilio\Rest\Client;
 use Modules\Admin\app\Models\whatsappTemplates;
-use Modules\Admin\app\Models\whatsappLogs;
-
+use Modules\Admin\app\Models\WhatsappLogs;
 
 
 
@@ -76,11 +75,25 @@ class AdminController extends Controller
 
 
 
+    public function sendMeaasge(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'phone_number' => 'required|string',
+            'message' => 'required|string'
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::error(['message' => $validator->errors()], 400);
+        }
+    
+        // $this->smsService->sendSms($request->phone_number, $request->message);   
+        return Resp::success(['message' => 'Message sent successfully']);
+    }
 
-    public function whatsappLogs(Request $request)
+
+    public function WhatsappLogs(Request $request)
     {
         // Initialize the query
-        $query = whatsappLogs::query();
+        $query = WhatsappLogs::query();
     
         // Apply filters based on request parameters
         if ($request->has('id')) {
@@ -384,6 +397,7 @@ class AdminController extends Controller
     
         // Fetch SMS logs with pagination
         $smsLogs = $query->orderBy('created_at', 'desc')->paginate(10);
+        $smsLogs->load('user');
     
         return Resp::success([
             'message' => 'SMS logs fetched successfully', 
