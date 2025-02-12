@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('whatsapp_logs', function (Blueprint $table) {
-            $table->dropColumn('from');
+            // $table->dropColumn('from');
         });
     }
 
