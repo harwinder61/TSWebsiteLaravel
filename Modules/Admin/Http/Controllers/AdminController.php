@@ -435,6 +435,14 @@ public function newUser(Request $request)
     $status = $request->sms;
 
     $verification_token = Str::random(30);
+
+    $email_verified_code = 1;
+
+    if ($request->user_type == 2) {
+        $email_verified_code = 0;
+    }
+
+
     // Create the user
     $user = AuthUser::create([
         'username' => $request->username,
@@ -443,7 +451,7 @@ public function newUser(Request $request)
         'user_type' => $request->user_type,
         'firstname' => $request->first_name,
         'lastname' => $request->last_name,
-        'email_verified' => 1,
+        'email_verified' => $email_verified_code,
         'phone_number' => $request->phone_number,
         'account_origin' => $request->account_origin,
         'verification_token' => $verification_token,
@@ -471,9 +479,7 @@ public function newUser(Request $request)
                 return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
             }
 
-            
-
-
+        
             $message = str_replace('[LOGIN_URL]', env('LOGIN_URL'), $message);
             $message = str_replace('[USER_LOGIN]', $request->username, $message);
             $message = str_replace('[USER_PASSWORD]', $request->password, $message);
@@ -991,9 +997,6 @@ public function newUser(Request $request)
             return Resp::error(['message' => 'Something went wrong: ' . $e->getMessage()]);
         }
     }
-
-
-
 
 
     public function getSinglePage(Request $request)
@@ -3255,9 +3258,7 @@ public function newUser(Request $request)
             ->limit($perPage)
             ->get();
             
-            
-
-
+        
         $totalCount = AuthUser::where('user_type', 3)->distinct('username')->count();
 
         return Resp::success([
