@@ -290,63 +290,60 @@ class AdminController extends Controller
         $twilioNumber = env('TWILIO_PHONE_NUMBER');
         $to = $user->profile->phone_number;
         $message = $smstemplate->content;
+
+        $message = str_replace('[LOGIN_URL]', env('LOGIN_URL'), $message);
+        $message = str_replace('[USER_LOGIN]', $user->username, $message);
+        $message = str_replace('[USER_PASSWORD]','', $message);
+
         $status = $request->status ?? true;
 
         try {
             $client = new Client($sid, $token);
 
+
             Log::info('Sending SMS: ' . $message);
 
             // Send SMS via Twilio
-            // $twilioMessage = $client->messages->create(
-            //     $to,
-            //     [
-            //         'from' => $twilioNumber,
-            //         'body' => $message
-            //     ]
-            // );
+            $twilioMessage = $client->messages->create(
+                $to,
+                [
+                    'from' => $twilioNumber,
+                    'body' => $message
+                ]
+            );
 
             Log::info('SMS sent to: ' . $to);
 
-            // Save SMS details to the database
-            $sms = Sms::create([
-                'to' => $to,
-                'message' => $message,
-                'user_id' => $user->id,
-                'from' => $twilioNumber,
-                'status' => $status,
-                // 'twilio_sid' => $twilioMessage->sid // Store Twilio message SID
-            ]);
-
-            return Resp::success([
-                'message' => 'SMS sent successfully',
-                'sms_id' => $sms->id
-            ]);
+          $status = 1;
         } catch (\Twilio\Exceptions\TwilioException $e) {
             Log::error('Twilio SMS Error: ' . $e->getMessage());
+            $status = 0;
 
-            // Save failed SMS to database
-            Sms::create([
-                'to' => $to,
-                'message' => $message,
-                'user_id' => $user->id,
-                'from' => $twilioNumber,
-                'status' => false,
-                'error_message' => $e->getMessage()
-            ]);
+          
+        } 
 
-            return Resp::error([
-                'message' => 'Failed to send SMS',
-                'error' => $e->getMessage()
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Unexpected SMS Error: ' . $e->getMessage());
+          // Save SMS details to the database
+          $sms = Sms::create([
+            'to' => $to,
+            'message' => $message,
+            'user_id' => $user->id,
+            'from' => $twilioNumber,
+            'status' => $status,
+            // 'twilio_sid' => $twilioMessage->sid // Store Twilio message SID
+        ]);
+        if($status){
+                return Resp::success([
+                    'message' => 'SMS sent successfully',
+                    'sms_id' => $sms->id
+                ]);
+            }else{
 
-            return Resp::error([
-                'message' => 'Unexpected error occurred',
-                'error' => $e->getMessage()
-            ]);
-        }
+                return Resp::error([
+                    'message' => 'Failed to send SMS',
+                    'error' => $e->getMessage()
+                ]);
+            }
+
     }
 
     public function getSmsTemplates(Request $request)
@@ -450,7 +447,7 @@ public function newUser(Request $request)
         $template = SmsHelper::getSmsTemplateByType('admin_new_user_added'); // Get SMS template by type
 
         if ($template) {
-            $message = $template->content; // Get message content
+             $message = $template->content; // Get message content
 
             // Ensure message is not empty
             if (empty($message)) {
@@ -458,6 +455,12 @@ public function newUser(Request $request)
                 return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
             }
 
+            
+
+
+            $message = str_replace('[LOGIN_URL]', env('LOGIN_URL'), $message);
+            $message = str_replace('[USER_LOGIN]', $request->username, $message);
+            $message = str_replace('[USER_PASSWORD]', $request->password, $message);
             $sid = env('TWILIO_SID');
             $token = env('TWILIO_TOKEN');
             $client = new Client($sid, $token);
@@ -466,39 +469,38 @@ public function newUser(Request $request)
 
             try {
                 // Send SMS (uncomment the line below to actually send the SMS via Twilio)
-                // $client->messages->create($to, [
-                //     'from' => env('TWILIO_PHONE_NUMBER'),
-                //     'body' => $message
-                // ]);
-
+                $client->messages->create($to, [
+                    'from' => env('TWILIO_PHONE_NUMBER'),
+                    'body' => $message
+                ]);
+            $status = 1;
                 Log::info('SMS sent to: ' . $to);
 
                 // Save SMS details to the database (sms_logs table)
-                $sms = Sms::create([
-                    'to' => $to,
-                    'message' => $message,
-                    'status' => 1, // Mark SMS as sent
-                    'user_id' => $user->id,
-                    'From' => env('TWILIO_PHONE_NUMBER'),
-                ]);
-
+    
             } catch (\Exception $e) {
                 Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
 
+
+                $status = 0;
                 // Save failed SMS details to the database
-                Sms::create([
-                    'to' => $to,
-                    'message' => $message,
-                    'status' => 0, // Failed SMS
-                    'user_id' => $user->id,
-                    'From' => env('TWILIO_PHONE_NUMBER'),
-                    'error_message' => $e->getMessage(),
-                ]);
+         
             }
+
+            Sms::create([
+                'to' => $to,
+                'message' => $message,
+                'status' => $status, // Failed SMS
+                'user_id' => $user->id,
+                'From' => env('TWILIO_PHONE_NUMBER'),
+                // 'error_message' => $e->getMessage(),
+            ]);
         } else {
             Log::error('Failed to fetch SMS template for user: ' . $user->username);
             return Resp::error(['message' => 'Failed to fetch SMS template.']);
         }
+
+
     }
 
     // Handle email notification for user type 3

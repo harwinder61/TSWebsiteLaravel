@@ -35,6 +35,29 @@ class EscortController extends Controller
         $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm']);
     } 
  
+
+
+    public function verifyEmail($token, Request $request){
+        $validator = Validator::make($request->all(), [
+           'email' => 'required|email',
+       ]);
+       
+       if ($validator->fails()) {
+           return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+       }
+       $user = AuthUser::where('verification_token', $token)->first();
+       if (!$user) {
+       
+       }
+       $user->email_verified_at = now();
+       $user->verification_token = null;
+       $user->save();
+   
+     }
+     
+   
+
+
     // public function deleteProfile(Request $request)
 // {
 //     $validator = Validator::make($request->all(), [
