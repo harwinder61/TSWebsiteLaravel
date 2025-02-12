@@ -224,11 +224,6 @@ class AdminController extends Controller
          }
      }
 
-
-
-
-  
-
     public function sendSmsToUser(Request $request)
     {
         $validator = Validator::make($request->all(), [

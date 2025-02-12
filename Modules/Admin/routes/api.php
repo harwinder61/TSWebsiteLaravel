@@ -122,6 +122,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/send-whatsapp', [AdminController::class, 'sendWhatsappToUser']);
         Route::put('/update-sms-template/{id}',[AdminController::class,'updateSmsTemplate']);
         Route::put('/update-whatsapp-template/{id}',[AdminController::class,'updateWhatsappTemplate']);
+        // Route::post('/measege',[AdminController::class,'sendMeaasge']);
     });
 
 

@@ -237,7 +237,7 @@ class AuthController extends Controller
         $user = JWTAuth::user()->load('profile');
     
         // Check if email is verified
-        if (!$user->email_verified) {
+        if (!$user->email_verified && $user->account_origin != 'admin') {
             return Resp::error(['error' => 'Email not verified']);
         }
     
