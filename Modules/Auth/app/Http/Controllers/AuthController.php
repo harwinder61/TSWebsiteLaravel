@@ -27,15 +27,93 @@ use App\Mail\EmailHelper;
 use Carbon\Carbon;
 use App\Console\Commands\ScheduledEmails;
 use App\Models\User;
+use Illuminate\Support\Facades\Crypt;
 
 class AuthController extends Controller
 {
 
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['register', 'loginWithGmail', 'registerWithGmail',
-          'login', 'verifyEmail', 'verificationEmailToken', 'recoverPassword', 'resetPassword','adminLogin']);
+        $this->middleware(AuthMiddleware::class)->except([
+            'register',
+            'loginWithGmail',
+            'registerWithGmail',
+            'login',
+            'verifyEmail',
+            'verificationEmailToken',
+            'recoverPassword',
+            'resetPassword',
+            'adminLogin'
+        ]);
     }
+
+
+
+    public function register(Request $request)
+    {
+        // Validate the incoming request data
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string|max:255|unique:users,username',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'user_type' => 'required|integer|in:1,2,3',
+            'password_confirmation' => 'required|same:password',
+            'others' => 'string',
+            'account_origin' => 'string|in:admin,site',
+        ], [
+            'user_type.in' => 'The user type must be either 1 or 2 or 3',
+            'password.confirmed' => 'The password and confirm password do not match',
+        ]);
+    
+        // If validation fails, return field errors
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        // Generate a verification token
+        $verification_token = Str::random(30);
+    
+        // Create the user record
+        $user = AuthUser::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'user_type' => $request->user_type,
+            'verification_token' => $verification_token,
+            'email_verified' => false,
+            'last_active_at' => Carbon::now(),
+            'others' => $request->others,
+            'account_origin' => $request->account_origin,
+            'secret' => $request->user_type == 2 ? Crypt::encryptString($request->password) : null,
+        ]);
+    
+        // Decrypt the password only if user_type is 2
+        // if ($user->user_type == 2) {
+        //     $decrypted_password = Crypt::decryptString($user->secret);
+        //     Log::info('Decrypted Password: ' . $decrypted_password);
+        // }
+    
+        // Send verification email
+        EmailHelper::sendDynamicEmail(
+            'ts_email_verification',
+            [
+                '[USER_LOGIN]' => $user->username,
+                '[USER_EMAIL]' => $user->email,
+                '[VERIFIED_EMAIL_LINK]' => env('WEBAPP_URL') . "/account-verification?token=" . $verification_token
+            ],
+            $user->email
+        );
+    
+        // Create user profile
+        $escort = Profile::create([
+            'name' => $user->username,
+            'escort_id' => $user->id,
+        ]);
+    
+        // Return success response
+        return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
+    }
+
 
 
     public function adminLogin(Request $request)
@@ -45,11 +123,11 @@ class AuthController extends Controller
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
-    
+
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-    
+
         // Extract credentials
         $credentials = $request->only('username', 'password');
         $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
@@ -57,7 +135,7 @@ class AuthController extends Controller
             $loginType => $request->input('username'),
             'password' => $request->input('password'),
         ];
-    
+
         // Attempt login
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
@@ -66,61 +144,61 @@ class AuthController extends Controller
         } catch (JWTException $e) {
             return Resp::error(['error' => 'Could not create token']);
         }
-    
+
         // Set the JWT token
         JWTAuth::setToken($token);
-    
+
         // Retrieve the authenticated user
         $user = JWTAuth::user()->load('profile');
-    
+
         // Check if email is verified
         if (!$user->email_verified) {
             return Resp::error(['error' => 'Email not verified']);
         }
-    
+
         if (($user->user_type === 1 || $user->user_type === 2)) {
             return Resp::error(['error' => 'Fans and Escorts cannot log in to the admin portal.']);
         }
-    
+
         // Call sendInactivityEmails if needed
         Log::info('Calling sendInactivityEmails for all inactive users');
         $scheduledEmails = new ScheduledEmails();
         $scheduledEmails->sendInactivityEmails();
-    
+
         return Resp::success([
             'message' => 'Login successful',
             'token' => $token,
             'user' => $user
         ]);
     }
-  
+
 
 
 
     public function backendToken($token)
     {
         $user = User::where('temp_token', $token)->first();
-    
+
         if (!$user) {
             return Resp::error(['message' => 'Invalid or expired token.']);
         }
-    
+
         // If the user has a requested email
         if (!$user->requested_email) {
             return Resp::error(['message' => 'No requested email found.']);
         }
-    
+
         // Update the user's main email with the requested email
         $user->email = $user->requested_email;
         $user->email_verified = true; // Mark the email as verified
         $user->requested_email = null; // Clear requested email
         $user->temp_token = null; // Clear temp token
         $user->save();
-    
+
         return Resp::success(['message' => 'Your email has been successfully changed and verified.']);
     }
-    
-    
+
+
     // public function login(Request $request)
     // {
     //     // Validate the request
@@ -128,11 +206,11 @@ class AuthController extends Controller
     //         'username' => 'required|string',
     //         'password' => 'required|string',
     //     ]);
-    
+
     //     if ($validator->fails()) {
     //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     //     }
-    
+
     //     // Extract credentials
     //     $credentials = $request->only('username', 'password');
     //     $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
@@ -140,7 +218,7 @@ class AuthController extends Controller
     //         $loginType => $request->input('username'),
     //         'password' => $request->input('password'),
     //     ];
-    
+
     //     // Attempt login
     //     try {
     //         if (!$token = JWTAuth::attempt($credentials)) {
@@ -149,18 +227,18 @@ class AuthController extends Controller
     //     } catch (JWTException $e) {
     //         return Resp::error(['error' => 'Could not create token']);
     //     }
-    
+
     //     // Set the JWT token
     //     JWTAuth::setToken($token);
-    
+
     //     // Retrieve the authenticated user
     //     $user = JWTAuth::user()->load('profile');
-    
+
     //     // Check if email is verified
     //     if (!$user->email_verified) {
     //         return Resp::error(['error' => 'Email not verified']);
     //     }
-    
+
     //     // Check if verification email has already been sent
     //     if (!$user->verification_email_sent) {
     //         // Prepare dynamic email data
@@ -170,7 +248,7 @@ class AuthController extends Controller
     //             '[CUSTOMER_EMAIL]' => $user->email,
     //             '[VERIFY_EMAIL_URL]' => env('WEBAPP_URL') . "/account-verification?token=" . $user->verification_token,
     //         ];
-    
+
     //         // Send dynamic email (ensure the template exists in the DB)
     //         try {
     //             EmailHelper::sendDynamicEmail(
@@ -179,21 +257,21 @@ class AuthController extends Controller
     //                 $user->email
     //             );
     //             Log::info('Verification email sent to: ' . $user->email);
-    
+
     //             // Update the user to mark email as sent
     //             $user->verification_email_sent = 1;
     //             $user->save();
-    
+
     //         } catch (\Exception $e) {
     //             Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
     //         }
     //     }
-    
+
     //     // Call sendInactivityEmails if needed
     //     Log::info('Calling sendInactivityEmails for all inactive users');
     //     $scheduledEmails = new ScheduledEmails();
     //     $scheduledEmails->sendInactivityEmails();
-    
+
     //     return Resp::success([
     //         'message' => 'Login successful',
     //         'token' => $token,
@@ -208,11 +286,11 @@ class AuthController extends Controller
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
-    
+
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
-    
+
         // Extract credentials
         $credentials = $request->only('username', 'password');
         $loginType = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
@@ -220,7 +298,7 @@ class AuthController extends Controller
             $loginType => $request->input('username'),
             'password' => $request->input('password'),
         ];
-    
+
         // Attempt login
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
@@ -229,13 +307,13 @@ class AuthController extends Controller
         } catch (JWTException $e) {
             return Resp::error(['error' => 'Could not create token']);
         }
-    
+
         // Set the JWT token
         JWTAuth::setToken($token);
-    
+
         // Retrieve the authenticated user
         $user = JWTAuth::user()->load('profile');
-        if($user->account_origin == 'admin' && $user->user_type == 2){
+        if ($user->account_origin == 'admin' && $user->user_type == 2) {
             $scheduledEmails = new ScheduledEmails();
             $scheduledEmails->sendInactivityEmails();
             return Resp::success([
@@ -248,152 +326,85 @@ class AuthController extends Controller
         if (!$user->email_verified && $user->account_origin != 'admin') {
             return Resp::error(['error' => 'Email not verified']);
         }
-    
+
         // Check user type for login restrictions
         if ($user->user_type === 3) { // Admin user type
             return Resp::error(['error' => 'Admins cannot log in to the website.']);
         }
 
-  
-    
+
+
         // Check if the user is trying to access the admin portal
         // if ($request->is('admin/*') && ($user->user_type === 1 || $user->user_type === 2)) {
         //     return Resp::error(['error' => 'Fans and Escorts cannot log in to the admin portal.']);
         // }
-    
+
         // Call sendInactivityEmails if needed
         Log::info('Calling sendInactivityEmails for all inactive users');
         $scheduledEmails = new ScheduledEmails();
         $scheduledEmails->sendInactivityEmails();
-    
+
         return Resp::success([
             'message' => 'Login successful',
             'token' => $token,
             'user' => $user
         ]);
     }
-    
-    public function register(Request $request)
-    {
-        // Validate the incoming request data
-        $validator = Validator::make($request->all(), [
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'user_type' => 'required|integer|in:1,2,3',
-            'password_confirmation' => 'required|same:password',
-            'others' => 'string',
-            'account_origin' => 'string|in:admin,site',                                                                                                                       
 
-        ], [
-            'user_type.in' => 'The user type must be either 1 or 2 or 3',
-            'password.confirmed' => 'The password and confirm password do not match',
+
+    public function resetOldEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'old_email' => 'required|string|email',
+            'new_email' => 'required|string|email|max:255|unique:users,email',
+            'confirm_email' => 'required|same:new_email',
         ]);
 
-        // If validation fails, return field errors
         if ($validator->fails()) {
             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
         }
 
-        // Generate a verification token
-        $verification_token = Str::random(30);
+        $user = auth()->user();
 
-        // Create the user record
-        $user = AuthUser::create([
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'user_type' => $request->user_type,
-            'verification_token' => $verification_token,
-            'email_verified' => false,
-            'last_active_at' => Carbon::now(),
-            'others' => $request->others,
-            'account_origin' => $request->account_origin,
-        ]);
+        // Check if the old email matches the current user email
+        if ($request->old_email !== $user->email) {
+            return Resp::error(['message' => 'Old email is incorrect']);
+        }
 
-        // Send verification email
-        //    $email = new Mailer();
-        //    $email->to($user->email);
-        //    $email->subject('Test Email');
-        //    $email->setBodyByTemplate('verify-email', ['verification_token' => $verification_token, 'user' => $user]);
-        //    $email->send();
+        // Update user with requested email directly (no verification)
+        $user->email = $request->new_email;
+        $user->email_verified = true;  // Assuming you want to mark this email as verified directly
+        $user->save();
 
-        // Create user profile
-        $escort = Profile::create([
-            'name' => $user->username,
-            'escort_id' => $user->id,
-        ]);
+        // Send confirmation email to old email address
+        $oldEmailContent = [
+            '[USER_LOGIN]' => $user->username,
+            '[RESET_EMAIL]' => $request->new_email, // Add the new email in the message
+        ];
 
-        // One-liner call to send dynamic email
         EmailHelper::sendDynamicEmail(
-            'ts_email_verification',
-            [
-                '[USER_LOGIN]' => $user->username,
-                '[USER_EMAIL]' => $user->email,
-                '[VERIFIED_EMAIL_LINK]' => env('WEBAPP_URL') . "/account-verification?token=" . $verification_token
-            ],
-            $user->email
+            'ts_email_change_request',
+            $oldEmailContent,
+            $request->old_email
         );
 
-        // Return success response
-        return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
+        // Send email to new email address confirming the email change
+        $newEmailContent = [
+            '[USER_LOGIN]' => $user->username,
+            '[NEW_EMAIL]' => $request->new_email,
+            '[USER_TOKEN]' => $user->verification_token,
+        ];
+
+        EmailHelper::sendDynamicEmail(
+            'ts_email_successful_change_verified',
+            $newEmailContent,
+            $request->new_email
+        );
+
+        return Resp::success([
+            'message' => 'Your email has been successfully changed.'
+        ]);
     }
-
-
-
-public function resetOldEmail(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'old_email' => 'required|string|email',
-        'new_email' => 'required|string|email|max:255|unique:users,email',
-        'confirm_email' => 'required|same:new_email',
-    ]);
-
-    if ($validator->fails()) {
-        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    }
-
-    $user = auth()->user();
-
-    // Check if the old email matches the current user email
-    if ($request->old_email !== $user->email) {
-        return Resp::error(['message' => 'Old email is incorrect']);
-    }
-
-    // Update user with requested email directly (no verification)
-    $user->email = $request->new_email;
-    $user->email_verified = true;  // Assuming you want to mark this email as verified directly
-    $user->save();
-
-    // Send confirmation email to old email address
-    $oldEmailContent = [
-        '[USER_LOGIN]' => $user->username,
-        '[RESET_EMAIL]' => $request->new_email, // Add the new email in the message
-    ];
-
-    EmailHelper::sendDynamicEmail(
-        'ts_email_change_request',
-        $oldEmailContent,
-        $request->old_email
-    );
-
-    // Send email to new email address confirming the email change
-    $newEmailContent = [
-        '[USER_LOGIN]' => $user->username,
-        '[NEW_EMAIL]' => $request->new_email,
-        '[USER_TOKEN]' => $user->verification_token,
-    ];
-
-    EmailHelper::sendDynamicEmail(
-        'ts_email_successful_change_verified',
-        $newEmailContent,
-        $request->new_email
-    );
-
-    return Resp::success([
-        'message' => 'Your email has been successfully changed.'
-    ]);
-}
 
     public function changePassword(Request $request)
     {
@@ -531,7 +542,7 @@ public function resetOldEmail(Request $request)
     }
 
 
- 
+
 
 
     public function registerWithGmail(Request $request)
@@ -549,7 +560,7 @@ public function resetOldEmail(Request $request)
         // print_r($request->all());
         $verification_token = Str::random(30);
 
-        $client=new Google_Client(['client_id' => env('GOOGLE_SSO_CLIENT_ID')]);
+        $client = new Google_Client(['client_id' => env('GOOGLE_SSO_CLIENT_ID')]);
         //$client = new Google_Client(['client_id' => '554367286106-3knj3b3orb78hh4gj5npg3heiikldtg7.apps.googleusercontent.com']);
         $payload = $client->verifyIdToken($request->google_sso_token);
 
