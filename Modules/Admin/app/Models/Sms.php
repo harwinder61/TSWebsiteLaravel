@@ -13,7 +13,7 @@ class Sms extends Model
     use HasFactory;
 
     protected $table='sms_logs';
-    protected $fillable=['phone_number','message','to','From' ,'user_id','status'] ;
+    protected $fillable=['phone_number','message','to','from' ,'user_id','status'] ;
 
  
     public function user(){

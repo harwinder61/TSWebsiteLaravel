@@ -75,7 +75,7 @@ class AdminController extends Controller
 
 
 
-    public function sendMeaasge(Request $request) {
+    public function sendMessage(Request $request) {
         $validator = Validator::make($request->all(), [
             'phone_number' => 'required|string',
             'message' => 'required|string'
@@ -85,8 +85,36 @@ class AdminController extends Controller
             return Resp::error(['message' => $validator->errors()], 400);
         }
     
-        // $this->smsService->sendSms($request->phone_number, $request->message);   
-        return Resp::success(['message' => 'Message sent successfully']);
+        try {
+            $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
+            $twilioMessage = $client->messages->create(
+                $request->phone_number,
+                [
+                    'from' => env('TWILIO_PHONE_NUMBER'),
+                    'body' => $request->message
+                ]
+            );
+    
+            Sms::create([
+                'to' => $request->phone_number,
+                'message' => $request->message,
+                'from' => env('TWILIO_PHONE_NUMBER'),
+                'status' => 1,
+                'twilio_sid' => $twilioMessage->sid
+            ]);
+    
+            return Resp::success(['message' => 'Message sent successfully']);
+        } catch (\Twilio\Exceptions\TwilioException $e) {
+            Sms::create([
+                'to' => $request->phone_number,
+                'message' => $request->message,
+                'from' => env('TWILIO_PHONE_NUMBER'),
+                'status' => 0,
+                'error_message' => $e->getMessage()
+            ]);
+    
+            return Resp::error(['message' => 'Failed to send SMS', 'error' => $e->getMessage()], 500);
+        }
     }
 
 
