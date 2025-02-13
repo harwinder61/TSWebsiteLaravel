@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mime;
 
-class DynamicEmail extends Mailable
+class SmsDynamic extends Mailable
 {
     use Queueable, SerializesModels;
 

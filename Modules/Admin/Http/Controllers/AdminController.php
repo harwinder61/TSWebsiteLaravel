@@ -61,6 +61,11 @@ use PhpParser\Node\Stmt\TryCatch;
 use Twilio\Rest\Client;
 use Modules\Admin\app\Models\whatsappTemplates;
 use Modules\Admin\app\Models\WhatsappLogs;
+use App\Mail\WhatsappHelper;
+
+
+
+
 
 
 
@@ -207,98 +212,212 @@ class AdminController extends Controller
 
      }
 
-     public function sendWhatsappToUser(Request $request)
-     {
-         $validator = Validator::make($request->all(), [
-             'user_id' => 'required|exists:users,id',
-         ]);
+    //  public function sendWhatsappToUser(Request $request)
+    //  {
+    //      $validator = Validator::make($request->all(), [
+    //          'user_id' => 'required|exists:users,id',
+    //      ]);
  
-         if ($validator->fails()) {
-             return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-         }
+    //      if ($validator->fails()) {
+    //          return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //      }
  
-         $user = AuthUser::with('profile')->find($request->user_id);
+    //      $user = AuthUser::with('profile')->find($request->user_id);
  
-         if (!$user) {
-             return Resp::error(['message' => 'User not found']);
-         }
+    //      if (!$user) {
+    //          return Resp::error(['message' => 'User not found']);
+    //      }
  
-         // Validate phone number
-         if (!$user->profile || !$user->profile->phone_number) {
-             return Resp::error(['message' => 'User phone number not found']);
-         }
+    //      // Validate phone number
+    //      if (!$user->profile || !$user->profile->phone_number) {
+    //          return Resp::error(['message' => 'User phone number not found']);
+    //      }
  
-         $whatsappTemplate = whatsappTemplates::where('type', 'admin_new_user_added')->first();
-         if (!$whatsappTemplate) {
-             return Resp::error(['message' => 'WhatsApp template not found']);
-         }
+    //      $whatsappTemplate = whatsappTemplates::where('type', 'admin_new_user_added')->first();
+    //      if (!$whatsappTemplate) {
+    //          return Resp::error(['message' => 'WhatsApp template not found']);
+    //      }
  
-         $sid = env('TWILIO_SID');
-         $token = env('TWILIO_TOKEN');
-         $twilioNumber = env('TWILIO_PHONE_NUMBER');
-         $to =  $user->profile->phone_number;
-         $message = $whatsappTemplate->content;
-         $status = $request->status ?? true;
+    //      $sid = env('TWILIO_SID');
+    //      $token = env('TWILIO_TOKEN');
+    //      $twilioNumber = env('TWILIO_PHONE_NUMBER');
+    //      $to =  $user->profile->phone_number;
+    //      $message = $whatsappTemplate->content;
+    //      $status = $request->status ?? true;
 
 
-         log::info('Sending WhatsApp MessagdfjkselLdjJIdkowedhjiwADe: ' . $twilioNumber);
+    //      log::info('Sending WhatsApp MessagdfjkselLdjJIdkowedhjiwADe: ' . $twilioNumber);
  
-         try {
-             $client = new Client($sid, $token);
+    //      try {
+    //          $client = new Client($sid, $token);
  
-             Log::info('Sending WhatsApp Message: ' . $message);
+    //          Log::info('Sending WhatsApp Message: ' . $message);
  
-             // Send WhatsApp message via Twilio
-             // $whatsappMessage = $client->messages->create(
-             //     $to,
-             //     [
-             //         'from' => $twilioNumber,
-             //         'body' => $message
-             //     ]
-             // );
+    //          // Send WhatsApp message via Twilio
+    //          // $whatsappMessage = $client->messages->create(
+    //          //     $to,
+    //          //     [
+    //          //         'from' => $twilioNumber,
+    //          //         'body' => $message
+    //          //     ]
+    //          // );
  
-             Log::info('WhatsApp message sent to: ' . $to);
+    //          Log::info('WhatsApp message sent to: ' . $to);
  
-             // Save WhatsApp message details to the database
-             $whatsapp = whatsappLogs::create([
-                 'to' => $to,
-                 'message' => $message,
-                 'user_id' => $user->id,
-                 'from' => $twilioNumber,
-                //  'status' => $status,
-                 // 'twilio_sid' => $whatsappMessage->sid // Store Twilio message SID
-             ]);
+    //          // Save WhatsApp message details to the database
+    //          $whatsapp = whatsappLogs::create([
+    //              'to' => $to,
+    //              'message' => $message,
+    //              'user_id' => $user->id,
+    //              'from' => $twilioNumber,
+    //             //  'status' => $status,
+    //              // 'twilio_sid' => $whatsappMessage->sid // Store Twilio message SID
+    //          ]);
  
-             return Resp::success([
-                 'message' => 'WhatsApp message sent successfully',
-                 'whatsapp_id' => $whatsapp->id
-             ]);
-         } catch (\Twilio\Exceptions\TwilioException $e) {
-             Log::error('Twilio WhatsApp Error: ' . $e->getMessage());
+    //          return Resp::success([
+    //              'message' => 'WhatsApp message sent successfully',
+    //              'whatsapp_id' => $whatsapp->id
+    //          ]);
+    //      } catch (\Twilio\Exceptions\TwilioException $e) {
+    //          Log::error('Twilio WhatsApp Error: ' . $e->getMessage());
  
-             // Save failed WhatsApp message to database
-             whatsappLogs::create([
-                 'to' => $to,
-                 'message' => $message,
-                 'user_id' => $user->id,
-                 'from' => $twilioNumber,
-                //  'status' => false,
-                //  'error_message' => $e->getMessage()
-             ]);
+    //          // Save failed WhatsApp message to database
+    //          whatsappLogs::create([
+    //              'to' => $to,
+    //              'message' => $message,
+    //              'user_id' => $user->id,
+    //              'from' => $twilioNumber,
+    //             //  'status' => false,
+    //             //  'error_message' => $e->getMessage()
+    //          ]);
  
-             return Resp::error([
-                 'message' => 'Failed to send WhatsApp message',
-                 'error' => $e->getMessage()
-             ]);
-         } catch (\Exception $e) {
-             Log::error('Unexpected WhatsApp Error: ' . $e->getMessage());
+    //          return Resp::error([
+    //              'message' => 'Failed to send WhatsApp message',
+    //              'error' => $e->getMessage()
+    //          ]);
+    //      } catch (\Exception $e) {
+    //          Log::error('Unexpected WhatsApp Error: ' . $e->getMessage());
  
-             return Resp::error([
-                 'message' => 'Unexpected error occurred',
-                 'error' => $e->getMessage()
-             ]);
-         }
-     }
+    //          return Resp::error([
+    //              'message' => 'Unexpected error occurred',
+    //              'error' => $e->getMessage()
+    //          ]);
+    //      }
+    //  }
+    public function sendWhatsappToUser(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        $user = AuthUser::with('profile')->find($request->user_id);
+    
+        if (!$user) {
+            return Resp::error(['message' => 'User not found']);
+        }
+    
+        // Validate phone number
+        if (!$user->profile || !$user->profile->phone_number) {
+            return Resp::error(['message' => 'User phone number not found']);
+        }
+    
+        $whatsappTemplate = whatsappTemplates::where('type', 'admin_new_user_added')->first();
+        if (!$whatsappTemplate) {
+            return Resp::error(['message' => 'WhatsApp template not found']);
+        }
+    
+        $verification_token = Str::random(30);
+        // Prepare the message content with dynamic data
+        $message = str_replace(
+            ['[USER_NAME]', '[USER_LOGIN]', '[VERIFIED_EMAIL_LINK]'], // Add the placeholder here
+            [$user->username, $user->username, env('WEBAPP_URL') . "/account-verification?token=" . $verification_token], // Include the verification link
+            $whatsappTemplate->content // The original content
+        );
+    
+        $sid = env('TWILIO_SID');
+        $token = env('TWILIO_TOKEN');
+        $twilioNumber = env('TWILIO_PHONE_NUMBER');
+        $to = $user->profile->phone_number;
+        $status = $request->status ?? true;
+    
+        Log::info('Sending WhatsApp Message: ' . $twilioNumber);
+    
+        try {
+            $client = new Client($sid, $token);
+    
+            Log::info('Sending WhatsApp Message: ' . $message);
+    
+            // Send WhatsApp message via Twilio
+            // $whatsappMessage = $client->messages->create(
+            //     $to,
+            //     [
+            //         'from' => $twilioNumber,
+            //         'body' => $message
+            //     ]
+            // );
+    
+
+             // Generate a verification token
+
+
+            Log::info('WhatsApp message sent to: ' . $to);
+    
+            // Save WhatsApp message details to the database
+            $whatsapp = WhatsappLogs::create([
+                'to' => $to,
+                'message' => $message,
+                'user_id' => $user->id,
+                'from' => $twilioNumber,
+                'verification_token' => $verification_token
+            ]);
+    
+            // Call dynamicsendWhatsapp function to send SMS
+            $smsResponse = WhatsappHelper::dynamicsendWhatsapp(
+                'admin_new_user_added', // Replace with your SMS template type
+                [
+                    '[USER_LOGIN]' => $user->username, // Dynamic data
+                    '[USER_NAME]' => $user->username,
+                    '[VERIFIED_EMAIL_LINK]' => env('WEBAPP_URL') . "/account-verification?token=" . $verification_token
+                ],
+                $user->profile->phone_number // Recipient's phone number
+            );
+    
+            Log::info('SMS response: ' . $smsResponse);
+    
+            return Resp::success([
+                'message' => 'WhatsApp message sent successfully',
+                'whatsapp_id' => $whatsapp->id,
+                'sms_response' => $smsResponse // Include SMS response in the success response
+            ]);
+        } catch (\Twilio\Exceptions\TwilioException $e) {
+            Log::error('Twilio WhatsApp Error: ' . $e->getMessage());
+    
+            // Save failed WhatsApp message to database
+            WhatsappLogs::create([
+                'to' => $to,
+                'message' => $message,
+                'user_id' => $user->id,
+                'from' => $twilioNumber,
+            ]);
+    
+            return Resp::error([
+                // 'message' => 'Failed to send WhatsApp message',
+                // 'error' => $e->getMessage()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Unexpected WhatsApp Error: ' . $e->getMessage());
+    
+            return Resp::error([
+                'message' => 'Unexpected error occurred',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
 
     public function sendSmsToUser(Request $request)
     {

@@ -87,16 +87,11 @@ class SmsHelper
         if($smsTemplate->status==0){
 
             return "SMS is disabled";
-
         }
-    
         // Replace dynamic data in the subject and body
         $subject = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->subject);
         $body = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->content);
-        
         $user = User::where('phone_number', $recipientSms)->first();
-        
-    
         // Send the email to the recipient
         //Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
         if($smsTemplate->status==1){
