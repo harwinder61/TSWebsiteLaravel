@@ -565,32 +565,32 @@ class SubscriptionController extends Controller
                 $locationORName = $request->query('locationName');
                 // $searchedlocationType=null;
 
-                // Check if the location name exists in City, County, or Region (in order of priority)
-                $cityExists = Location::where('name', 'like', '%' . $locationORName . '%')
-                                        ->where('type','city')->exists();
+                // Check if the location name exists in Region, County, or City (in order of priority)
+                $regionExists = Location::where('name', 'like',  $locationORName . '%')
+                    ->where('type','region')->exists();
+                if ($regionExists) {
+                    $searchedlocationType = 'region';
+                } else {
+                    $countyExists = Location::where('name', 'like', $locationORName . '%')
+                        ->where('type','county')->exists();
+                if ($countyExists) {
+                    $searchedlocationType = 'county';
+                } else {
+                    $cityExists = Location::where('name', 'like',  $locationORName . '%')
+                        ->where('type','city')->exists();
                 if ($cityExists) {
                     $searchedlocationType = 'city';
-                } else {
-                    $regionExists = Location::where('name', 'like', '%' . $locationORName . '%')
-                                            ->where('type','region')->exists();
-                    if ($regionExists) {
-                        $searchedlocationType = 'region';
-                    } else {
-                        $countyExists = Location::where('name', 'like', '%' . $locationORName . '%')
-                                                ->where('type','county')->exists();
-                        if ($countyExists) {
-                            $searchedlocationType = 'county';
-                        }
+                    }
                     }
                 }
 
                 $subscriptions->whereHas('escort.profile', function ($query) use ($locationORName) {
                     $query->whereHas('city', function ($q) use ($locationORName) {
-                        $q->where('name', 'like', '%' . $locationORName . '%');
+                        $q->where('name', 'like',  $locationORName . '%');
                     })->orWhereHas('region', function ($q) use ($locationORName) {
-                        $q->where('name', 'like', '%' . $locationORName . '%');
+                        $q->where('name', 'like',  $locationORName . '%');
                     })->orWhereHas('county', function ($q) use ($locationORName) {
-                        $q->where('name', 'like', '%' . $locationORName . '%');
+                        $q->where('name', 'like',  $locationORName . '%');
                     });
                 });
 
@@ -600,9 +600,9 @@ class SubscriptionController extends Controller
                 $profileName = $request->query('profileName');
 
                 $subscriptions->whereHas('escort.profile', function ($query) use ($profileName) {
-                    $query->where('name', 'like', '%' . $profileName . '%');
+                    $query->where('name', 'like',  $profileName . '%');
                 })->orWhereHas('escort', function ($query) use ($profileName) {
-                    $query->where('username', 'like', '%' . $profileName . '%');
+                    $query->where('username', 'like', $profileName . '%');
                 });
 
             }
