@@ -9,7 +9,7 @@ use App\Models\User;
 use Modules\Fan\app\Models\Fan;
 // use Modules\Escort\Database\Factories\EscortFactory;
 
-class verify extends Model
+class Verify extends Model
 {
     use HasFactory;
 

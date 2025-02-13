@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Modules\Admin\app\Models\Forum;
 use Modules\Admin\app\Models\Master;
-use Modules\Admin\app\Models\Verify;
+use Modules\Escort\app\Models\Verify;
 use Modules\Escort\app\Models\Verify as ModelsVerify;
 use Modules\Escort\app\Models\Profile as BaseProfile;
 use Modules\Admin\app\Models\Comment;
@@ -62,6 +62,7 @@ use Twilio\Rest\Client;
 use Modules\Admin\app\Models\whatsappTemplates;
 use Modules\Admin\app\Models\WhatsappLogs;
 use App\Mail\WhatsappHelper;
+
 
 
 
@@ -1162,12 +1163,18 @@ public function newUser(Request $request)
             return Resp::error(['message' => 'User not found']);
         }
         try {
-            Media::where('id', $id)->delete();
-            $user->delete();
+            $media=Media::where('escort_id', $id)->delete();
+            $profile=BaseProfile::where('id', $id)->delete();
+            $subscriptions=Subscription::where('escort_id', $id)->delete();
+            $orders=Orders::where('escort_id', $id)->delete();
+            $verify=Verify::where('escort_id', $id)->delete();
+            $comments=Comment::where('commentator_id', $id)->delete();
+            $Remindercomment=ReminderComment::where('admin_id', $id)->delete();
+            $user_data=$user->delete();
             return Resp::success(['message' => 'User deleted successfully']);
         } catch (\Exception $e) {
             Log::error('Error deleting user: ' . $e->getMessage());
-            return Resp::error(['message' => 'Error deleting user']);
+            return Resp::error(['message' => 'Error deleting user'. $e->getMessage()]);
         }
     }
 
