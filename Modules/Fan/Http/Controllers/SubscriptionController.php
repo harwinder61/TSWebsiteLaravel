@@ -1333,6 +1333,13 @@ class SubscriptionController extends Controller
 
                 $applyFilters($city_data);
 
+                if (!is_null($request->query('profileName'))) {
+                    $city_data->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('name', $request->query('profileName'));
+                    })->orWhereHas('escort', function ($query) use ($request) {
+                        $query->where('username', $request->query('profileName'));
+                    });
+                }
 
                 if (!is_null($request->query('plan_code'))) {
                     $city_data->where('plan_code', $request->query('plan_code'));
@@ -1582,6 +1589,15 @@ class SubscriptionController extends Controller
                     });
                 }
 
+
+                if (!is_null($request->query('profileName'))) {
+                    $county_data->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('name', $request->query('profileName'));
+                    })->orWhereHas('escort', function ($query) use ($request) {
+                        $query->where('username', $request->query('profileName'));
+                    });
+                }
+
                 if (!is_null($request->query('plan_code'))) {
                     $county_data->where('plan_code', $request->query('plan_code'));
                 }
@@ -1738,6 +1754,14 @@ class SubscriptionController extends Controller
                             }
                         });
                     }
+                });
+            }
+
+            if (!is_null($request->query('profileName'))) {
+                $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('name', $request->query('profileName'));
+                })->orWhereHas('escort', function ($query) use ($request) {
+                    $query->where('username', $request->query('profileName'));
                 });
             }
 
