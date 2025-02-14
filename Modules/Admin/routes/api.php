@@ -124,6 +124,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::put('/update-whatsapp-template/{id}',[AdminController::class,'updateWhatsappTemplate']);
         Route::post('/message',[AdminController::class,'sendMessage']);
        Route::get('/whatsapp-logs',[AdminController::class,'whatsappLogs']);
+       Route::post('/delete-fan-escort-all',[AdminController::class,'deleteFanEscortAll']);
     });
 
 

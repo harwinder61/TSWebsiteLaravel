@@ -12,7 +12,7 @@ class SmsTemplates extends Model
     use HasFactory;
 
     protected $table='sms_templates';
-    protected $fillable=['type','content','status'];
+    protected $fillable=['type','content','status','sms_status','whatsapp_status'];
 
  
 }

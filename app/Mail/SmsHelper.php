@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Modules\Admin\app\Models\EmailLog;  
 use Modules\Admin\app\Models\SmsTemplates;
 use Modules\Admin\app\Models\SmsLogs;   
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 
 class SmsHelper
 {
@@ -31,97 +33,90 @@ class SmsHelper
         return $template; // Return the template if found and content is not empty
     }
 
-    //    public static function sendDynamicEmail($templateType, $dynamicData, $recipientEmail)
-    // {
-    //     // Fetch the email template by type
-        
-    //     $emailTemplate = EmailTemplates::where('type', $templateType)->first();
-        
-    //     if (!$emailTemplate) {
-    //         // If the template doesn't exist, return an error or handle it
-    //         return 'Email template not found';
-    //     }
-
-    //     if($emailTemplate->status==0){
-
-    //         return "Email is disabled";
-
-    //     }
-    
-    //     // Replace dynamic data in the subject and body
-    //     $subject = str_replace(array_keys($dynamicData), array_values($dynamicData), $emailTemplate->subject);
-    //     $body = str_replace(array_keys($dynamicData), array_values($dynamicData), $emailTemplate->content);
-        
-    //     $user = User::where('email', $recipientEmail)->first();
-        
-    
-    //     // Send the email to the recipient
-    //     //Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
-    //     if($emailTemplate->status==1){
-            
-    //         Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
-    //     }
-
-    //     EmailLog::create([
-    //         'subject' => $subject,
-    //         'message' => $body,
-    //         'to' => $recipientEmail
-    //     ]);
-       
-    
-    //     return "Email sent successfully!";
-    // }
-
-
-
-    public static function dynamicsendSms($templateType, $dynamicData, $recipientSms) {
-        // Fetch the SMS template by type
-        $smsTemplate = SmsTemplates::where('type', $templateType)->first();
-    
-        if (!$smsTemplate) {
-            return 'SMS template not found';
-        }
-    
-        if ($smsTemplate->status == 0) {
-            return "SMS is disabled";
-        }
-    
-        // Replace dynamic data in the subject and body
-        $subject = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->subject);
-        $body = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->content);
-        
-        // Send the SMS using Twilio or your preferred method
-        try {
-            $sid = env('TWILIO_SID');
-            $token = env('TWILIO_TOKEN');
-            $twilioNumber = env('TWILIO_PHONE_NUMBER');
-    
-            $client = new \Twilio\Rest\Client($sid, $token);
-            $client->messages->create(
-                $recipientSms, // This should be the phone number
-                [
-                    'from' => $twilioNumber,
-                    'body' => $body
-                ]
-            );
-    
-            SmsLogs::create([
-                'subject' => $subject,
-                'message' => $body,
-                'to' => $recipientSms
-            ]);
-    
-            return "SMS sent successfully!";
-        } catch (\Exception $e) {
-            Log::error('Error sending SMS: ' . $e->getMessage());
-            return "Failed to send SMS: " . $e->getMessage();
-        }
+    public static function dynamicsendSms($templateType, $dynamicData, $recipientSms, $user = null,$isWhatsapp = false)
+{
+    // Check if the user object is valid
+    if (!is_object($user) || $user === null) {
+        return 'The user object is invalid or not passed correctly.';
     }
 
+    // Fetch the SMS template by type
+   
+    // // $whatsappTemplate = SmsTemplates::where('type', 'whatsapp_admin_new_user_added')->first();
+    // if (!$smsTemplate) {
+    //     return 'SMS template not found';
+    // }
 
+    // if ($smsTemplate->status == 0) {
+    //     return "SMS is disabled";
+    // }
 
-  
+    $smsTemplate = SmsTemplates::where('type', $templateType)->first();
+    if (!$smsTemplate) {
+        return 'SMS template not found';
+    }
+
+    // Replace the placeholders with actual dynamic values
+    $body = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->content);
+
+    // Check for profile and phone number
+    if (!$user->profile || !$user->profile->phone_number) {
+        return 'User profile or phone number not found';
+    }
+
+    // Replace encrypted password if necessary
+    if ($user->user_type == 2) {
+        $decryptedPassword = Crypt::decryptString($user->secret);
+        $body = str_replace('[USER_PASSWORD]', $decryptedPassword, $body);
+    } else {
+        $body = str_replace('[USER_PASSWORD]', $dynamicData['[USER_PASSWORD]'], $body);
+    }
+
+    if($isWhatsapp){
+        //runs whatsapp functions
+    }else{
+        //run simple sms functions
+    }
+
+    try {
+        $sid = env('TWILIO_SID');
+        $token = env('TWILIO_TOKEN');
+        $twilioNumber = env('TWILIO_PHONE_NUMBER');
+
+        $client = new \Twilio\Rest\Client($sid, $token);
+        $client->messages->create(
+            $recipientSms,
+            [
+                'from' => $twilioNumber,
+                'body' => $body
+            ]
+        );
+        SmsLogs::create([
+            'message' => $body,
+            'to' => $recipientSms,
+            'status' => 1, // Success
+            'user_id' => $user->id,  // Now properly saving the user_id
+            'from' => $twilioNumber,
+        ]);
+        return "SMS sent successfully!";
+    } catch (\Exception $e) {
+        Log::error('Error sending SMS: ' . $e->getMessage());
+
+        // Save failed SMS details with user_id
+        SmsLogs::create([
+            'message' => $body,
+            'to' => $recipientSms,
+            'status' => 0, // Failed
+            'user_id' => $user->id,  // Now properly saving the user_id
+            'from' => env('TWILIO_PHONE_NUMBER'),
+        ]);
+        return "Failed to send SMS: " . $e->getMessage();
+    }
 }
 
 
- 
+
+
+
+
+}
