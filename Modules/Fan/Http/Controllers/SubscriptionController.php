@@ -1727,6 +1727,31 @@ class SubscriptionController extends Controller
                     }
 
 
+
+
+                    if (!is_null($request->query('profileName'))) {
+                        $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('name', $request->query('profileName'));
+                    })->orWhereHas('escort', function ($query) use ($request) {
+                        $query->where('username', $request->query('profileName'));
+                    });
+                    }
+
+                    if(!is_null($request->query('locationName'))){
+                    $locationName = $request->query('locationName');
+
+                    $region_data->whereHas('escort.profile', function ($query) use ($locationName) {
+                        $query->whereHas('city', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('region', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('county', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        });
+                        });
+                    }
+
+
                     if (!is_null($request->query('profileName'))) {
                         $region_data->whereHas('escort.profile', function ($query) use ($request) {
                         $query->where('name', $request->query('profileName'));
@@ -1858,6 +1883,37 @@ class SubscriptionController extends Controller
                         });
                         });
                     }
+
+            if (!is_null($request->query('profileName'))) {
+                $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('name', $request->query('profileName'));
+                })->orWhereHas('escort', function ($query) use ($request) {
+                    $query->where('username', $request->query('profileName'));
+                });
+            }
+
+
+            if(!is_null($request->query('locationName'))){
+                    $locationName = $request->query('locationName');
+
+                    $region_data->whereHas('escort.profile', function ($query) use ($locationName) {
+                        $query->whereHas('city', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('region', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('county', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        });
+                        });
+                    }
+
+            if (!is_null($request->query('profileName'))) {
+                $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                    $query->where('name', $request->query('profileName'));
+                })->orWhereHas('escort', function ($query) use ($request) {
+                    $query->where('username', $request->query('profileName'));
+                });
+            }
 
 
             if (!is_null($request->query('plan_code'))) {
