@@ -40,16 +40,6 @@ class SmsHelper
         return 'The user object is invalid or not passed correctly.';
     }
 
-    // Fetch the SMS template by type
-   
-    // // $whatsappTemplate = SmsTemplates::where('type', 'whatsapp_admin_new_user_added')->first();
-    // if (!$smsTemplate) {
-    //     return 'SMS template not found';
-    // }
-
-    // if ($smsTemplate->status == 0) {
-    //     return "SMS is disabled";
-    // }
 
     $smsTemplate = SmsTemplates::where('type', $templateType)->first();
     if (!$smsTemplate) {
@@ -72,11 +62,11 @@ class SmsHelper
         $body = str_replace('[USER_PASSWORD]', $dynamicData['[USER_PASSWORD]'], $body);
     }
 
-    if($isWhatsapp){
-        //runs whatsapp functions
-    }else{
-        //run simple sms functions
-    }
+    // if($isWhatsapp){
+    //     //runs whatsapp functions
+    // }else{
+    //     //run simple sms functions
+    // }
 
     try {
         $sid = env('TWILIO_SID');
