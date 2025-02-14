@@ -561,50 +561,101 @@ class SubscriptionController extends Controller
                 });
             }
 
-            if(!is_null($request->query('locationName'))){
-                $locationORName = $request->query('locationName');
-                // $searchedlocationType=null;
+            // if(!is_null($request->query('locationName'))){
+            //     $locationORName = $request->query('locationName');
+            //     // $searchedlocationType=null;
 
-                // Check if the location name exists in Region, County, or City (in order of priority)
-                $regionExists = Location::where('name', 'like',  $locationORName . '%')
-                    ->where('type','region')->exists();
-                if ($regionExists) {
-                    $searchedlocationType = 'region';
-                } else {
-                    $countyExists = Location::where('name', 'like', $locationORName . '%')
-                        ->where('type','county')->exists();
-                if ($countyExists) {
-                    $searchedlocationType = 'county';
-                } else {
-                    $cityExists = Location::where('name', 'like',  $locationORName . '%')
-                        ->where('type','city')->exists();
-                if ($cityExists) {
-                    $searchedlocationType = 'city';
+            //     // Check if the location name exists in Region, County, or City (in order of priority)
+            //     $regionExists = Location::where('name', 'like',  $locationORName . '%')
+            //         ->where('type','region')->exists();
+            //     if ($regionExists) {
+            //         $searchedlocationType = 'region';
+            //     } else {
+            //         $countyExists = Location::where('name', 'like', $locationORName . '%')
+            //             ->where('type','county')->exists();
+            //     if ($countyExists) {
+            //         $searchedlocationType = 'county';
+            //     } else {
+            //         $cityExists = Location::where('name', 'like',  $locationORName . '%')
+            //             ->where('type','city')->exists();
+            //     if ($cityExists) {
+            //         $searchedlocationType = 'city';
+            //         }
+            //         }
+            //     }
+
+            //     $subscriptions->whereHas('escort.profile', function ($query) use ($locationORName) {
+            //         $query->whereHas('city', function ($q) use ($locationORName) {
+            //             $q->where('name', 'like',  $locationORName . '%');
+            //         })->orWhereHas('region', function ($q) use ($locationORName) {
+            //             $q->where('name', 'like',  $locationORName . '%');
+            //         })->orWhereHas('county', function ($q) use ($locationORName) {
+            //             $q->where('name', 'like',  $locationORName . '%');
+            //         });
+            //         });
+
+            // }
+
+            // if(!is_null($request->query('profileName'))){
+            //     $profileName = $request->query('profileName');
+
+            //     $subscriptions->whereHas('escort.profile', function ($query) use ($profileName) {
+            //         $query->where('name', 'like',  $profileName . '%');
+            //     })->orWhereHas('escort', function ($query) use ($profileName) {
+            //         $query->where('username', 'like', $profileName . '%');
+            //     });
+
+            // }
+
+            if (!is_null($profileName = $request->query('profileName')) || !is_null($location = $request->query('locationName'))) {
+                $location= $request->query('locationName');
+                $profileName= $request->query('profileName');
+                $subscriptions->where(function ($query) use ($profileName, $location,&$searchedlocationType) {
+                    // If profileName is provided, search in profile name or escort username
+                    if (!is_null($profileName)) {
+                        $query->where(function ($q) use ($profileName) {
+                            $q->whereHas('escort.profile', function ($q) use ($profileName) {
+                                $q->where('name', 'like', $profileName . '%');
+                            })->orWhereHas('escort', function ($q) use ($profileName) {
+                                $q->where('username', 'like', $profileName . '%');
+                            });
+                        });
                     }
+            
+                    // If location is provided, search in city, region, or county
+
+                    // $searchedlocationType=null;
+
+                    // Check if the location name exists in Region, County, or City (in order of priority)
+                    $regionExists = Location::where('name', 'like',  $location . '%')
+                        ->where('type','region')->exists();
+                    if ($regionExists) {
+                        $searchedlocationType = 'region';
+                    } else {
+                        $countyExists = Location::where('name', 'like', $location . '%')
+                            ->where('type','county')->exists();
+                        if ($countyExists) {
+                            $searchedlocationType = 'county';
+                        } else {
+                            $cityExists = Location::where('name', 'like',  $location . '%')
+                                ->where('type','city')->exists();
+                            if ($cityExists) {
+                                $searchedlocationType = 'city';
+                            }
+                        }
                     }
-                }
-
-                $subscriptions->whereHas('escort.profile', function ($query) use ($locationORName) {
-                    $query->whereHas('city', function ($q) use ($locationORName) {
-                        $q->where('name', 'like',  $locationORName . '%');
-                    })->orWhereHas('region', function ($q) use ($locationORName) {
-                        $q->where('name', 'like',  $locationORName . '%');
-                    })->orWhereHas('county', function ($q) use ($locationORName) {
-                        $q->where('name', 'like',  $locationORName . '%');
-                    });
+                    if (!is_null($location)) {
+                        $query->where(function ($q) use ($location) {
+                            $q->whereHas('escort.profile.city', function ($q) use ($location) {
+                                $q->where('name', 'like', $location . '%');
+                            })->orWhereHas('escort.profile.region', function ($q) use ($location) {
+                                $q->where('name', 'like', $location . '%');
+                            })->orWhereHas('escort.profile.county', function ($q) use ($location) {
+                                $q->where('name', 'like', $location . '%');
+                            });
+                        });
+                    }
                 });
-
-            }
-
-            if(!is_null($request->query('profileName'))){
-                $profileName = $request->query('profileName');
-
-                $subscriptions->whereHas('escort.profile', function ($query) use ($profileName) {
-                    $query->where('name', 'like',  $profileName . '%');
-                })->orWhereHas('escort', function ($query) use ($profileName) {
-                    $query->where('username', 'like', $profileName . '%');
-                });
-
             }
 
             if (!is_null($request->query('rate'))) {
@@ -1333,11 +1384,25 @@ class SubscriptionController extends Controller
 
                 $applyFilters($city_data);
 
+                if(!is_null($request->query('locationName'))){
+                $locationName = $request->query('locationName');
+
+                $city_data->whereHas('escort.profile', function ($query) use ($locationName) {
+                    $query->whereHas('city', function ($q) use ($locationName) {
+                        $q->where('name', 'like',  $locationName . '%');
+                    })->orWhereHas('region', function ($q) use ($locationName) {
+                        $q->where('name', 'like',  $locationName . '%');
+                    })->orWhereHas('county', function ($q) use ($locationName) {
+                        $q->where('name', 'like',  $locationName . '%');
+                    });
+                    });
+                }
+
                 if (!is_null($request->query('profileName'))) {
                     $city_data->whereHas('escort.profile', function ($query) use ($request) {
-                        $query->where('name', $request->query('profileName'));
+                        $query->where('name','like', $request->query('profileName').'%');
                     })->orWhereHas('escort', function ($query) use ($request) {
-                        $query->where('username', $request->query('profileName'));
+                        $query->where('username', 'like',$request->query('profileName').'%');
                     });
                 }
 
@@ -1414,16 +1479,30 @@ class SubscriptionController extends Controller
                     // }
                     $applyFilters($county_data);
 
-                    if (!is_null($request->query('profileName'))) {
-                        $county_data->whereHas('escort.profile', function ($query) use ($request) {
-                            $query->where('name', $request->query('profileName'));
-                        })->orWhereHas('escort', function ($query) use ($request) {
-                            $query->where('username', $request->query('profileName'));
-                        });
-                    }
+                    if(!is_null($request->query('locationName'))){
+                    $locationName = $request->query('locationName');
+
+                    $county_data->whereHas('escort.profile', function ($query) use ($locationName) {
+                    $query->whereHas('city', function ($q) use ($locationName) {
+                        $q->where('name', 'like',  $locationName . '%');
+                    })->orWhereHas('region', function ($q) use ($locationName) {
+                        $q->where('name', 'like',  $locationName . '%');
+                    })->orWhereHas('county', function ($q) use ($locationName) {
+                        $q->where('name', 'like',  $locationName . '%');
+                    });
+                    });
+                }
 
                     if (!is_null($request->query('plan_code'))) {
                         $county_data->where('plan_code', $request->query('plan_code'));
+                    }
+
+                    if (!is_null($request->query('profileName'))) {
+                        $county_data->whereHas('escort.profile', function ($query) use ($request) {
+                            $query->where('name', 'like', $request->query('profileName') . '%');
+                        })->orWhereHas('escort', function ($query) use ($request) {
+                            $query->where('username', 'like', $request->query('profileName') . '%');
+                        });
                     }
                     
 
@@ -1492,11 +1571,25 @@ class SubscriptionController extends Controller
                     // }
                     $applyFilters($region_data);
 
+                    if(!is_null($request->query('locationName'))){
+                    $locationName = $request->query('locationName');
+
+                    $region_data->whereHas('escort.profile', function ($query) use ($locationName) {
+                        $query->whereHas('city', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('region', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('county', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        });
+                        });
+                    }   
+
                     if (!is_null($request->query('profileName'))) {
                         $region_data->whereHas('escort.profile', function ($query) use ($request) {
-                            $query->where('name', $request->query('profileName'));
+                            $query->where('name', 'like', $request->query('profileName') . '%');
                         })->orWhereHas('escort', function ($query) use ($request) {
-                            $query->where('username', $request->query('profileName'));
+                            $query->where('username', 'like', $request->query('profileName') . '%');
                         });
                     }
 
@@ -1608,11 +1701,25 @@ class SubscriptionController extends Controller
 
                 if (!is_null($request->query('profileName'))) {
                     $county_data->whereHas('escort.profile', function ($query) use ($request) {
-                        $query->where('name', $request->query('profileName'));
+                        $query->where('name', 'like', $request->query('profileName') . '%');
                     })->orWhereHas('escort', function ($query) use ($request) {
-                        $query->where('username', $request->query('profileName'));
+                        $query->where('username', 'like', $request->query('profileName') . '%');
                     });
                 }
+
+                if(!is_null($request->query('locationName'))){
+                    $locationName = $request->query('locationName');
+
+                    $county_data->whereHas('escort.profile', function ($query) use ($locationName) {
+                        $query->whereHas('city', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('region', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('county', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        });
+                        });
+                    }
 
                 if (!is_null($request->query('plan_code'))) {
                     $county_data->where('plan_code', $request->query('plan_code'));
@@ -1686,11 +1793,51 @@ class SubscriptionController extends Controller
                         $region_data->where('plan_code', $request->query('plan_code'));
                     }
 
+
+
+
                     if (!is_null($request->query('profileName'))) {
                         $region_data->whereHas('escort.profile', function ($query) use ($request) {
-                            $query->where('name', $request->query('profileName'));
-                        })->orWhereHas('escort', function ($query) use ($request) {
-                            $query->where('username', $request->query('profileName'));
+                        $query->where('name', 'like', $request->query('profileName') . '%');
+                    })->orWhereHas('escort', function ($query) use ($request) {
+                        $query->where('username', 'like', $request->query('profileName') . '%');
+                    });
+                    }
+
+                    if(!is_null($request->query('locationName'))){
+                    $locationName = $request->query('locationName');
+
+                    $region_data->whereHas('escort.profile', function ($query) use ($locationName) {
+                        $query->whereHas('city', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('region', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('county', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        });
+                        });
+                    }
+
+
+                    if (!is_null($request->query('profileName'))) {
+                        $region_data->whereHas('escort.profile', function ($query) use ($request) {
+                        $query->where('name', $request->query('profileName'));
+                    })->orWhereHas('escort', function ($query) use ($request) {
+                        $query->where('username', $request->query('profileName'));
+                    });
+                    }
+
+                    if(!is_null($request->query('locationName'))){
+                    $locationName = $request->query('locationName');
+
+                    $region_data->whereHas('escort.profile', function ($query) use ($locationName) {
+                        $query->whereHas('city', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('region', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('county', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        });
                         });
                     }
 
@@ -1783,19 +1930,31 @@ class SubscriptionController extends Controller
 
             if (!is_null($request->query('profileName'))) {
                 $region_data->whereHas('escort.profile', function ($query) use ($request) {
-                    $query->where('name', $request->query('profileName'));
+                    $query->where('name', 'like', $request->query('profileName') . '%');
                 })->orWhereHas('escort', function ($query) use ($request) {
-                    $query->where('username', $request->query('profileName'));
+                    $query->where('username', 'like', $request->query('profileName') . '%');
                 });
             }
 
-            if (!is_null($request->query('profileName'))) {
-                $region_data->whereHas('escort.profile', function ($query) use ($request) {
-                    $query->where('name', $request->query('profileName'));
-                })->orWhereHas('escort', function ($query) use ($request) {
-                    $query->where('username', $request->query('profileName'));
-                });
+
+            if(!is_null($request->query('locationName'))){
+                    $locationName = $request->query('locationName');
+
+                    $region_data->whereHas('escort.profile', function ($query) use ($locationName) {
+                        $query->whereHas('city', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('region', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        })->orWhereHas('county', function ($q) use ($locationName) {
+                            $q->where('name', 'like',  $locationName . '%');
+                        });
+                        });
             }
+
+            
+
+
+        
 
 
             if (!is_null($request->query('plan_code'))) {
