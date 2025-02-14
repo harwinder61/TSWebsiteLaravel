@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use  App\Models\Media;
 use App\Models\User;
 
-class Sms extends Model
+
+
+class SmsLogs extends Model
 {
     use HasFactory;
 

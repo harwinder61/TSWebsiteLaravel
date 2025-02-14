@@ -54,7 +54,6 @@ use Carbon\Carbon;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Services\TwilioSmsService;
 use Illuminate\Support\Facades\Config;
-use Modules\Admin\app\Models\Sms;
 use App\Mail\SmsHelper;
 use Modules\Admin\app\Models\SmsTemplates;
 use PhpParser\Node\Stmt\TryCatch;
@@ -62,6 +61,8 @@ use Twilio\Rest\Client;
 use Modules\Admin\app\Models\whatsappTemplates;
 use Modules\Admin\app\Models\WhatsappLogs;
 use App\Mail\WhatsappHelper;
+use Illuminate\Support\Facades\Crypt;
+use Modules\Admin\app\Models\SmsLogs;
 
 
 
@@ -101,7 +102,7 @@ class AdminController extends Controller
                 ]
             );
     
-            Sms::create([
+            SmsLogs::create([
                 'to' => $request->phone_number,
                 'message' => $request->message,
                 'from' => env('TWILIO_PHONE_NUMBER'),
@@ -111,7 +112,7 @@ class AdminController extends Controller
     
             return Resp::success(['message' => 'Message sent successfully']);
         } catch (\Twilio\Exceptions\TwilioException $e) {
-            Sms::create([
+            SmsLogs::create([
                 'to' => $request->phone_number,
                 'message' => $request->message,
                 'from' => env('TWILIO_PHONE_NUMBER'),
@@ -213,98 +214,7 @@ class AdminController extends Controller
 
      }
 
-    //  public function sendWhatsappToUser(Request $request)
-    //  {
-    //      $validator = Validator::make($request->all(), [
-    //          'user_id' => 'required|exists:users,id',
-    //      ]);
- 
-    //      if ($validator->fails()) {
-    //          return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    //      }
- 
-    //      $user = AuthUser::with('profile')->find($request->user_id);
- 
-    //      if (!$user) {
-    //          return Resp::error(['message' => 'User not found']);
-    //      }
- 
-    //      // Validate phone number
-    //      if (!$user->profile || !$user->profile->phone_number) {
-    //          return Resp::error(['message' => 'User phone number not found']);
-    //      }
- 
-    //      $whatsappTemplate = whatsappTemplates::where('type', 'admin_new_user_added')->first();
-    //      if (!$whatsappTemplate) {
-    //          return Resp::error(['message' => 'WhatsApp template not found']);
-    //      }
- 
-    //      $sid = env('TWILIO_SID');
-    //      $token = env('TWILIO_TOKEN');
-    //      $twilioNumber = env('TWILIO_PHONE_NUMBER');
-    //      $to =  $user->profile->phone_number;
-    //      $message = $whatsappTemplate->content;
-    //      $status = $request->status ?? true;
-
-
-    //      log::info('Sending WhatsApp MessagdfjkselLdjJIdkowedhjiwADe: ' . $twilioNumber);
- 
-    //      try {
-    //          $client = new Client($sid, $token);
- 
-    //          Log::info('Sending WhatsApp Message: ' . $message);
- 
-    //          // Send WhatsApp message via Twilio
-    //          // $whatsappMessage = $client->messages->create(
-    //          //     $to,
-    //          //     [
-    //          //         'from' => $twilioNumber,
-    //          //         'body' => $message
-    //          //     ]
-    //          // );
- 
-    //          Log::info('WhatsApp message sent to: ' . $to);
- 
-    //          // Save WhatsApp message details to the database
-    //          $whatsapp = whatsappLogs::create([
-    //              'to' => $to,
-    //              'message' => $message,
-    //              'user_id' => $user->id,
-    //              'from' => $twilioNumber,
-    //             //  'status' => $status,
-    //              // 'twilio_sid' => $whatsappMessage->sid // Store Twilio message SID
-    //          ]);
- 
-    //          return Resp::success([
-    //              'message' => 'WhatsApp message sent successfully',
-    //              'whatsapp_id' => $whatsapp->id
-    //          ]);
-    //      } catch (\Twilio\Exceptions\TwilioException $e) {
-    //          Log::error('Twilio WhatsApp Error: ' . $e->getMessage());
- 
-    //          // Save failed WhatsApp message to database
-    //          whatsappLogs::create([
-    //              'to' => $to,
-    //              'message' => $message,
-    //              'user_id' => $user->id,
-    //              'from' => $twilioNumber,
-    //             //  'status' => false,
-    //             //  'error_message' => $e->getMessage()
-    //          ]);
- 
-    //          return Resp::error([
-    //              'message' => 'Failed to send WhatsApp message',
-    //              'error' => $e->getMessage()
-    //          ]);
-    //      } catch (\Exception $e) {
-    //          Log::error('Unexpected WhatsApp Error: ' . $e->getMessage());
- 
-    //          return Resp::error([
-    //              'message' => 'Unexpected error occurred',
-    //              'error' => $e->getMessage()
-    //          ]);
-    //      }
-    //  }
+    
     public function sendWhatsappToUser(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -431,6 +341,12 @@ class AdminController extends Controller
         }
 
         $user = AuthUser::with('profile')->find($request->user_id);
+   
+        $secret = $user->secret;
+
+        $decryptedPassword = Crypt::decryptString($secret);
+        
+        Log::info('Decrypted Password: ' . $decryptedPassword);
 
         if (!$user) {
             return Resp::error(['message' => 'User not found']);
@@ -441,10 +357,12 @@ class AdminController extends Controller
             return Resp::error(['message' => 'User phone number not found']);
         }
 
+
         $smstemplate = SmsTemplates::where('type', 'admin_new_user_added')->first();
         if (!$smstemplate) {
             return Resp::error(['message' => 'SMS template not found']);
         }
+       
 
         $sid = env('TWILIO_SID');
         $token = env('TWILIO_TOKEN');
@@ -454,8 +372,11 @@ class AdminController extends Controller
 
         $message = str_replace('[LOGIN_URL]', env('LOGIN_URL'), $message);
         $message = str_replace('[USER_LOGIN]', $user->username, $message);
-        $message = str_replace('[USER_PASSWORD]','', $message);
+        $message = str_replace('[USER_PASSWORD]', $decryptedPassword, $message);
+        $message = str_replace('[USER_NAME]',  $user->firstname . ' ' . $user->lastname, $message);
 
+        // echo $message;
+        // exit;
         $status = $request->status ?? true;
 
         try {
@@ -472,19 +393,14 @@ class AdminController extends Controller
                     'body' => $message
                 ]
             );
-
             Log::info('SMS sent to: ' . $to);
-
           $status = 1;
         } catch (\Twilio\Exceptions\TwilioException $e) {
             Log::error('Twilio SMS Error: ' . $e->getMessage());
-            $status = 0;
-
-          
+            $status = 0; 
         } 
 
-          // Save SMS details to the database
-          $sms = Sms::create([
+          $sms = SmsLogs::create([
             'to' => $to,
             'message' => $message,
             'user_id' => $user->id,
@@ -528,7 +444,7 @@ class AdminController extends Controller
     public function getSmsLogs(Request $request)
     {
         // Initialize the query
-        $query = Sms::query();
+        $query = SmsLogs::query();
     
         // Apply filters based on request parameters
         if ($request->has('id')) {
@@ -560,8 +476,11 @@ class AdminController extends Controller
     }
 
 
+
+
+
 public function newUser(Request $request)
-{
+{   
     // Validate the incoming request
     $validator = Validator::make($request->all(), [
         'username' => 'required|string|max:255|unique:users,username',
@@ -583,13 +502,7 @@ public function newUser(Request $request)
     $status = $request->sms;
 
     $verification_token = Str::random(30);
-
-    $email_verified_code = 1;
-
-    if ($request->user_type == 2) {
-        $email_verified_code = 0;
-    }
-
+    $email_verified_code = $request->user_type == 2 ? 0 : 1;
 
     // Create the user
     $user = AuthUser::create([
@@ -603,7 +516,8 @@ public function newUser(Request $request)
         'phone_number' => $request->phone_number,
         'account_origin' => $request->account_origin,
         'verification_token' => $verification_token,
-        'status' => $status
+        'status' => $status,
+        'secret' => $request->user_type == 2 ? Crypt::encryptString($request->password) : null, // Encrypt password for user_type 2
     ]);
 
     $user_id = $user->id;
@@ -613,64 +527,72 @@ public function newUser(Request $request)
         'phone_number' => $request->phone_number
     ]);
 
+    // Prepare dynamic data for WhatsApp message
+    $dynamicData = [
+        '[USER_LOGIN]' => $user->username,
+        '[VERIFIED_EMAIL_LINK]' => env('WEBAPP_URL') . "/account-verification?token=" . $verification_token,
+        '[PASSWORD]' => $request->password,
+        '[USER_NAME]' => $user->firstname . ' ' . $user->lastname
+    ];
+
+    // Include the encrypted password only if user_type is 2
+    if ($request->user_type == 2) {
+        $dynamicData['[PASSWORD]'] = Crypt::encryptString($request->password);
+    }
+
+    // Send WhatsApp message
+    // $smsResponse = SmsHelper::dynamicsendSms(
+    //     'admin_new_user_added', // Replace with your SMS template type
+    //     $dynamicData,
+    //     $user->profile->phone_number,
+    //     $user->profile->name,
+    // );
+
     // Handle SMS sending for user type 2 (if SMS flag is 1)
-    if ($request->user_type == 2 && $request->sms == 1) {
-        $to = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER'); // Use provided phone number or default
-        $template = SmsHelper::getSmsTemplateByType('admin_new_user_added'); // Get SMS template by type
+    if ($request->sms == 1) {
+        if ($request->user_type == 2) {
+            // Dynamic SMS for user type 2 (using Twilio)
+            $to = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER');
+            $template = SmsHelper::getSmsTemplateByType('admin_new_user_added');
+            
+            if ($template) {
+                $message = str_replace('[USER_LOGIN]', $request->username, $template->content);
+                $message = str_replace('[USER_PASSWORD]', $request->password, $message);
+                $message = str_replace('[USER_NAME]', $user->firstname . ' ' . $user->lastname, $message);
+                $message = str_replace('[LOGIN_URL]', env('LOGIN_URL'), $message);
 
-        if ($template) {
-             $message = $template->content; // Get message content
+                try {
+                    $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
+                    $client->messages->create($to, [
+                        'from' => env('TWILIO_PHONE_NUMBER'),
+                        'body' => $message
+                    ]);
+                    Log::info('SMS sent to: ' . $to);
 
-            // Ensure message is not empty
-            if (empty($message)) {
-                Log::error('Generated SMS message is empty for user: ' . $user->username);
-                return Resp::error(['message' => 'Failed to send SMS. Message content is empty.']);
+                    // Save SMS details to the database (sms_logs table)
+                    SmsLogs::create([
+                        'to' => $to,
+                        'message' => $message,
+                        'status' => 1, // Success
+                        'user_id' => $user->id,
+                        'from' => env('TWILIO_PHONE_NUMBER'),
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send SMS: ' . $e->getMessage());
+
+                    // Save failed SMS details to the database
+                    SmsLogs::create([
+                        'to' => $to,
+                        'message' => $message,
+                        'status' => 0, // Failed
+                        'user_id' => $user->id,
+                        'from' => env('TWILIO_PHONE_NUMBER'),
+                    ]);
+                }
+            } else {
+                Log::error('Failed to fetch SMS template for user: ' . $user->username);
             }
-
-        
-            $message = str_replace('[LOGIN_URL]', env('LOGIN_URL'), $message);
-            $message = str_replace('[USER_LOGIN]', $request->username, $message);
-            $message = str_replace('[USER_PASSWORD]', $request->password, $message);
-            $sid = env('TWILIO_SID');
-            $token = env('TWILIO_TOKEN');
-            $client = new Client($sid, $token);
-
-            Log::info('Sending SMS: ' . $message);
-
-            try {
-                // Send SMS (uncomment the line below to actually send the SMS via Twilio)
-                $client->messages->create($to, [
-                    'from' => env('TWILIO_PHONE_NUMBER'),
-                    'body' => $message
-                ]);
-            $status = 1;
-                Log::info('SMS sent to: ' . $to);
-
-                // Save SMS details to the database (sms_logs table)
-    
-            } catch (\Exception $e) {
-                Log::error('Failed to send SMS to ' . $to . ': ' . $e->getMessage());
-
-
-                $status = 0;
-                // Save failed SMS details to the database
-         
-            }
-
-            Sms::create([
-                'to' => $to,
-                'message' => $message,
-                'status' => $status, // Failed SMS
-                'user_id' => $user->id,
-                'From' => env('TWILIO_PHONE_NUMBER'),
-                // 'error_message' => $e->getMessage(),
-            ]);
-        } else {
-            Log::error('Failed to fetch SMS template for user: ' . $user->username);
-            return Resp::error(['message' => 'Failed to fetch SMS template.']);
         }
-
-
     }
 
     // Handle email notification for user type 3
@@ -695,7 +617,6 @@ public function newUser(Request $request)
 
     return Resp::success(['message' => 'User created successfully', 'user' => $user]);
 }
-
 
 
 

@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;    
 use Modules\Admin\app\Models\EmailLog;  
 use Modules\Admin\app\Models\SmsTemplates;
+use Modules\Admin\app\Models\SmsLogs;   
 
 class SmsHelper
 {
@@ -73,42 +74,49 @@ class SmsHelper
 
 
 
-       public static function dynamicsendSms($templateType, $dynamicData, $recipientSms)
-    {
-        // Fetch the email template by type
-        
-        $smsTemplate = smsTemplates::where('type', $templateType)->first();
-        
+    public static function dynamicsendSms($templateType, $dynamicData, $recipientSms) {
+        // Fetch the SMS template by type
+        $smsTemplate = SmsTemplates::where('type', $templateType)->first();
+    
         if (!$smsTemplate) {
-            // If the template doesn't exist, return an error or handle it
             return 'SMS template not found';
         }
-
-        if($smsTemplate->status==0){
-
+    
+        if ($smsTemplate->status == 0) {
             return "SMS is disabled";
         }
+    
         // Replace dynamic data in the subject and body
         $subject = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->subject);
         $body = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->content);
-        $user = User::where('phone_number', $recipientSms)->first();
-        // Send the email to the recipient
-        //Mail::to($recipientEmail)->send(new DynamicEmail($subject, $body));
-        if($smsTemplate->status==1){
-            
-            Mail::to($recipientSms)->send(new DynamicEmail($subject, $body));
-        }
-
-        EmailLog::create([
-            'subject' => $subject,
-            'message' => $body,
-            'to' => $recipientSms
-        ]);
-       
+        
+        // Send the SMS using Twilio or your preferred method
+        try {
+            $sid = env('TWILIO_SID');
+            $token = env('TWILIO_TOKEN');
+            $twilioNumber = env('TWILIO_PHONE_NUMBER');
     
-        return "Email sent successfully!";
+            $client = new \Twilio\Rest\Client($sid, $token);
+            $client->messages->create(
+                $recipientSms, // This should be the phone number
+                [
+                    'from' => $twilioNumber,
+                    'body' => $body
+                ]
+            );
+    
+            SmsLogs::create([
+                'subject' => $subject,
+                'message' => $body,
+                'to' => $recipientSms
+            ]);
+    
+            return "SMS sent successfully!";
+        } catch (\Exception $e) {
+            Log::error('Error sending SMS: ' . $e->getMessage());
+            return "Failed to send SMS: " . $e->getMessage();
+        }
     }
-
 
 
 
