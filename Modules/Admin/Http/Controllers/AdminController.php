@@ -81,6 +81,28 @@ class AdminController extends Controller
     }   
 
 
+    public function userDelete($id, Request $request)
+    {
+        $user = AuthUser::find($id);
+        if (!$user) {
+            return Resp::error(['message' => 'User not found']);
+        }
+        try {
+            $media=Media::where('escort_id', $id)->delete();
+            $profile=BaseProfile::where('id', $id)->delete();
+            $subscriptions=Subscription::where('escort_id', $id)->delete();
+            $orders=Orders::where('escort_id', $id)->delete();
+            $verify=Verify::where('escort_id', $id)->delete();
+            $comments=Comment::where('commentator_id', $id)->delete();
+            $Remindercomment=ReminderComment::where('admin_id', $id)->delete();
+            $smsLogs=SmsLogs::where('user_id', $id)->delete();
+            $user_data=$user->delete();
+            return Resp::success(['message' => 'User deleted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error deleting user: ' . $e->getMessage());
+            return Resp::error(['message' => 'Error deleting user'. $e->getMessage()]);
+        }
+    }
 
     public function sendMessage(Request $request) {
         $validator = Validator::make($request->all(), [
@@ -1076,29 +1098,6 @@ public function newUser(Request $request)
         }
         return Resp::success(['page' => $page]);
     }
-
-    public function userDelete($id, Request $request)
-    {
-        $user = AuthUser::find($id);
-        if (!$user) {
-            return Resp::error(['message' => 'User not found']);
-        }
-        try {
-            $media=Media::where('escort_id', $id)->delete();
-            $profile=BaseProfile::where('id', $id)->delete();
-            $subscriptions=Subscription::where('escort_id', $id)->delete();
-            $orders=Orders::where('escort_id', $id)->delete();
-            $verify=Verify::where('escort_id', $id)->delete();
-            $comments=Comment::where('commentator_id', $id)->delete();
-            $Remindercomment=ReminderComment::where('admin_id', $id)->delete();
-            $user_data=$user->delete();
-            return Resp::success(['message' => 'User deleted successfully']);
-        } catch (\Exception $e) {
-            Log::error('Error deleting user: ' . $e->getMessage());
-            return Resp::error(['message' => 'Error deleting user'. $e->getMessage()]);
-        }
-    }
-
 
     public function editCategory(Request $request, $id)
     {
