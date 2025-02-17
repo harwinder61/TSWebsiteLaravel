@@ -170,6 +170,36 @@ Route::get('/30day-expired-users', function () {
 }
 );
 
+Route::get('/test-scheduled-sms', function() {
+  Artisan::call('app:scheduled-sms');
+  $output = Artisan::output();
+  return response()->json([
+      'message' => 'SMS Command executed successfully.',
+      'result' => json_decode($output) 
+  ]);
+});
+
+Route::get('/test-scheduled-advert-ended', function() {
+  Artisan::call('app:scheduled-advert-ended');
+  $output = Artisan::output();
+  return response()->json([
+      'message' => 'Advert Command executed successfully.',
+      'result' => json_decode($output) 
+  ]);
+});
+
+Route::get('/test-scheduled-inactive-users', function() {
+  Artisan::call('app:scheduled-inactive-users');
+  $output = Artisan::output();
+  return response()->json([
+      'message' => 'Inactive Users Command executed successfully.',
+      'result' => json_decode($output) 
+  ]);
+});
+
+
+
+
 
 Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
 Route::get('/send-inactivity-emails', [AuthController::class, 'sendInactivityEmails']);
@@ -180,3 +210,4 @@ Route::post('/admin/recover-password', [AdminController::class, 'recoverAdminPas
 //   $smsService = new \App\Services\TwilioSmsService();
 //   return $smsService->sendSms('+441234567890', 'Test message from Twilio!');
 // });
+// Route::get('/test-48-hours', [AdminController::class, 'test48Hours']);

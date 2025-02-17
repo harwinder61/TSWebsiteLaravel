@@ -503,7 +503,7 @@ class AdminController extends Controller
         }
     
         $sms->save();
-        return response()->json(['message' => 'Status changed successfully', 'status' => $sms->whatsapp_status]);
+        return response()->json(['message' => 'Status changed successfully', 'sms' => $sms]);
     }
 
 
