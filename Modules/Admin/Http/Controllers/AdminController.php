@@ -188,15 +188,23 @@ class AdminController extends Controller
     }
     $request->validate([
         'content' => 'required',
-        'status' => 'required | in:1,0',
+        'sms_status' => 'nullable | in:1,0',
+        'whatsapp_status' => 'nullable | in:1,0',
     ]);
     $smsTemplate->content = $request->input('content');
-    $smsTemplate->status = $request->input('status');
-    if ($request->input('status') == 1) {
-        $smsTemplate->status = 1;
+    $smsTemplate->sms_status = $request->input('sms_status');
+    $smsTemplate->whatsapp_status = $request->input('whatsapp_status');
+  if ($request->input('sms_status') == 1) {
+        $smsTemplate->sms_status = 1;
     } else {
-        $smsTemplate->status = 0;
+        $smsTemplate->sms_status = 0;
     }
+    if ($request->input('whatsapp_status') == 1) {
+        $smsTemplate->whatsapp_status = 1;
+    } else {
+        $smsTemplate->whatsapp_status = 0;
+    }
+
     if ($smsTemplate->save()) {
         return Resp::success(['message' => 'Sms template updated successfully']);
     } else {
@@ -204,38 +212,6 @@ class AdminController extends Controller
     }
   }
 
-
-  public function updateWhatsappTemplate($id, Request $request){
-    $whatsappTemplate = whatsappTemplates::find($id);
-    if (!$whatsappTemplate) {
-        return Resp::error(['message' => 'Whatsapp template not found'], 404);
-    }
-    $request->validate([
-        'content' => 'required',
-        'status' => 'required | in:1,0',
-    ]);
-    $whatsappTemplate->content = $request->input('content');
-    $whatsappTemplate->status = $request->input('status');
-    if ($request->input('status') == 1) {
-        $whatsappTemplate->status = 1;
-    } else {
-        $whatsappTemplate->status = 0;
-    }
-
-    if ($whatsappTemplate->save()) {
-        return Resp::success(['message' => 'Whatsapp template updated successfully']);
-    } else {
-        return Resp::error(['message' => 'Failed to update whatsapp template'], 500);
-    }
-  }
-
-
-     public function getWhatsappTemplates(Request $request){
-
-        $whatsapp_templates = whatsappTemplates::get();
-        return Resp::success(['whatsapp_templates' => $whatsapp_templates]);
-
-     }
 
     
     public function sendWhatsappToUser(Request $request)
