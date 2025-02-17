@@ -37,12 +37,14 @@ class SmsHelper
 {
     // Check if the user object is valid
     if (!is_object($user) || $user === null) {
+        Log::error('The user object is invalid or not passed correctly.');
         return 'The user object is invalid or not passed correctly.';
     }
 
 
     $smsTemplate = SmsTemplates::where('type', $templateType)->first();
     if (!$smsTemplate) {
+        Log::error('SMS template not found for type: ' . $templateType);
         return 'SMS template not found';
     }
 
@@ -51,6 +53,7 @@ class SmsHelper
 
     // Check for profile and phone number
     if (!$user->profile || !$user->profile->phone_number) {
+        Log::error('User profile or phone number not found for user: ' . $user->email);
         return 'User profile or phone number not found';
     }
 
@@ -73,14 +76,14 @@ class SmsHelper
         $token = env('TWILIO_TOKEN');
         $twilioNumber = env('TWILIO_PHONE_NUMBER');
 
-        $client = new \Twilio\Rest\Client($sid, $token);
-        $client->messages->create(
-            $recipientSms,
-            [
-                'from' => $twilioNumber,
-                'body' => $body
-            ]
-        );
+        // $client = new \Twilio\Rest\Client($sid, $token);
+        // $client->messages->create(
+        //     $recipientSms,
+        //     [
+        //         'from' => $twilioNumber,
+        //         'body' => $body
+        //     ]
+        // );
         SmsLogs::create([
             'message' => $body,
             'to' => $recipientSms,

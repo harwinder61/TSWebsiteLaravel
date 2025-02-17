@@ -29,13 +29,14 @@ class Subscription extends BaseSubscription
      }
 
       function plan() {
-        return $this->belongsTo(Plan::class, 'code', 'plan_code');
+        return $this->belongsTo(Plan::class, 'plan_code', 'code');
      }
 
      function media(){
       return $this->hasMany(Media::class,'id','image_id');
      }
-
+     
+ 
     
 }
  

@@ -68,8 +68,6 @@ class OrderController extends Controller
         }
 
 
-
-
         $sub_exists = Subscription::where('escort_id', $user->id)->first();
         $days = $plan->days;
         $end_date = date('Y-m-d', strtotime($request->input('start_date') . " + $days days"));

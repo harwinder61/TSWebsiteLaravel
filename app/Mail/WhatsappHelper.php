@@ -33,51 +33,51 @@ class WhatsappHelper
     }
 
 
-    public static function dynamicsendWhatsapp($templateType, $dynamicData, $recipientSms)
-    {
-        // Fetch the SMS template by type
-        $smsTemplate = whatsappTemplates::where('type', $templateType)->first();
+    // public static function dynamicsendWhatsapp($templateType, $dynamicData, $recipientSms)
+    // {
+    //     // Fetch the SMS template by type
+    //     $smsTemplate = whatsappTemplates::where('type', $templateType)->first();
     
-        if (!$smsTemplate) {
-            return 'SMS template not found';
-        }
+    //     if (!$smsTemplate) {
+    //         return 'SMS template not found';
+    //     }
     
-        if ($smsTemplate->status == 0) {
-            return "SMS is disabled";
-        }
+    //     if ($smsTemplate->status == 0) {
+    //         return "SMS is disabled";
+    //     }
     
-        // Replace dynamic data in the subject and body
-        $subject = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->subject);
-        $body = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->content);
+    //     // Replace dynamic data in the subject and body
+    //     $subject = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->subject);
+    //     $body = str_replace(array_keys($dynamicData), array_values($dynamicData), $smsTemplate->content);
         
-        // Assuming you want to send a WhatsApp message, you should use Twilio or another service
-        // Send the WhatsApp message using Twilio or your preferred method
-        try {
-            $sid = env('TWILIO_SID');
-            $token = env('TWILIO_TOKEN');
-            $twilioNumber = env('TWILIO_PHONE_NUMBER');
+    //     // Assuming you want to send a WhatsApp message, you should use Twilio or another service
+    //     // Send the WhatsApp message using Twilio or your preferred method
+    //     try {
+    //         $sid = env('TWILIO_SID');
+    //         $token = env('TWILIO_TOKEN');
+    //         $twilioNumber = env('TWILIO_PHONE_NUMBER');
     
-            $client = new \Twilio\Rest\Client($sid, $token);
-            $client->messages->create(
-                $recipientSms, // This should be the phone number
-                [
-                    'from' => $twilioNumber,
-                    'body' => $body
-                ]
-            );
+    //         $client = new \Twilio\Rest\Client($sid, $token);
+    //         $client->messages->create(
+    //             $recipientSms, // This should be the phone number
+    //             [
+    //                 'from' => $twilioNumber,
+    //                 'body' => $body
+    //             ]
+    //         );
     
-            WhatsappLogs::create([
-                'subject' => $subject,
-                'message' => $body,
-                'to' => $recipientSms
-            ]);
+    //         WhatsappLogs::create([
+    //             'subject' => $subject,
+    //             'message' => $body,
+    //             'to' => $recipientSms
+    //         ]);
     
-            return "WhatsApp message sent successfully!";
-        } catch (\Exception $e) {
-            Log::error('Error sending WhatsApp message: ' . $e->getMessage());
-            return "Failed to send WhatsApp message: " . $e->getMessage();
-        }
-    }
+    //         return "WhatsApp message sent successfully!";
+    //     } catch (\Exception $e) {
+    //         Log::error('Error sending WhatsApp message: ' . $e->getMessage());
+    //         return "Failed to send WhatsApp message: " . $e->getMessage();
+    //     }
+    // }
   
 }
 
