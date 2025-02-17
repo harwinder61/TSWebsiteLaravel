@@ -514,15 +514,23 @@ class AdminController extends Controller
     }
 
 
-
-
     public function SmsStatus(Request $request)
     {
         $sms = SmsTemplates::find($request->input('id'));
-        $sms->status = $request->input('status') === false ? 0 : 1;
+        
+        if ($request->has('sms_status')) {
+            $sms->sms_status = $request->input('sms_status') ? 1 : 0;
+        }
+    
+        if ($request->has('whatsapp_status')) {
+            $sms->whatsapp_status = $request->input('whatsapp_status') ? 1 : 0;
+        }
+    
         $sms->save();
-        return response()->json(['message' => 'Status changed successfully', 'status' => $sms->status]);
+        return response()->json(['message' => 'Status changed successfully', 'status' => $sms->whatsapp_status]);
     }
+
+
 
     public function getSmsLogs(Request $request)
     {
