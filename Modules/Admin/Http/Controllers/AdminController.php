@@ -214,111 +214,111 @@ class AdminController extends Controller
 
 
     
-    public function sendWhatsappToUser(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
-        ]);
-        if ($validator->fails()) {
-            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-        }
-        $user = AuthUser::with('profile')->find($request->user_id);
-        if (!$user) {
-            return Resp::error(['message' => 'User not found']);
-        }
-        if (!$user->profile || !$user->profile->phone_number) {
-            return Resp::error(['message' => 'User phone number not found']);
-        }
-        $whatsappTemplate = whatsappTemplates::where('type', 'admin_new_user_added')->first();
-        if (!$whatsappTemplate) {
-            return Resp::error(['message' => 'WhatsApp template not found']);
-        }
-        $verification_token = Str::random(30);
-        // Prepare the message content with dynamic data
-        $message = str_replace(
-            ['[USER_NAME]', '[USER_LOGIN]', '[VERIFIED_EMAIL_LINK]'], // Add the placeholder here
-            [$user->username, $user->username, env('WEBAPP_URL') . "/account-verification?token=" . $verification_token], // Include the verification link
-            $whatsappTemplate->content // The original content
-        );
+    // public function sendWhatsappToUser(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'user_id' => 'required|exists:users,id',
+    //     ]);
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    //     $user = AuthUser::with('profile')->find($request->user_id);
+    //     if (!$user) {
+    //         return Resp::error(['message' => 'User not found']);
+    //     }
+    //     if (!$user->profile || !$user->profile->phone_number) {
+    //         return Resp::error(['message' => 'User phone number not found']);
+    //     }
+    //     $whatsappTemplate = whatsappTemplates::where('type', 'admin_new_user_added')->first();
+    //     if (!$whatsappTemplate) {
+    //         return Resp::error(['message' => 'WhatsApp template not found']);
+    //     }
+    //     $verification_token = Str::random(30);
+    //     // Prepare the message content with dynamic data
+    //     $message = str_replace(
+    //         ['[USER_NAME]', '[USER_LOGIN]', '[VERIFIED_EMAIL_LINK]'], // Add the placeholder here
+    //         [$user->username, $user->username, env('WEBAPP_URL') . "/account-verification?token=" . $verification_token], // Include the verification link
+    //         $whatsappTemplate->content // The original content
+    //     );
     
-        $sid = env('TWILIO_SID');
-        $token = env('TWILIO_TOKEN');
-        $twilioNumber = env('TWILIO_PHONE_NUMBER');
-        $to = $user->profile->phone_number;
-        $status = $request->status ?? true;
-        Log::info('Sending WhatsApp Message: ' . $twilioNumber);
+    //     $sid = env('TWILIO_SID');
+    //     $token = env('TWILIO_TOKEN');
+    //     $twilioNumber = env('TWILIO_PHONE_NUMBER');
+    //     $to = $user->profile->phone_number;
+    //     $status = $request->status ?? true;
+    //     Log::info('Sending WhatsApp Message: ' . $twilioNumber);
     
-        try {
-            $client = new Client($sid, $token);
+    //     try {
+    //         $client = new Client($sid, $token);
     
-            Log::info('Sending WhatsApp Message: ' . $message);
+    //         Log::info('Sending WhatsApp Message: ' . $message);
     
-            // Send WhatsApp message via Twilio
-            // $whatsappMessage = $client->messages->create(
-            //     $to,
-            //     [
-            //         'from' => $twilioNumber,
-            //         'body' => $message
-            //     ]
-            // );
+    //         // Send WhatsApp message via Twilio
+    //         // $whatsappMessage = $client->messages->create(
+    //         //     $to,
+    //         //     [
+    //         //         'from' => $twilioNumber,
+    //         //         'body' => $message
+    //         //     ]
+    //         // );
     
 
-             // Generate a verification token
+    //          // Generate a verification token
 
 
-            Log::info('WhatsApp message sent to: ' . $to);
+    //         Log::info('WhatsApp message sent to: ' . $to);
     
-            // Save WhatsApp message details to the database
-            $whatsapp = WhatsappLogs::create([
-                'to' => $to,
-                'message' => $message,
-                'user_id' => $user->id,
-                'from' => $twilioNumber,
-                'verification_token' => $verification_token
-            ]);
+    //         // Save WhatsApp message details to the database
+    //         $whatsapp = WhatsappLogs::create([
+    //             'to' => $to,
+    //             'message' => $message,
+    //             'user_id' => $user->id,
+    //             'from' => $twilioNumber,
+    //             'verification_token' => $verification_token
+    //         ]);
     
-            // Call dynamicsendWhatsapp function to send SMS
-            $smsResponse = WhatsappHelper::dynamicsendWhatsapp(
-                'admin_new_user_added', // Replace with your SMS template type
-                [
-                    '[USER_LOGIN]' => $user->username, // Dynamic data
-                    '[USER_NAME]' => $user->username,
-                    '[VERIFIED_EMAIL_LINK]' => env('WEBAPP_URL') . "/account-verification?token=" . $verification_token
-                ],
-                $user->profile->phone_number // Recipient's phone number
-            );
+    //         // Call dynamicsendWhatsapp function to send SMS
+    //         $smsResponse = WhatsappHelper::dynamicsendWhatsapp(
+    //             'admin_new_user_added', // Replace with your SMS template type
+    //             [
+    //                 '[USER_LOGIN]' => $user->username, // Dynamic data
+    //                 '[USER_NAME]' => $user->username,
+    //                 '[VERIFIED_EMAIL_LINK]' => env('WEBAPP_URL') . "/account-verification?token=" . $verification_token
+    //             ],
+    //             $user->profile->phone_number // Recipient's phone number
+    //         );
     
-            Log::info('SMS response: ' . $smsResponse);
+    //         Log::info('SMS response: ' . $smsResponse);
     
-            return Resp::success([
-                'message' => 'WhatsApp message sent successfully',
-                'whatsapp_id' => $whatsapp->id,
-                'sms_response' => $smsResponse // Include SMS response in the success response
-            ]);
-        } catch (\Twilio\Exceptions\TwilioException $e) {
-            Log::error('Twilio WhatsApp Error: ' . $e->getMessage());
+    //         return Resp::success([
+    //             'message' => 'WhatsApp message sent successfully',
+    //             'whatsapp_id' => $whatsapp->id,
+    //             'sms_response' => $smsResponse // Include SMS response in the success response
+    //         ]);
+    //     } catch (\Twilio\Exceptions\TwilioException $e) {
+    //         Log::error('Twilio WhatsApp Error: ' . $e->getMessage());
     
-            // Save failed WhatsApp message to database
-            WhatsappLogs::create([
-                'to' => $to,
-                'message' => $message,
-                'user_id' => $user->id,
-                'from' => $twilioNumber,
-            ]);
+    //         // Save failed WhatsApp message to database
+    //         WhatsappLogs::create([
+    //             'to' => $to,
+    //             'message' => $message,
+    //             'user_id' => $user->id,
+    //             'from' => $twilioNumber,
+    //         ]);
     
-            return Resp::error([
-                // 'message' => 'Failed to send WhatsApp message',
-                // 'error' => $e->getMessage()
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Unexpected WhatsApp Error: ' . $e->getMessage());
+    //         return Resp::error([
+    //             // 'message' => 'Failed to send WhatsApp message',
+    //             // 'error' => $e->getMessage()
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('Unexpected WhatsApp Error: ' . $e->getMessage());
     
-            return Resp::error([
-                'message' => 'Unexpected error occurred',
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
+    //         return Resp::error([
+    //             'message' => 'Unexpected error occurred',
+    //             'error' => $e->getMessage()
+    //         ]);
+    //     }
+    // }
 
 
     // public function sendSmsToUser(Request $request)
@@ -2764,6 +2764,63 @@ public function newUser(Request $request)
     }
 
 
+    // public function createSubscription(Request $request)
+    // {
+    //     $validated = Validator::make($request->all(), [
+    //         'user_id' => 'required|exists:users,id',
+    //         'plan_code' => 'required|exists:plans,code',
+    //         'start_date' => 'required|date',
+    //         'end_date' => 'required|date|after:start_date',
+    //         'image_id' => 'required|exists:media,id',
+    //     ]);
+
+    //     if ($validated->fails()) {
+    //         return Resp::error(['message' => $validated->errors()]);
+    //     }
+
+    //     try {
+
+    //         $plan = Plan::where('code', $request->input('plan_code'))->first();
+    //         $order = Orders::create([
+    //             'escort_id' => $request->input('user_id'),
+    //             'plan_code' => $request->input('plan_code'),
+    //             'start_date' => $request->input('start_date'),
+    //             'end_date' => $request->input('end_date'),
+    //             'payment_status' => 'PAID',
+
+    //         ]);
+    //         $subscription = Subscription::create([
+    //             'escort_id' => $request->input('user_id'),
+    //             'plan_code' => $request->input('plan_code'),
+    //             'status' => 'ACTIVE',
+    //             'start_date' => $request->input('start_date'),
+    //             'end_date' => $request->input('end_date'),
+    //             'created_by' => auth()->user()->id,
+    //             'image_id' => $request->input('image_id'),
+    //             'created_mode' => 'Admin',
+    //             'order_id' => $order->id
+
+    //         ]);
+    //         if (!$subscription) {
+    //             return Resp::error(['message' => 'Failed to create subscription']);
+    //         }
+    //         if ($request->input('onlyfans') != null || $request->input('manyvids') != "" || $request->input('fancentro') != "") {
+    //             $subscription->orders->update([
+    //                 'only_fans_link' => $request->input('onlyfans'),
+    //                 'many_vids_link' => $request->input('manyvids'),
+    //                 'fan_centro_link' => $request->input('fancentro'),
+    //             ]);
+    //         }
+    //         return Resp::success([
+
+    //             'message' => 'Subscription created successfully',
+    //             'subscription' => $subscription
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return Resp::error(['message' => $e->getMessage()]);
+    //     }
+    // }
+
     public function createSubscription(Request $request)
     {
         $validated = Validator::make($request->all(), [
@@ -2772,14 +2829,14 @@ public function newUser(Request $request)
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'image_id' => 'required|exists:media,id',
+            'type' => 'nullable|string', // Added type validation
         ]);
-
+    
         if ($validated->fails()) {
             return Resp::error(['message' => $validated->errors()]);
         }
-
+    
         try {
-
             $plan = Plan::where('code', $request->input('plan_code'))->first();
             $order = Orders::create([
                 'escort_id' => $request->input('user_id'),
@@ -2787,8 +2844,8 @@ public function newUser(Request $request)
                 'start_date' => $request->input('start_date'),
                 'end_date' => $request->input('end_date'),
                 'payment_status' => 'PAID',
-
             ]);
+    
             $subscription = Subscription::create([
                 'escort_id' => $request->input('user_id'),
                 'plan_code' => $request->input('plan_code'),
@@ -2799,20 +2856,48 @@ public function newUser(Request $request)
                 'image_id' => $request->input('image_id'),
                 'created_mode' => 'Admin',
                 'order_id' => $order->id
-
             ]);
+    
             if (!$subscription) {
                 return Resp::error(['message' => 'Failed to create subscription']);
             }
-            if ($request->input('onlyfans') != null || $request->input('manyvids') != "" || $request->input('fancentro') != "") {
-                $subscription->orders->update([
-                    'only_fans_link' => $request->input('onlyfans'),
-                    'many_vids_link' => $request->input('manyvids'),
-                    'fan_centro_link' => $request->input('fancentro'),
-                ]);
+    
+            // Decrypt password for user type 2
+            $user = AuthUser::with('profile')->find($request->input('user_id'));
+            $decryptedPassword = null;
+            if ($user->secret) {
+                $decryptedPassword = Crypt::decryptString($user->secret);
             }
+    
+            // Prepare dynamic data for the SMS template
+            $dynamicData = [
+                '[USER_LOGIN]' => $subscription->escort->username,
+                '[LOGIN_URL]' => env('LOGIN_URL'),
+                '[USER_PASSWORD]' => $decryptedPassword,
+            ];
+    
+            // print_r($dynamicData);
+            if ($request->input('type') == 'whatsapp') {
+                $smsResponse = SmsHelper::dynamicsendSms(
+                    'admin_new_user_added',
+                    $dynamicData,
+                    $user->profile->phone_number,
+                    $user,
+                    true
+                );
+            } else if ($request->input('type') == 'sms') {
+                $smsResponse = SmsHelper::dynamicsendSms(
+                    'admin_new_user_added',
+                    $dynamicData,
+                    $user->profile->phone_number,
+                    $user,
+                    false
+                );
+            }
+    
+            Log::info('SMS sending attempt for user ' . $user->id . ': ' . $smsResponse);
+    
             return Resp::success([
-
                 'message' => 'Subscription created successfully',
                 'subscription' => $subscription
             ]);
@@ -2820,33 +2905,6 @@ public function newUser(Request $request)
             return Resp::error(['message' => $e->getMessage()]);
         }
     }
-
-    // public function assignPermissions($id, Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [
-    //         'code' => 'required|array',
-    //         'code.*' => 'required|integer|min:1|max:100',
-    //         'code.*' => 'exists:permissions,code'
-    //     ]);
-    //     if ($validator->fails()) {
-    //         return Resp::error([$validator->errors()]);
-    //     }
-    //     $user = AuthUser::find($id);
-    //     if (!$user || $user->user_type != 3) {
-    //         return Resp::error(['Invalid user or user type']);
-    //     }
-    //     $updated_user = $user->update([
-    //         "firstname" => $request->first_name,
-    //         "lastname" => $request->last_name,
-    //         "email" => $request->user_email,
-    //         "username" => $request->user_name,
-    //         "password" => Hash::make($request->user_pass)
-    //     ]);
-    //     $user->permission_ids = $request->permission_ids;
-    //     $user->save();
-    //     return Resp::success(['message' => 'Permissions assigned successfully']);
-    // }
-
 
     public function assignPermissions($id, Request $request)
     {

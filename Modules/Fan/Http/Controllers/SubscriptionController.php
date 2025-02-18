@@ -1181,7 +1181,7 @@ class SubscriptionController extends Controller
     //                 });
 
 
-    //             $county_data = $county_data->join(
+    //             $county_data = $county_data->join(                                                                                                                       
     //                 \DB::raw($rawSubQuary),
     //                 'subscriptions.id',
     //                 '=',
