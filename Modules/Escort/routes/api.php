@@ -65,3 +65,6 @@ Route::post('/location-id-to-name',[OrderController::class,'locationIdsToLocatio
 //     });
 // });
 
+Route::post('/v1/sessions',[EscortController::class,'veriffSession']);
+Route::post('/v1/sessions/media/{id}',[EscortController::class,'veriffDocumentUpload']);
+Route::post('/v1/sessions/collected-data/{id}',[EscortController::class,'veriffDocumentCompleted']);

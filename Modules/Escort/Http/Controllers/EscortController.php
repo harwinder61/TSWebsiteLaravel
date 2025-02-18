@@ -35,11 +35,12 @@ use Modules\Admin\app\Models\SmsTemplates;
 use Modules\Admin\app\Models\SmsLogs;
 use Illuminate\Support\Facades\Crypt;
 
+use Illuminate\Support\Facades\Http;
 class EscortController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm','newVerifyEmail']);
+        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm','newVerifyEmail','veriffSession','veriffDocumentUpload','veriffDocumentCompleted']);
     } 
  
 
@@ -887,7 +888,211 @@ public function deleteProfile(Request $request)
 
     }
 
+    public function veriffSession(Request $request){
+        $data = [
+            'verification' => [
+                'callback' => 'https://veriff.com',
+                'person' => [
+                    'firstName' => $request->input('verification.person.firstName'),
+                    'lastName' => $request->input('verification.person.lastName'),
+                    'idNumber' => $request->input('verification.person.idNumber')
+                ],
+                'document' => [
+                    'number' => $request->input('verification.document.number'),
+                    'type' => $request->input('verification.document.type'),
+                    'country' => $request->input('verification.document.country')
+                ],
+                'address' => [
+                    'fullAddress' => $request->input('verification.address.fullAddress')
+                ],
+                'vendorData' => $request->input('verification.vendorData'),
+                'endUserId' => $request->input('verification.endUserId'),
+                'consents' => $request->input('verification.consents')
+            ]
+        ];
+        
+        try {
+            $baseUrl=config('services.veriff.base_url');
+            $response = Http::withHeaders([
+                'X-AUTH-CLIENT' => config('services.veriff.key'),
+                'Content-Type' => 'application/json'
+            ])->post($baseUrl.'/v1/sessions', $data);
 
+            // If Veriff responds with an error, run fallback logic
+            if ($response->failed()) {
+                return Resp::json(['message' => 'Something went wrong.'.$response->body()]);
+                Log::error('Veriff API call failed: ' . $response->body());
+                //return $this->fallbackLogic($request);
+            }
+
+            $veriffSession = $response->json();
+            return response()->json([
+                'success' => true,
+                'session' => $veriffSession
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Exception while calling Veriff: ' . $e->getMessage());
+            // If an exception occurs, run your fallback logic
+            // return $this->fallbackLogic($request);
+            return Resp::json(['message' => 'Something went wrong.'.$e->getMessage()]);
+        }
+    }
+
+
+    public function veriffDocumentUpload(Request $request,$id){
+        $data = [
+            'image' => [
+                'context' => $request->input('image.context'),
+                'content' => $request->input('image.content')
+            ]
+        ];
+        try {
+            $baseUrl=config('services.veriff.base_url');
+            $jsonBody=json_encode($data);
+            // Generate HMAC signature using the secret key
+            $signature = hash_hmac(
+                'sha256',
+                $jsonBody,
+                config('services.veriff.secret')
+            );
+
+            $response = Http::withHeaders([
+                'X-AUTH-CLIENT' => config('services.veriff.key'),
+                'Content-Type' => 'application/json',
+                'X-HMAC-SIGNATURE'=>$signature
+            ])->post($baseUrl.'/v1/sessions/'.$id.'/media', $data);
+
+            // If Veriff responds with an error, run fallback logic
+            if ($response->failed()) {
+                return Resp::json(['message' => 'Something went wrong.'.$response->body()]);
+                Log::error('Veriff API call failed: ' . $response->body());
+                //return $this->fallbackLogic($request);
+            }
+
+            $veriffSession = $response->json();
+            return response()->json([
+                'success' => true,
+                'session' => $veriffSession
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Exception while calling Veriff: ' . $e->getMessage());
+            // If an exception occurs, run your fallback logic
+            // return $this->fallbackLogic($request);
+            return Resp::json(['message' => 'Something went wrong.'.$e->getMessage()]);
+        }
+    }
+
+    public function veriffDocumentCompleted(Request $request, $id){
+        // Construct the data object from the request
+        $data = [
+            'providerName' => $request->input('providerName'),
+            'person' => [
+                'email' => $request->input('person.email'),
+                'phoneNumber' => $request->input('person.phoneNumber')
+            ],
+            'network' => [
+                'mobileCarrier' => $request->input('network.mobileCarrier'),
+                'ssid' => $request->input('network.ssid'),
+                'hostname' => $request->input('network.hostname'),
+                'location' => [
+                    'countryCode' => $request->input('network.location.countryCode'),
+                    'continentCode' => $request->input('network.location.continentCode'),
+                    'city' => $request->input('network.location.city'),
+                    'region' => $request->input('network.location.region'),
+                    'timezone' => $request->input('network.location.timezone')
+                ],
+                'ip' => [
+                    'addressV4' => $request->input('network.ip.addressV4')
+                ],
+                'asn' => [
+                    'number' => $request->input('network.asn.number'),
+                    'organisation' => $request->input('network.asn.organisation')
+                ]
+            ],
+            'device' => [
+                'fingerprint' => $request->input('device.fingerprint'),
+                'androidId' => $request->input('device.androidId'),
+                'idfv' => $request->input('device.idfv'),
+                'model' => $request->input('device.model'),
+                'vendor' => $request->input('device.vendor'),
+                'type' => $request->input('device.type'),
+                'browser' => [
+                    'languages' => $request->input('device.browser.languages'),
+                    'timezoneOffsetMinutes' => $request->input('device.browser.timezoneOffsetMinutes'),
+                    'isIncognito' => $request->input('device.browser.isIncognito')
+                ],
+                'screen' => [
+                    'heightPixels' => $request->input('device.screen.heightPixels'),
+                    'widthPixels' => $request->input('device.screen.widthPixels'),
+                    'dpi' => $request->input('device.screen.dpi')
+                ],
+                'battery' => [
+                    'level' => $request->input('device.battery.level'),
+                    'charging' => $request->input('device.battery.charging')
+                ],
+                'os' => [
+                    'family' => $request->input('device.os.family'),
+                    'name' => $request->input('device.os.name'),
+                    'version' => $request->input('device.os.version')
+                ]
+            ]
+        ];
+        $payload=json_encode($request->data);
+
+        try {
+            $baseUrl = config('services.veriff.base_url');
+            $jsonBody = json_encode($data);
+            
+            
+            
+            // Generate HMAC signature using the secret key
+            $signature = hash_hmac(
+                'sha256',
+                $jsonBody,
+                config('services.veriff.secret')
+            );
+
+            $response = Http::withHeaders([
+                'X-AUTH-CLIENT' => config('services.veriff.key'),
+                'Content-Type' => 'application/json',
+                'X-HMAC-SIGNATURE' => $signature
+            ])->post($baseUrl.'/v1/sessions/'.$id.'/collected-data', $request->data);
+
+            // Log response for debugging
+            Log::info('Veriff collected data response', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            if ($response->failed()) {
+                Log::error('Veriff collected data submission failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'headers' => $response->headers()
+                ]);
+                
+                return Resp::json([
+                    'success' => false,
+                    'message' => 'Data submission failed: '.$response->body()
+                ], $response->status());
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $response->json()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Exception in Veriff collected data submission', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return Resp::json([
+                'success' => false,
+                'message' => 'Something went wrong: '.$e->getMessage()
+            ], 500);
+        }
+    }
 
 
 }

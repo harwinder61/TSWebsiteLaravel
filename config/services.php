@@ -48,6 +48,12 @@ return [
     'from' => env('TWILIO_PHONE_NUMBER'),
 ],
 
+'veriff' => [
+    'key' => env('VERIFF_API_KEY'),
+    'secret' => env('VERIFF_SECRET_KEY'),
+    'base_url' => env('VERIFF_BASE_URL'),
+],
+
 
 
 ];
