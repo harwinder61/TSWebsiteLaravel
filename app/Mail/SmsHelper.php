@@ -76,14 +76,14 @@ class SmsHelper
         $token = env('TWILIO_TOKEN');
         $twilioNumber = env('TWILIO_PHONE_NUMBER');
 
-        $client = new \Twilio\Rest\Client($sid, $token);
-        $client->messages->create(
-            $recipientSms,
-            [
-                'from' => $twilioNumber,
-                'body' => $body
-            ]
-        );
+        // $client = new \Twilio\Rest\Client($sid, $token);
+        // $client->messages->create(
+        //     $recipientSms,
+        //     [
+        //         'from' => $twilioNumber,
+        //         'body' => $body
+        //     ]
+        // );
         SmsLogs::create([
             'message' => $body,
             'to' => $recipientSms,
