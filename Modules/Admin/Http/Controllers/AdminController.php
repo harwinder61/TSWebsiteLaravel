@@ -249,23 +249,23 @@ class AdminController extends Controller
 
     try {
         
-    if($request->input('type') == 'whatsapp'){
-    $smsResponse = SmsHelper::dynamicsendSms(
-        'admin_new_user_added',
-        $dynamicData,
-        $user->profile->phone_number,
-        $user,
-        true
-    );
-   }else if($request->input('type') == 'sms'){
-        $smsResponse = SmsHelper::dynamicsendSms(
-            'admin_new_user_added',
-            $dynamicData,
-            $user->profile->phone_number,
-            $user,
-            false
-        );
-    }
+        if ($request->input('status') ? 1 : 0) {
+            $smsResponse = SmsHelper::dynamicsendSms(
+                'admin_new_user_added',
+                $dynamicData,
+                $user->profile->phone_number,
+                $user,
+                true
+            );
+        } else if (($request->input('status') ? 1 : 0) == 0) {
+            $smsResponse = SmsHelper::dynamicsendSms(
+                'admin_new_user_added',
+                $dynamicData,
+                $user->profile->phone_number,
+                $user,
+                false
+            );
+        }
 
         Log::info('SMS sending attempt for user ' . $user->id . ': ' . $smsResponse);
 

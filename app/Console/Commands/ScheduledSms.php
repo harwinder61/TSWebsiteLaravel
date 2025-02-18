@@ -131,6 +131,7 @@ class ScheduledSms extends Command
                 'status' => 1, // Success
                 'user_id' => $advert->user->id,
                 'from' => $twilioNumber,
+                'message_sent' => true,
             ]);
     
             return "SMS sent successfully!";
@@ -142,6 +143,7 @@ class ScheduledSms extends Command
                 'status' => 0, // Failed
                 'user_id' => $advert->user->id,
                 'from' => env('TWILIO_PHONE_NUMBER'),
+                'message_sent' => false,
             ]);
     
             throw new \Exception("Failed to send SMS: " . $e->getMessage());

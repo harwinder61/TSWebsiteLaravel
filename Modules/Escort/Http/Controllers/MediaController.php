@@ -73,7 +73,6 @@ class MediaController extends Controller
             return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
         }
         
-
         }else{
             
         $currentUser = auth()->user();

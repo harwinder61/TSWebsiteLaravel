@@ -32,7 +32,8 @@ protected function schedule(Schedule $schedule)
     // Schedule your command to run daily (or at whatever interval you need)
     $schedule->command('app:scheduled-emails')->daily();
     $schedule->command('users:delete-expired')->daily();
-    $schedule->command('app:scheduled-sms')->daily();
+    // $schedule->command('app:scheduled-sms')->daily();
+    $schedule->command('app:scheduled-sms')->everyThreeMinutes();
     $schedule->command('app:scheduled-advert-ended')->daily();
     $schedule->command('app:scheduled-inactive-users')->daily();
 }

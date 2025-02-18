@@ -15,7 +15,7 @@ class SmsLogs extends Model
     use HasFactory;
 
     protected $table='sms_logs';
-    protected $fillable=['phone_number','message','to','from' ,'user_id','status'] ;
+    protected $fillable=['phone_number','message','to','from' ,'user_id','status' ,'message_sent']; 
 
  
     public function user(){

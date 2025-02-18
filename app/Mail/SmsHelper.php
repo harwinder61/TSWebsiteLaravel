@@ -41,7 +41,6 @@ class SmsHelper
         return 'The user object is invalid or not passed correctly.';
     }
 
-
     $smsTemplate = SmsTemplates::where('type', $templateType)->first();
     if (!$smsTemplate) {
         Log::error('SMS template not found for type: ' . $templateType);
