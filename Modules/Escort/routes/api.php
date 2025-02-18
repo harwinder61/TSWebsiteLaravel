@@ -68,3 +68,6 @@ Route::post('/location-id-to-name',[OrderController::class,'locationIdsToLocatio
 Route::post('/v1/sessions',[EscortController::class,'veriffSession']);
 Route::post('/v1/sessions/media/{id}',[EscortController::class,'veriffDocumentUpload']);
 Route::post('/v1/sessions/collected-data/{id}',[EscortController::class,'veriffDocumentCompleted']);
+Route::patch('/v1/session/{id}',[EscortController::class,'veriffStatus']);
+Route::get('/v1/sessions/decision/{id}',[EscortController::class,'VeriffDecision']);
+Route::post('/verify/webhook',[EscortController::class,'veriffWebhook']);

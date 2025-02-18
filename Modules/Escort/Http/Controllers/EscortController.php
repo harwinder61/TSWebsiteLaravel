@@ -40,7 +40,7 @@ class EscortController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm','newVerifyEmail','veriffSession','veriffDocumentUpload','veriffDocumentCompleted']);
+        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm','newVerifyEmail','veriffSession','veriffDocumentUpload','veriffDocumentCompleted','veriffStatus','VeriffDecision','getVeriffStatus','veriffWebhook']);
     } 
  
 
@@ -1057,67 +1057,27 @@ public function deleteProfile(Request $request)
 
     public function veriffDocumentCompleted(Request $request, $id){
         // Construct the data object from the request
+        // Simplify the data structure to only include required fields
         $data = [
-            'providerName' => $request->input('providerName'),
+            'document' => [
+                'number' => $request->input('data.document.number'),
+                'type' => $request->input('data.document.type'),
+                'country' => $request->input('data.document.country')
+            ],
             'person' => [
-                'email' => $request->input('person.email'),
-                'phoneNumber' => $request->input('person.phoneNumber')
-            ],
-            'network' => [
-                'mobileCarrier' => $request->input('network.mobileCarrier'),
-                'ssid' => $request->input('network.ssid'),
-                'hostname' => $request->input('network.hostname'),
-                'location' => [
-                    'countryCode' => $request->input('network.location.countryCode'),
-                    'continentCode' => $request->input('network.location.continentCode'),
-                    'city' => $request->input('network.location.city'),
-                    'region' => $request->input('network.location.region'),
-                    'timezone' => $request->input('network.location.timezone')
-                ],
-                'ip' => [
-                    'addressV4' => $request->input('network.ip.addressV4')
-                ],
-                'asn' => [
-                    'number' => $request->input('network.asn.number'),
-                    'organisation' => $request->input('network.asn.organisation')
-                ]
-            ],
-            'device' => [
-                'fingerprint' => $request->input('device.fingerprint'),
-                'androidId' => $request->input('device.androidId'),
-                'idfv' => $request->input('device.idfv'),
-                'model' => $request->input('device.model'),
-                'vendor' => $request->input('device.vendor'),
-                'type' => $request->input('device.type'),
-                'browser' => [
-                    'languages' => $request->input('device.browser.languages'),
-                    'timezoneOffsetMinutes' => $request->input('device.browser.timezoneOffsetMinutes'),
-                    'isIncognito' => $request->input('device.browser.isIncognito')
-                ],
-                'screen' => [
-                    'heightPixels' => $request->input('device.screen.heightPixels'),
-                    'widthPixels' => $request->input('device.screen.widthPixels'),
-                    'dpi' => $request->input('device.screen.dpi')
-                ],
-                'battery' => [
-                    'level' => $request->input('device.battery.level'),
-                    'charging' => $request->input('device.battery.charging')
-                ],
-                'os' => [
-                    'family' => $request->input('device.os.family'),
-                    'name' => $request->input('device.os.name'),
-                    'version' => $request->input('device.os.version')
-                ]
+                'firstName' => $request->input('data.person.firstName'),
+                'lastName' => $request->input('data.person.lastName'),
+                'dateOfBirth' => $request->input('data.person.dateOfBirth'),
+                'gender' => $request->input('data.person.gender')
             ]
         ];
-        $payload=json_encode($request->data);
+        $veriffData = $request->input('data', []);
 
         try {
             $baseUrl = config('services.veriff.base_url');
-            $jsonBody = json_encode($data);
+            $jsonBody = json_encode($veriffData);
             
-            
-            
+           
             // Generate HMAC signature using the secret key
             $signature = hash_hmac(
                 'sha256',
@@ -1129,24 +1089,15 @@ public function deleteProfile(Request $request)
                 'X-AUTH-CLIENT' => config('services.veriff.key'),
                 'Content-Type' => 'application/json',
                 'X-HMAC-SIGNATURE' => $signature
-            ])->post($baseUrl.'/v1/sessions/'.$id.'/collected-data', $request->data);
-
-            // Log response for debugging
-            Log::info('Veriff collected data response', [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
+            ])->post($baseUrl.'/v1/sessions/'.$id.'/collected-data', $veriffData);
 
             if ($response->failed()) {
-                Log::error('Veriff collected data submission failed', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                    'headers' => $response->headers()
-                ]);
+                
                 
                 return Resp::json([
                     'success' => false,
-                    'message' => 'Data submission failed: '.$response->body()
+                    'message' => 'Data submission failed: '.$response->body(),
+                    'data' => $veriffData
                 ], $response->status());
             }
 
@@ -1166,6 +1117,104 @@ public function deleteProfile(Request $request)
             ], 500);
         }
     }
+
+    public function veriffStatus(Request $request,$id)
+    {
+        try {
+            $veriffData=$request->input('data');
+            $data=json_encode($veriffData);
+            $baseUrl = config('services.veriff.base_url');
+            $signature = hash_hmac(
+                'sha256',
+                $data,
+                config('services.veriff.secret')
+            );
+            $response = Http::withHeaders([
+                'X-AUTH-CLIENT' => config('services.veriff.key'),
+                'X-HMAC-SIGNATURE' => $signature
+            ])->patch($baseUrl.'/v1/sessions/'.$id,$veriffData);
+
+            if ($response->failed()) {
+                return Resp::json(['message' => 'Something went wrong.'.$response->body(),'data' => $veriffData]);
+               
+                //return $this->fallbackLogic($request);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $response->json()
+            ]);
+        } catch (\Exception $e) {
+            
+            return Resp::json([
+                'success' => false,
+                'message' => 'Something went wrong: '.$e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function VeriffDecision(Request $request,$id){
+        try{
+
+
+            $baseUrl = config('services.veriff.base_url');
+            $signature = hash_hmac(
+                'sha256',
+                $id,
+                config('services.veriff.secret')
+            );
+            $response = Http::withHeaders([
+                'X-AUTH-CLIENT' => config('services.veriff.key'),
+                'X-HMAC-SIGNATURE' => $signature
+            ])->get($baseUrl.'/v1/sessions/'.$id.'/decision');
+            if($response->failed()){
+                return Resp::json(['message' => 'Something went wrong.'.$response->body(),'data' => $id]);
+               
+                //return $this->fallbackLogic($request);
+            }
+            return Resp::json(['data' => $response->json()]);
+        }catch(\Exception $e){
+            return Resp::error(['message' => 'Something went wrong.'.$e->getMessage()]);
+        }
+    }
+
+    public function veriffWebhook(Request $request){
+        try {
+
+            $data=$request->all();
+            Log::info($request->all());
+
+            $payload = $request->getContent();
+            $signature = $request->header('x-veriff-signature'); // Veriff's signature header
+            $webhookSecret = config('services.veriff.secret'); // Replace with your actual secret
+    
+            // Verify the signature
+            $computedSignature = hash_hmac('sha256', $payload, $webhookSecret);
+    
+            if (!hash_equals($computedSignature, $signature)) {
+                \Log::error('Invalid Veriff Webhook Signature');
+                return response()->json(['message' => 'Invalid signature'], 403);
+            }
+    
+            // Log the incoming request data
+            \Log::info('Veriff Webhook Received:', $request->all());
+            // Return 200 OK to acknowledge receipt
+            return response()->json([
+                'success' => true,
+                'message' => 'Webhook processed successfully',
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            
+            return Resp::error([
+                'message' => 'Webhook processing failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+
+
+    
 
 
 }
