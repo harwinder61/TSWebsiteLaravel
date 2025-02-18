@@ -147,6 +147,10 @@ class BaseProfile extends Model
         return $this->hasMany(BaseSubscription::class,'escort_id','escort_id');
     }
 
-
+     public function profile(){
+        return $this->belongsTo(Profile::class,'escort_id','id');
+    }
 }
+
+
 

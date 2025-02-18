@@ -29,5 +29,8 @@ public function city (){
 }
 
 
-}
+// public function profile(){
+//     return $this->belongsTo(Profile::class,'escort_id','id');
+// }
 
+}

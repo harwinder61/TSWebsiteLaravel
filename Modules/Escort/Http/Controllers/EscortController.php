@@ -29,6 +29,12 @@ use App\Models\BaseReviews;
 use App\Mail\EmailHelper;
 use App\Models\User;
 use Illuminate\Support\Str;
+use App\Mail\SmsHelper;
+use Illuminate\Support\Facades\Mail;
+use Modules\Admin\app\Models\SmsTemplates;
+use Modules\Admin\app\Models\SmsLogs;
+use Illuminate\Support\Facades\Crypt;
+
 use Illuminate\Support\Facades\Http;
 class EscortController extends Controller
 {
@@ -38,7 +44,235 @@ class EscortController extends Controller
     } 
  
 
+    // public function updateSubscription(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'subscription_id' => 'required|exists:subscriptions,id',
+    //         'image_id' => 'required|exists:media,id'
+    //     ]);
+    
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+        
+    //     $user = auth()->user();
+    //     $subscription = EscortSubscription::with('profile')->find($request->subscription_id); // Join with profile
+    
+    //     if (!$subscription) {
+    //         return Resp::error(['message' => 'Subscription not found'], 404);
+    //     }
+    
+    //     $subscription->update([
+    //         'image_id' => $request->image_id
+    //     ]);
+    
+    //     // Update additional fields
+    //     if ($request->input('start_date')) {
+    //         $subscription->start_date = $request->input('start_date');
+    //         $subscription->save();
+    //     }
+    //     if ($request->input('end_date')) {
+    //         $subscription->end_date = $request->input('end_date');
+    //         $subscription->save();
+    //     }
+    //     if ($request->input('plan_code')) {
+    //         $subscription->plan_code = $request->input('plan_code');
+    //         $subscription->save();
+    //     }
+    
+    //     // Prepare dynamic data for the SMS
+    //     $dynamicData = [
+    //         '[SUBSCRIPTION_ID]' => $subscription->id,
+    //         '[USER_NAME]' => $user->firstname . ' ' . $user->lastname,
+    //         '[LOGIN_URL]' => env('LOGIN_URL'),
+    //     ];
+    
+    //     // Send SMS using the phone number from the joined profile
+    //     $phoneNumber = $subscription->profile->phone_number; // Get phone number from profile
+    //     if ($request->input('type') == 'whatsapp') {
+    //         $smsResponse = SmsHelper::dynamicsendSms(
+    //             'whatapp_admin_new_user_added',
+    //             $dynamicData,
+    //             $phoneNumber,
+    //             $user,
+    //             true
+    //         );
+    //     } else if ($request->input('type') == 'sms') {
+    //         $smsResponse = SmsHelper::dynamicsendSms(
+    //             'admin_new_user_added',
+    //             $dynamicData,
+    //             $phoneNumber,
+    //             $user,
+    //             false
+    //         );
+    //     }
+    
+    //     return Resp::success([
+    //         'message' => 'Subscription updated successfully and SMS sent',
+    //         'subscription' => $subscription
+    //     ]);
+    // }
 
+    // public function updateSubscription(Request $request)
+    // {
+    //     // Validate the incoming request
+    //     $validator = Validator::make($request->all(), [
+    //         'subscription_id' => 'required|exists:subscriptions,id',
+    //         'image_id' => 'required|exists:media,id'
+    //     ]);
+    
+    //     if ($validator->fails()) {
+    //         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+    //     }
+    
+    //     $user = auth()->user();
+    //     $subscription = EscortSubscription::with('profile')->find($request->subscription_id);
+    
+    //     if (!$subscription) {
+    //         return Resp::error(['message' => 'Subscription not found'], 404);
+    //     }
+    
+    //     // Update the subscription with the new image ID
+    //     $subscription->image_id = $request->image_id;
+    
+    //     // Update additional fields if provided
+    //     if ($request->input('start_date')) {
+    //         $subscription->start_date = $request->input('start_date');
+    //     }
+    //     if ($request->input('end_date')) {
+    //         $subscription->end_date = $request->input('end_date');
+    //     }
+    //     if ($request->input('plan_code')) {
+    //         $subscription->plan_code = $request->input('plan_code');
+    //     }
+    
+    //     // Save all changes at once
+    //     $subscription->save();
+    
+    //     // Decrypt the user's password
+    //     $decryptedPassword = null;
+    //     if ($subscription->escort->secret) {
+    //         $decryptedPassword = Crypt::decryptString($subscription->escort->secret);
+    //     }
+    
+    //     // Prepare dynamic data for the SMS
+    //     $dynamicData = [
+    //         '[USER_LOGIN]' => $subscription->escort->username,
+    //         '[LOGIN_URL]' => env('LOGIN_URL'),
+    //         '[USER_PASSWORD]' => $decryptedPassword,
+    //     ];
+    
+    //     // Construct the SMS message dynamically using placeholders
+    //     $smsMessage = "Hi {$dynamicData['[USER_LOGIN]']},\n" .
+    //                   "We have created an account for you on Transbunnies.com. Claim your free advert here - {$dynamicData['[LOGIN_URL]']}\n" .
+    //                   "Username: {$dynamicData['[USER_LOGIN]']}\n" .
+    //                   "Password: {$dynamicData['[USER_PASSWORD]']}\n" .
+    //                   "Regards,\n" .
+    //                   "Team Transbunnies\n" .
+    //                   "THE PLACE TO BE IN!";
+    
+    //     // Send SMS using the phone number from the joined profile
+    //     $phoneNumber = $subscription->profile->phone_number;
+    
+    //     // Debugging: Log the input type
+    //     Log::info('SMS Type: ' . $request->input('type'));
+    
+    //     $smsResponse = null;
+    //     if (in_array($request->input('type'), ['whatsapp', 'sms'])) {
+    //         $template = $request->input('type') == 'whatsapp' ? 'whatapp_admin_new_user_added' : 'admin_new_user_added';
+    //         $smsResponse = SmsHelper::dynamicsendSms($template, $dynamicData, $phoneNumber, $user, $request->input('type') == 'whatsapp');
+    //     } else {
+    //         Log::error('Invalid SMS type: ' . $request->input('type'));
+    //         return Resp::error(['message' => 'Invalid SMS type'], 400);
+    //     }
+    
+    //     // Log the SMS message
+    //     SmsLogs::create([
+    //         'message' => $smsMessage, // Save the constructed SMS message
+    //         'to' => $phoneNumber,
+    //         'status' => 1, // Assuming success, adjust based on actual response
+    //         'user_id' => $user->id,
+    //         'from' => env('TWILIO_PHONE_NUMBER'),
+    //     ]);
+    
+    //     return Resp::success([
+    //         'message' => 'Subscription updated successfully and SMS sent',
+    //         'subscription' => $subscription
+    //     ]);
+    // }
+
+    public function updateSubscription(Request $request)
+    {
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'subscription_id' => 'required|exists:subscriptions,id',
+            'image_id' => 'required|exists:media,id'
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+    
+        $user = auth()->user();
+        $subscription = EscortSubscription::with('profile')->find($request->subscription_id);
+    
+        if (!$subscription) {
+            return Resp::error(['message' => 'Subscription not found'], 404);
+        }
+    
+        // Update the subscription with the new image ID
+        $subscription->image_id = $request->image_id;
+    
+        // Update additional fields if provided
+        if ($request->input('start_date')) {
+            $subscription->start_date = $request->input('start_date');
+        }
+        if ($request->input('end_date')) {
+            $subscription->end_date = $request->input('end_date');
+        }
+        if ($request->input('plan_code')) {
+            $subscription->plan_code = $request->input('plan_code');
+        }
+    
+        // Save all changes at once
+        $subscription->save();
+    
+        // Decrypt the user's password
+        $decryptedPassword = null;
+        if ($subscription->escort->secret) {
+            $decryptedPassword = Crypt::decryptString($subscription->escort->secret);
+        }
+    
+           // Prepare dynamic data for the SMS template
+           $dynamicData = [
+            '[USER_LOGIN]' => $subscription->escort->username,
+            '[LOGIN_URL]' => env('LOGIN_URL'),
+            '[USER_PASSWORD]' => $decryptedPassword,
+        ];
+
+        // print_r($dynamicData);
+        if ($request->input('status') ? 1 : 0) {
+            $smsResponse = SmsHelper::dynamicsendSms(
+                'admin_new_user_added',
+                $dynamicData,
+                $user->profile->phone_number,
+                $user,
+                true
+            );
+        }  else if (($request->input('status') ? 1 : 0) == 0) {
+            $smsResponse = SmsHelper::dynamicsendSms(
+                'admin_new_user_added',
+                $dynamicData,
+                $user->profile->phone_number,
+                $user,
+                false
+            );
+        }
+        return Resp::success([
+            'message' => 'Subscription updated successfully and SMS sent',
+            'subscription' => $subscription
+        ]);
+    }
     public function newVerifyEmail(Request $request)
     {
         $user = auth()->user();
@@ -352,43 +586,44 @@ public function deleteProfile(Request $request)
 
  
 
-    public function updateSubscription(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'subscription_id' => 'required|exists:subscriptions,id',
-        'image_id' => 'required|exists:media,id'
-    ]);
+//     public function updateSubscription(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'subscription_id' => 'required|exists:subscriptions,id',
+//         'image_id' => 'required|exists:media,id'
+//     ]);
 
-    if ($validator->fails()) {
-        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
-    }
-    $user = auth()->user();
-    $subscription = EscortSubscription::find($request->subscription_id);
+//     if ($validator->fails()) {
+//         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+//     }
+//     $user = auth()->user();
+//     $subscription = EscortSubscription::find($request->subscription_id);
     
-    if (!$subscription) {
-        return Resp::error(['message' => 'Subscription not found'], 404);
-    }
-    $subscription->update([
-        'image_id' => $request->image_id
-    ]);
-    if($request->input('start_date')){
-        $subscription->start_date = $request->input('start_date');
-        $subscription->save();
-    }
-    if($request->input('end_date')){
-        $subscription->end_date = $request->input('end_date');
-        $subscription->save();
-    }
-    if($request->input('plan_code')){
-        $subscription->plan_code = $request->input('plan_code');
-        $subscription->save();
-    }
-    return Resp::success([
-        'message' => 'Subscription updated successfully',
-        'subscription' => $subscription
+//     if (!$subscription) {
+//         return Resp::error(['message' => 'Subscription not found'], 404);
+//     }
+//     $subscription->update([
+//         'image_id' => $request->image_id
+//     ]);
+//     if($request->input('start_date')){
+//         $subscription->start_date = $request->input('start_date');
+//         $subscription->save();
+//     }
+//     if($request->input('end_date')){
+//         $subscription->end_date = $request->input('end_date');
+//         $subscription->save();
+//     }
+//     if($request->input('plan_code')){
+//         $subscription->plan_code = $request->input('plan_code');
+//         $subscription->save();
+//     }
+//     return Resp::success([
+//         'message' => 'Subscription updated successfully',
+//         'subscription' => $subscription
         
-        ]);
-    }
+//         ]);
+//     }
+
 
     public function updateMedia(Request $request)
     {
