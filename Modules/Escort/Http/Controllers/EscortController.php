@@ -40,7 +40,7 @@ class EscortController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm','newVerifyEmail','veriffSession','veriffDocumentUpload','veriffDocumentCompleted','veriffStatus','VeriffDecision','getVeriffStatus','veriffWebhook']);
+        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm','newVerifyEmail','veriffSession','veriffDocumentUpload','veriffDocumentCompleted','veriffStatus','VeriffDecision','getVeriffStatus','veriffWebhook','veriffEventWebhook']);
     } 
  
 
@@ -1182,22 +1182,37 @@ public function deleteProfile(Request $request)
         try {
 
             $data=$request->all();
+            Log::info('Veriff decisionWebhook triggered');
             Log::info($request->all());
 
-            $payload = $request->getContent();
-            $signature = $request->header('x-veriff-signature'); // Veriff's signature header
-            $webhookSecret = config('services.veriff.secret'); // Replace with your actual secret
-    
-            // Verify the signature
-            $computedSignature = hash_hmac('sha256', $payload, $webhookSecret);
-    
-            if (!hash_equals($computedSignature, $signature)) {
-                \Log::error('Invalid Veriff Webhook Signature');
-                return response()->json(['message' => 'Invalid signature'], 403);
+
+        $verification = $data['verification'];
+        if(!isset($verification)){
+            Log::info('verification field not found in data');
+        }
+
+        // Check if code equals 9001 and status is "approved"
+        if (isset($verification['code'], $verification['status']) && 
+            $verification['code'] == 9001 && 
+            $verification['status'] == 'approved') {
+
+            // For example, let's assume you use 'attemptId' to find the record
+            $record = Verify::where('escort_id', $verification['person']['idNumber'])->first();
+
+            if ($record) {
+                // Update fields as needed. For instance, update the status and approval time.
+                $record->verified_status = 1;
+                $record->save();
+
+                Log::info('Record updated successfully for userId: ' . $verification['person']['idNumber']);
+                return response()->json(['message' => 'Record updated successfully'], 200);
+            } else {
+                Log::warning('Record not found for userId: ' . $verification['person']['idNumber']);
+                return response()->json(['message' => 'Record not found'], 404);
             }
-    
-            // Log the incoming request data
-            \Log::info('Veriff Webhook Received:', $request->all());
+            }
+
+
             // Return 200 OK to acknowledge receipt
             return response()->json([
                 'success' => true,
@@ -1212,9 +1227,17 @@ public function deleteProfile(Request $request)
         }
     }
 
+    public function veriffEventWebhook(Request $request){
+        try {
+            $data=$request->all();
+            Log::info("Event webhook triggered");
+            Log::info($request->all());
 
-
-    
+            return Resp::json(['data' => $request->all()]);
+        }catch(\Exception $e){
+            return Resp::error(['message' => 'Webhook processing failed: ' . $e->getMessage()]);
+        }
+    }
 
 
 }
