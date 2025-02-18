@@ -167,78 +167,78 @@ class ScheduledInactive extends Command
 
 
     protected function inactiveUsers()
-{
-    $dateThreshold = Carbon::now()->subDays(14); // 14 days ago
-
-    // Get users who have been inactive for 14 days
-    $inactiveUsers = AuthUser::where('last_active_at', '<=', $dateThreshold)
-        ->with(['profile']) // Assuming there's a profile relationship
-        ->get();
-
-    Log::info('Inactive users for 14 days - Total: ' . $inactiveUsers->count());
-
-    foreach ($inactiveUsers as $user) {
-        Log::info('User ID: ' . $user->id . ' | User Email: ' . $user->email);
-
-        if ($user->profile && $user->profile->phone_number) {
-            // Check if the SMS has already been sent
-            $smsLog = SmsLogs::where('user_id', $user->id)
-                ->where('message_sent', true)
-                ->where('created_at', '>=', Carbon::now()->subDays(14)) // Ensure it's within the 14-day threshold
-                ->first();
-
-            if ($smsLog) {
-                Log::info('Skipping SMS for User ID: ' . $user->id . ' - Message already sent');
-                continue; // Skip sending SMS if already sent
+    {
+        $dateThreshold = Carbon::now()->subDays(14); // 14 days ago
+    
+        // Get users who have been inactive for 14 days
+        $inactiveUsers = AuthUser::where('last_active_at', '<=', $dateThreshold)
+            ->with(['profile']) // Assuming there's a profile relationship
+            ->get();
+    
+        Log::info('Inactive users for 14 days - Total: ' . $inactiveUsers->count());
+    
+        foreach ($inactiveUsers as $user) {
+            Log::info('User ID: ' . $user->id . ' | User Email: ' . $user->email);
+    
+            if ($user->profile && $user->profile->phone_number) {
+                // Check if the SMS has already been sent
+                $smsLog = SmsLogs::where('user_id', $user->id)
+                    ->where('message_sent', true)
+                    ->where('created_at', '>=', Carbon::now()->subDays(14)) // Ensure it's within the 14-day threshold
+                    ->first();
+    
+                if ($smsLog) {
+                    Log::info('Skipping SMS for User ID: ' . $user->id . ' - Message already sent');
+                    continue; // Skip sending SMS if already sent
+                }
+    
+                try {
+                    $phone = $user->profile->phone_number;
+    
+                    // Fetch the SMS template for inactive users
+                    $templateData = SmsHelper::getSmsTemplateByType('come_back_to_transbunnies_after_14_days');
+                    $template = $templateData->content ?? '';
+    
+                    // Prepare dynamic data
+                    $dynamicData = [
+                        '[USER_LOGIN]' => $user->username ?? $user->name,
+                        '[ADVERT_TITLE]' => $user->subscription->plan->title ?? 'Plan',
+                        '[ADVERT_LINK]' => url('/login'), // Adjust the link as necessary
+                    ];
+    
+                    // Replace placeholders in the template
+                    $message = $this->replacePlaceholders($template, $dynamicData);
+                    $message = strip_tags($message); // Remove HTML tags
+    
+                    // Call the method to send SMS and save logs
+                    $smsResponse = $this->sendSms($phone, $message, $user);
+                    Log::info('SMS Response: ' . $smsResponse);
+    
+                    // After sending the SMS, log it with message_sent as true
+                    SmsLogs::create([
+                        'message' => $message, 
+                        'to' => $phone, 
+                        'status' => 1, 
+                        'user_id' => $user->id, 
+                        'from' => env('TWILIO_PHONE_NUMBER'), 
+                        'message_sent' => true
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send SMS for User ID: ' . $user->id . ' - Error: ' . $e->getMessage());
+                    SmsLogs::create([
+                        'message' => $message, 
+                        'to' => $phone, 
+                        'status' => 0, 
+                        'user_id' => $user->id, 
+                        'from' => env('TWILIO_PHONE_NUMBER'), 
+                        'message_sent' => false
+                    ]);
+                }
+            } else {
+                Log::info('Skipping SMS for User ID: ' . $user->id . ' - No valid phone number');
             }
-
-            try {
-                $phone = $user->profile->phone_number;
-
-                // Fetch the SMS template for inactive users
-                $templateData = SmsHelper::getSmsTemplateByType('come_back_to_transbunnies_after_14_days');
-                $template = $templateData->content ?? '';
-
-                // Prepare dynamic data
-                $dynamicData = [
-                    '[USER_LOGIN]' => $user->username ?? $user->name,
-                    '[ADVERT_TITLE]' => $user->subscription->plan->title ?? 'Plan',
-                    '[ADVERT_LINK]' => url('/login'), // Adjust the link as necessary
-                ];
-
-                // Replace placeholders in the template
-                $message = $this->replacePlaceholders($template, $dynamicData);
-                $message = strip_tags($message); // Remove HTML tags
-
-                // Call the method to send SMS and save logs
-                $smsResponse = $this->sendSms($phone, $message, $user);
-                Log::info('SMS Response: ' . $smsResponse);
-
-                // After sending the SMS, log it with message_sent as true
-                SmsLogs::create([
-                    'message' => $message, 
-                    'to' => $phone, 
-                    'status' => 1, 
-                    'user_id' => $user->id, 
-                    'from' => env('TWILIO_PHONE_NUMBER'), 
-                    'message_sent' => true
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Failed to send SMS for User ID: ' . $user->id . ' - Error: ' . $e->getMessage());
-                SmsLogs::create([
-                    'message' => $message, 
-                    'to' => $phone, 
-                    'status' => 0, 
-                    'user_id' => $user->id, 
-                    'from' => env('TWILIO_PHONE_NUMBER'), 
-                    'message_sent' => false
-                ]);
-            }
-        } else {
-            Log::info('Skipping SMS for User ID: ' . $user->id . ' - No valid phone number');
         }
     }
-}
 
 protected function replacePlaceholders($template, $data)
 {
@@ -265,7 +265,6 @@ protected function sendSms($phone, $message, $user)
     try {
         $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
         $client->messages->create($phone, ['from' => env('TWILIO_PHONE_NUMBER'), 'body' => $message]);
-
         SmsLogs::create([
             'message' => $message, 
             'to' => $phone, 
