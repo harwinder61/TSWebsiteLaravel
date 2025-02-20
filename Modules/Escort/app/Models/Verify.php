@@ -17,7 +17,7 @@ class Verify extends Model
      * The attributes that are mass assignable.
      */
     protected $table="verify";
-    protected $fillable = ['passport_image','selfie_image','verified_status'];
+    protected $fillable = ['passport_image','selfie_image','verified_status','action'];
 
 
     public function escort()

@@ -1210,7 +1210,7 @@ public function deleteProfile(Request $request)
                 return response()->json(['message' => 'Record updated successfully'], 200);
             } else {
                 //Log::info("User not found !!");
-                Log::warning('Record not found or failed to update status');
+                Log::warning('Record not found!!');
                 return response()->json(['message' => 'Record not found'], 404);
             }
             }
@@ -1241,10 +1241,11 @@ public function deleteProfile(Request $request)
                     $record = Verify::where('escort_id', $data['vendorData'])->first();
                     if($record){
                         $record->verified_status = 1;
+                        $record->action = $data['action'];
                         $record->save();
                         Log::info("Record updated successfully");
                     }else{
-                        Log::info("Record not found for or failed to update status ");
+                        Log::info("Record not found!");
                     }
 
                 }
