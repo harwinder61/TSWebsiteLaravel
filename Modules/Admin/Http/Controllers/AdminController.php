@@ -355,7 +355,7 @@ public function newUser(Request $request)
         'last_name' => 'required|string|max:255',
         'phone_number' => 'nullable',
         'account_origin' => 'string|in:admin,site',
-        'sms' => 'nullable|integer|in:0,1'
+        // 'sms' => 'nullable|integer|in:0,1'
     ]);
 
     if ($validator->fails()) {
@@ -381,7 +381,7 @@ public function newUser(Request $request)
         'account_origin' => $request->account_origin,
         'verification_token' => $verification_token,
         'status' => $status,
-        'secret' => $request->user_type == 2 ? Crypt::encryptString($request->password) : null, // Encrypt password for user_type 2
+        // 'secret' => $request->user_type == 2 ? Crypt::encryptString($request->password) : null, // Encrypt password for user_type 2
     ]);
 
     $user_id = $user->id;
@@ -399,23 +399,23 @@ public function newUser(Request $request)
         '[USER_NAME]' => $user->firstname . ' ' . $user->lastname
     ];
 
-    // Send SMS if SMS is requested (sms == 1)
-    if ($request->sms == 1) {
-        if ($request->user_type == 2) {
-            $recipientPhone = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER');
+    // // Send SMS if SMS is requested (sms == 1)
+    // if ($request->sms == 1) {
+    //     if ($request->user_type == 2) {
+    //         $recipientPhone = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER');
             
-            // Pass the user object as the fourth parameter
-            $smsResponse = SmsHelper::dynamicsendSms(
-                'admin_new_user_added',
-                $dynamicData,
-                $recipientPhone,
-                $user , // Pass the user object here,
-                true
-            );
+    //         // Pass the user object as the fourth parameter
+    //         $smsResponse = SmsHelper::dynamicsendSms(
+    //             'admin_new_user_added',
+    //             $dynamicData,
+    //             $recipientPhone,
+    //             $user , // Pass the user object here,
+    //             true
+    //         );
 
-            Log::info('SMS sending attempt for user ' . $user->id . ': ' . $smsResponse);
-        }
-    }
+    //         Log::info('SMS sending attempt for user ' . $user->id . ': ' . $smsResponse);
+    //     }
+    // }
 
     // Handle email notification for user type 3
     if ($request->user_type == 3) {

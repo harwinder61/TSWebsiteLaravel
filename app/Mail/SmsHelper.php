@@ -89,6 +89,7 @@ class SmsHelper
             'status' => 1, // Success
             'user_id' => $user->id,  // Now properly saving the user_id
             'from' => $twilioNumber,
+            'message_sent' => true
         ]);
         return "SMS sent successfully!";
     } catch (\Exception $e) {
@@ -101,6 +102,7 @@ class SmsHelper
             'status' => 0, // Failed
             'user_id' => $user->id,  // Now properly saving the user_id
             'from' => env('TWILIO_PHONE_NUMBER'),
+            'message_sent' => false
         ]);
         return "Failed to send SMS: " . $e->getMessage();
     }
