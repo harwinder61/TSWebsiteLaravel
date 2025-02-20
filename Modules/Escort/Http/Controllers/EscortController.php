@@ -1248,6 +1248,13 @@ public function deleteProfile(Request $request)
                         Log::info("Record not found!");
                     }
 
+                }else{
+                    $record=Verify::where('escort_id', $data['vendorData'])->first();
+                    if($record){
+                        $record->action = $data['action'];
+                        $record->save();
+                        Log::info("Record updated successfully");
+                    }
                 }
             }
 
