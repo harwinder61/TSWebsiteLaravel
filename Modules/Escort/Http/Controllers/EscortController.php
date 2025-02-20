@@ -465,6 +465,11 @@ public function deleteProfile(Request $request)
     {
         try {
             $user = auth()->user();
+            $verification_exists=Verify::where('escort_id',$user->id)->first();
+            if($verification_exists){
+                return Resp::error(['message'=>"User already exists in verification table!"]);
+            }
+
             $profile = Profile::where('escort_id', $user->id)->first();
             if(!$profile){
                 return Resp::error(['message' => 'Profile not found']);
