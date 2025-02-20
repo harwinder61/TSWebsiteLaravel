@@ -1244,10 +1244,16 @@ public function deleteProfile(Request $request)
             if($data && isset($data['action'])){
                 if($data['action'] == "submitted" && $data['code'] == 7002){
                     $record = Verify::where('escort_id', $data['vendorData'])->first();
+                    $profile = Profile::where('escort_id', $data['vendorData'])->first();
                     if($record){
                         $record->verified_status = 1;
                         $record->action = $data['action'];
                         $record->save();
+                        if($profile){
+                            $profile->verified_status=1;
+                            $profile->save();
+                            Log::info("Profile verified status updated");
+                        }
                         Log::info("Record updated successfully");
                     }else{
                         Log::info("Record not found!");
