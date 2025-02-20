@@ -117,21 +117,21 @@ class AdminController extends Controller
         }
     
         try {
-            $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
-            $twilioMessage = $client->messages->create(
-                $request->phone_number,
-                [
-                    'from' => env('TWILIO_PHONE_NUMBER'),
-                    'body' => $request->message
-                ]
-            );
+            // $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
+            // $twilioMessage = $client->messages->create(
+            //     $request->phone_number,
+            //     [
+            //         'from' => env('TWILIO_PHONE_NUMBER'),
+            //         'body' => $request->message
+            //     ]
+            // );
     
             SmsLogs::create([
                 'to' => $request->phone_number,
                 'message' => $request->message,
                 'from' => env('TWILIO_PHONE_NUMBER'),
                 'status' => 1,
-                'twilio_sid' => $twilioMessage->sid
+                // 'twilio_sid' => $twilioMessage->sid
             ]);
     
             return Resp::success(['message' => 'Message sent successfully']);

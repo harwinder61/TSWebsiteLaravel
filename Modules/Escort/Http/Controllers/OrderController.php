@@ -171,7 +171,7 @@ class OrderController extends Controller
                 $price = 0;
                 EmailHelper::sendDynamicEmail(
                     'ts_great_news_you_are_step_away_to_place_your_free_featured_ad',
-                    ['[USER_LOGIN]' => $user->username, '[UNCORAGING_URL]' => 'https://transbunnies.com/escort/profile'],
+                    ['[USER_LOGIN]' => $user->username, '[UNCORAGING_URL]' => env('APP_URL') . '/booking/P105'],
                     $user->email
                 );
             }

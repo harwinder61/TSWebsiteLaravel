@@ -137,7 +137,7 @@ class ScheduledInactive extends Command
 
         try {
             $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
-            $client->messages->create($phone, ['from' => env('TWILIO_PHONE_NUMBER'), 'body' => $message]);
+            // $client->messages->create($phone, ['from' => env('TWILIO_PHONE_NUMBER'), 'body' => $message]);
             SmsLogs::create([
                 'message' => $message, 
                 'to' => $phone, 

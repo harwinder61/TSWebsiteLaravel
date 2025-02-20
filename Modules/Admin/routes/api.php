@@ -211,3 +211,7 @@ Route::post('/admin/recover-password', [AdminController::class, 'recoverAdminPas
 //   return $smsService->sendSms('+441234567890', 'Test message from Twilio!');
 // });
 // Route::get('/test-48-hours', [AdminController::class, 'test48Hours']);
+Route::get('/test-inactivity-emails', function () {
+  $scheduledEmails = new ScheduledEmails();
+  return $scheduledEmails->sendInactivityEmails();
+});
