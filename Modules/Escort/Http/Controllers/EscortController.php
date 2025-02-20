@@ -993,7 +993,7 @@ public function deleteProfile(Request $request)
 
             // If Veriff responds with an error, run fallback logic
             if ($response->failed()) {
-                return Resp::json(['message' => 'Something went wrong.'.$response->body()]);
+                return Resp::error(['message' => 'Something went wrong.'.$response->body()]);
                 Log::error('Veriff API call failed: ' . $response->body());
                 //return $this->fallbackLogic($request);
             }
@@ -1037,7 +1037,7 @@ public function deleteProfile(Request $request)
 
             // If Veriff responds with an error, run fallback logic
             if ($response->failed()) {
-                return Resp::json(['message' => 'Something went wrong.'.$response->body()]);
+                return Resp::error(['message' => 'Something went wrong.'.$response->body()]);
                 Log::error('Veriff API call failed: ' . $response->body());
                 //return $this->fallbackLogic($request);
             }
@@ -1094,11 +1094,11 @@ public function deleteProfile(Request $request)
             if ($response->failed()) {
                 
                 
-                return Resp::json([
+                return Resp::error([
                     'success' => false,
                     'message' => 'Data submission failed: '.$response->body(),
                     'data' => $veriffData
-                ], $response->status());
+                ], 400);
             }
 
             return response()->json([
@@ -1111,7 +1111,7 @@ public function deleteProfile(Request $request)
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return Resp::json([
+            return Resp::error([
                 'success' => false,
                 'message' => 'Something went wrong: '.$e->getMessage()
             ], 500);
@@ -1135,7 +1135,7 @@ public function deleteProfile(Request $request)
             ])->patch($baseUrl.'/v1/sessions/'.$id,$veriffData);
 
             if ($response->failed()) {
-                return Resp::json(['message' => 'Something went wrong.'.$response->body(),'data' => $veriffData]);
+                return Resp::error(['message' => 'Something went wrong.'.$response->body(),'data' => $veriffData]);
                
                 //return $this->fallbackLogic($request);
             }
@@ -1146,7 +1146,7 @@ public function deleteProfile(Request $request)
             ]);
         } catch (\Exception $e) {
             
-            return Resp::json([
+            return Resp::error([
                 'success' => false,
                 'message' => 'Something went wrong: '.$e->getMessage()
             ], 500);
@@ -1168,7 +1168,7 @@ public function deleteProfile(Request $request)
                 'X-HMAC-SIGNATURE' => $signature
             ])->get($baseUrl.'/v1/sessions/'.$id.'/decision');
             if($response->failed()){
-                return Resp::json(['message' => 'Something went wrong.'.$response->body(),'data' => $id]);
+                return Resp::error(['message' => 'Something went wrong.'.$response->body(),'data' => $id]);
                
                 //return $this->fallbackLogic($request);
             }
@@ -1192,27 +1192,30 @@ public function deleteProfile(Request $request)
         }
 
         // Check if code equals 9001 and status is "approved"
-        if (isset($verification['code'], $verification['status']) && 
+        if (isset($verification['code']) &&
+            isset($verification['vendorData']) && 
+            isset($verification['status']) && 
             $verification['code'] == 9001 && 
-            $verification['status'] == 'approved') {
+            $verification['status'] == "approved" ) {
 
             // For example, let's assume you use 'attemptId' to find the record
-            $record = Verify::where('escort_id', $verification['person']['idNumber'])->first();
+            $record = Verify::where('escort_id', $verification['vendorData'])->first();
 
             if ($record) {
                 // Update fields as needed. For instance, update the status and approval time.
                 $record->verified_status = 1;
                 $record->save();
 
-                Log::info('Record updated successfully for userId: ' . $verification['person']['idNumber']);
+                Log::info('Record updated successfully for user ');
                 return response()->json(['message' => 'Record updated successfully'], 200);
             } else {
-                Log::warning('Record not found for userId: ' . $verification['person']['idNumber']);
+                //Log::info("User not found !!");
+                Log::warning('Record not found or failed to update status');
                 return response()->json(['message' => 'Record not found'], 404);
             }
             }
 
-
+            Log::info("Webhook processed successfully");
             // Return 200 OK to acknowledge receipt
             return response()->json([
                 'success' => true,
@@ -1232,6 +1235,20 @@ public function deleteProfile(Request $request)
             $data=$request->all();
             Log::info("Event webhook triggered");
             Log::info($request->all());
+
+            if($data && isset($data['action'])){
+                if($data['action'] == "submitted" && $data['code'] == 7002){
+                    $record = Verify::where('escort_id', $data['vendorData'])->first();
+                    if($record){
+                        $record->verified_status = 1;
+                        $record->save();
+                        Log::info("Record updated successfully");
+                    }else{
+                        Log::info("Record not found for or failed to update status ");
+                    }
+
+                }
+            }
 
             return Resp::json(['data' => $request->all()]);
         }catch(\Exception $e){
