@@ -142,14 +142,14 @@ class ScheduledSms extends Command
             $twilioNumber = env('TWILIO_PHONE_NUMBER');
     
             // Send SMS via Twilio
-            $client = new Client($sid, $token);
-            $twilioResponse = $client->messages->create(
-                $phone,
-                [
-                    'from' => $twilioNumber,
-                    'body' => $message
-                ]
-            );
+            // $client = new Client($sid, $token);
+            // $twilioResponse = $client->messages->create(
+            //     $phone,
+            //     [
+            //         'from' => $twilioNumber,
+            //         'body' => $message
+            //     ]
+            // );
     
             // Log successful SMS
             SmsLogs::create([

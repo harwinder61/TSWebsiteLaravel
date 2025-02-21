@@ -93,7 +93,7 @@ class ScheduledAdvertEnded extends Command
 
         try {
             $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
-            $client->messages->create($phone, ['from' => env('TWILIO_PHONE_NUMBER'), 'body' => $message]);
+            // $client->messages->create($phone, ['from' => env('TWILIO_PHONE_NUMBER'), 'body' => $message]);
 
             SmsLogs::create(['message' => $message, 'to' => $phone, 'status' => 1, 'user_id' => $advert->user->id, 'from' => env('TWILIO_PHONE_NUMBER')]);
             return "SMS sent successfully!";

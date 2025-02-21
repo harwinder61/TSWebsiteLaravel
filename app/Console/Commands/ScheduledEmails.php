@@ -251,7 +251,7 @@ public function sendInactivityEmails()
         // die($inactiveUsers);
 
     // Log how many inactive users were found.
-    Log::info('Found ' . $inactiveUsers->count() . ' inactive users');
+    Log::info('Found ' . $inactiveUsers->count() . ' inactive users>>>>>>>><<<<<<<<<<');
 
     $count = 1;
 
@@ -260,14 +260,13 @@ public function sendInactivityEmails()
 
         try {
             EmailHelper::sendDynamicEmail('ts_4_weeks_of_profile_inactivity',
-                ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email],
-                $user->email);
+            ['[USER_LOGIN]' => $user->username, '[USER_EMAIL]' => $user->email, '[VERIFY_EMAIL_LINK]' => env('APP_URL') . '/createAccount'],
+            $user->email);
             Log::info('Email sent to: ' . $user->email);
             $user->last_active_at = Carbon::now(); 
             $user->drop_mail = 1;  
             $user->inactivity_email_sent = 1;
             $user->save(); 
-
             Log::info('Updated last_active_at and drop_mail for user ' . $user->id . ' to: ' . $user->last_active_at . ', drop_mail: ' . $user->drop_mail);
         } catch (\Exception $e) {
             Log::error('Failed to send email to ' . $user->email . ': ' . $e->getMessage());
