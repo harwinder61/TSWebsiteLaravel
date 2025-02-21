@@ -468,10 +468,16 @@ class SubscriptionController extends Controller
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
                 ->select('subscriptions.*', 'plans.title as plan_title')
                 ->where('subscriptions.end_date', '>', now())
-                ->where('subscriptions.is_hidden', 0)
-                ->whereHas('escort.profile', function($query) {
+                ->where('subscriptions.is_hidden', 0);
+
+            if(!$request->query('ignore_verified')){
+               
+                $subscriptions->whereHas('escort.profile', function($query) {
                     $query->where('verified_status', 1);
                 });
+            }
+            
+                
             if ($request->query('slug')) {
                 $slug = $request->query('slug');
 

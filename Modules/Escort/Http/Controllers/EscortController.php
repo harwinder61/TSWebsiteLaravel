@@ -1256,7 +1256,17 @@ public function deleteProfile(Request $request)
                         }
                         Log::info("Record updated successfully");
                     }else{
-                        Log::info("Record not found!");
+                        $record = new Verify();
+                        $record->escort_id = $data['vendorData'];
+                        $record->verified_status = 1;
+                        $record->action = $data['action'];
+                        $record->save();
+                        if($profile){
+                            $profile->verified_status=1;
+                            $profile->save();
+                            Log::info("Profile verified status updated");
+                        }
+                        Log::info("Record Created and updated successfully!");
                     }
 
                 }else{
