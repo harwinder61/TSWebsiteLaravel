@@ -373,7 +373,10 @@ class SubscriptionController extends Controller
     {
         $primaryLocations = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
             ->where('subscriptions.end_date', '>', now())
-            ->where('subscriptions.is_hidden', 0);
+            ->where('subscriptions.is_hidden', 0)
+            ->whereHas('escort.profile', function($query) {
+                $query->where('verified_status', 1);
+            });
 
         $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
         if ($byPlanOrder) {
@@ -421,6 +424,9 @@ class SubscriptionController extends Controller
         $extraLocations = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
             ->where('subscriptions.end_date', '>', now())
             ->where('subscriptions.is_hidden', 0)
+            ->whereHas('escort.profile', function($query) {
+                $query->where('verified_status', 1);
+            })
             ->join(
                 \DB::raw($rawSubQuary),
                 'subscriptions.id',
@@ -1340,7 +1346,12 @@ class SubscriptionController extends Controller
                         $query->where('profile.city_id', $location->id)
                             ->orWhereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(? AS CHAR))', [$location->id]);
 
+                    })->whereHas('escort.profile', function($query) {
+                        $query->where('verified_status', 1);
                     });
+
+
+                        
 
 
 
@@ -1456,6 +1467,8 @@ class SubscriptionController extends Controller
                             ->orWhereHas('extraLocations', function ($q) use ($county) {
                                 $q->where('county_id', $county->id);
                             });
+                    })->whereHas('escort.profile', function($query) {
+                        $query->where('verified_status', 1);
                     })
                     // ->orWhereHas('extraLocations', function ($query) use ($county) {
                     //     $query->where('county_id', $county->id);
@@ -1551,6 +1564,8 @@ class SubscriptionController extends Controller
                             ->orWhereHas('extraLocations', function ($query) use ($region) {
                                 $query->where('region_id', $region->id);
                             });
+                        })->whereHas('escort.profile', function($query) {
+                            $query->where('verified_status', 1);
                         });
                     
 
@@ -1679,6 +1694,8 @@ class SubscriptionController extends Controller
                             ->orWhereHas('extraLocations', function ($query) use ($location) {
                                 $query->where('county_id', $location->id);
                             });
+                    })->whereHas('escort.profile', function($query) {
+                        $query->where('verified_status', 1);
                     });
                 
 
@@ -1770,6 +1787,8 @@ class SubscriptionController extends Controller
                             ->orWhereHas('extraLocations', function ($query) use ($region) {
                                 $query->where('region_id', $region->id);
                             });
+                    })->whereHas('escort.profile', function($query) {
+                        $query->where('verified_status', 1);
                     });
 
 
@@ -1908,6 +1927,8 @@ class SubscriptionController extends Controller
                     ->orWhereHas('extraLocations', function ($query) use ($location) {
                         $query->where('region_id', $location->id);
                     });
+            })->whereHas('escort.profile', function($query) {
+                $query->where('verified_status', 1);
             });
 
             //return Resp::success(["data" => $region_data]);
