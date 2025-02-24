@@ -3714,4 +3714,75 @@ public function newUser(Request $request)
         $email->send();
         return Resp::success(['message' => 'Password recovery token sent successfully']);
     }
+
+
+
+    public function mediaSingle(Request $request)
+    {
+        $slug=$request->input('upload_type') || $request->query('upload_type');
+        $is_temp=$request->input('is_temp');
+
+        if($slug == 'advert'){
+            $escort_id=$request->input('escort_id');
+        try {
+            $file = $request->file('file');
+            $fileExtension = $file->getClientOriginalExtension();
+            $fileName = $request->input('type') . '_' . time() . '.' . $fileExtension;
+
+            $userFolder = 'uploads/media/user_' . $escort_id;
+            $directoryPath = public_path($userFolder);
+
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }
+
+            $file->move($directoryPath, $fileName);
+            $media = new Media();
+            $media->escort_id = (int)$escort_id;
+            $media->type = $request->type;
+            $media->path = $userFolder . '/' . $fileName;
+            $media->save();
+
+            return Resp::success(['media' => $media,'slug'=>$slug]);
+        } catch (\Exception $e) {
+            return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
+        }
+        
+        }else{
+            
+        $currentUser = auth()->user();
+        if (!$currentUser) {
+            return Resp::error(['error' => 'Unauthorized'], 401);
+        }
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:jpeg,png,jpg,gif,mp4,avi,mkv|max:5000000',
+            'type' => 'required|string|in:gallery,private_gallery,promo_video',
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        try {
+            $file = $request->file('file');
+            $fileExtension = $file->getClientOriginalExtension();
+            $fileName = $request->input('type') . '_' . time() . '.' . $fileExtension;
+
+            $userFolder = 'uploads/media/user_' . $currentUser->id;
+            $directoryPath = public_path($userFolder);
+
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }
+            $file->move($directoryPath, $fileName);
+            $media = new Media();
+            $media->escort_id = $currentUser->id;
+            $media->type = $request->type;
+            $media->path = $userFolder . '/' . $fileName;
+            $media->save();
+            return Resp::success(['media' => $media]);
+        } catch (\Exception $e) {
+            return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
+        }
+        }
+    }
 }

@@ -25,18 +25,18 @@ class AuthMiddleware
             }
             if($guard=='admin' && $user->user_type!=3){
             
-                return Resp::error(['Unauthorized']);
+                return Resp::error(['Unauthorized user is not an admin']);
             }
             if($guard=='escort' && $user->user_type!=2){
                 
-                return Resp::error(['Unauthorized']);
+                return Resp::error(['Unauthorized user is not an escort']);
             }
             if($guard=='fan' && $user->user_type!=1){
                 
-                return Resp::error(['Unauthorized']);
+                return Resp::error(['Unauthorized user is not a fan']);
             }
         } catch (JWTException $e) {
-            return Resp::error(['Token is invalid'],"Token is invalid",401);
+            return Resp::error(['Token is invalid or expired : '.$e->getMessage()],"Token is invalid",401);
         }
    
         // Attach user to request

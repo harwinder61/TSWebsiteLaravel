@@ -123,6 +123,7 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
         Route::post('/message',[AdminController::class,'sendMessage']);
        Route::get('/whatsapp-logs',[AdminController::class,'whatsappLogs']);
        Route::post('/delete-fan-escort-all',[AdminController::class,'deleteFanEscortAll']);
+       Route::post('/media/single',[AdminController::class,'mediaSingle']);
     });
 
 
