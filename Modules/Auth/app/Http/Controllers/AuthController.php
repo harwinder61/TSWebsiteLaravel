@@ -28,6 +28,8 @@ use Carbon\Carbon;
 use App\Console\Commands\ScheduledEmails;
 use App\Models\User;
 use Illuminate\Support\Facades\Crypt;
+use Laravel\Socialite\Facades\Socialite;
+
 
 class AuthController extends Controller
 {
@@ -43,7 +45,9 @@ class AuthController extends Controller
             'verificationEmailToken',
             'recoverPassword',
             'resetPassword',
-            'adminLogin'
+            'adminLogin',
+            'callback',
+            'redirect'
         ]);
     }
 
@@ -855,5 +859,63 @@ class AuthController extends Controller
         $user->email_verified = true;
         $user->save();
         return view('emailTemplates.email-verify-succesfully');
+    }
+
+   
+
+    public function redirect()
+    {
+        return Socialite::driver('x')->redirect();
+    }
+
+    public function callback()
+    {
+        try {
+            $xUser = Socialite::driver('x')->user();
+            //return Resp::json(['data' => 'redirect twitter','user' => $xUser]);
+            Log::info([$xUser]);
+            // $user = User::UpdateOrCreate([
+            //      'twitter_id' => $xUser->id,
+            //  ], [
+            //      'name' => $xUser->name,
+            //      'username' => $xUser->user->username,
+            //      'email' => $xUser->email,
+            //      'password' => bcrypt(Str::random(24)),
+            //  ]);
+            $username = $xUser->nickname;
+             $user = AuthUser::where('twitter_id', $xUser->id)->first();
+             if(!$user){
+                $user = AuthUser::where('username', $username)->first();
+             }
+             if(!$user){
+                $user = AuthUser::create([
+                    'twitter_id' => $xUser->id,
+                    'name' => $xUser->name,
+                    'username' => $username,
+                    'email' => $xUser->email??Str::random(10) . '@gmail.com',
+                    'password' => bcrypt(Str::random(24)),
+                    'user_type'=>2
+                ]);
+             }
+
+             //Auth::login($user);
+            // Generate JWT token
+            $token = JWTAuth::fromUser($user);
+
+
+            // return view('oauth-callback', [
+            //     'token' => $user->createToken('x-token')->plainTextToken,
+            // ]);
+            // Redirect to React app with token
+            return redirect()->to(env('WEBAPP_URL')."/login?token={$token}&user={$user}");
+
+            
+        } catch (\Exception $e) {
+            return redirect()->to(env('WEBAPP_URL')."/login");
+            return Resp::error(['error' => 'An error occurred while logging in with Twitter'.$e->getMessage()], 401);
+            
+
+
+        }
     }
 }

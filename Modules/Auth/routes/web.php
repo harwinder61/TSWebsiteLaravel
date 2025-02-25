@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Auth\Http\Controllers\AuthController;
+use Modules\Auth\app\Http\Controllers\AuthController;
 
 
 /*
@@ -19,4 +19,7 @@ Route::group([], function () {
     //Route::resource('auth', AuthController::class)->names('auth');
 
 });
+
+Route::get('/auth/x/redirect', [AuthController::class, 'redirect']);
+Route::get('/auth/x/callback', [AuthController::class, 'callback']);
 
