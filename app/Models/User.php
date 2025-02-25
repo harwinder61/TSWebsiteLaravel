@@ -39,7 +39,8 @@ class User extends Authenticatable
         'deleted_at',
         'deleted_on',
         'account_origin',
-        'secret'
+        'secret',
+        'twitter_id'
     ];
     protected $casts=[
         'user_type'=>'integer',

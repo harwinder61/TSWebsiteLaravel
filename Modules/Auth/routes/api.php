@@ -23,6 +23,9 @@ Route::post('register-with-gmail', [AuthController::class, 'registerWithGmail'])
 Route::get('/email/change/confirm/{token}', [AuthController::class, 'backendToken']);
 Route::post('admin-login', [AuthController::class, 'adminLogin']);
 
+// Route::get('auth/x/redirect', [Controller::class, 'redirect']);
+// Route::get('auth/x/callback', [XLoginController::class, 'callback']);
+
 
 
 

@@ -53,6 +53,11 @@ return [
     'secret' => env('VERIFF_SECRET_KEY'),
     'base_url' => env('VERIFF_BASE_URL'),
 ],
+'x' => [
+    'client_id' => env('X_CLIENT_ID'),
+    'client_secret' => env('X_CLIENT_SECRET'),
+    'redirect' => env('X_REDIRECT_URI'),
+],
 
 
 

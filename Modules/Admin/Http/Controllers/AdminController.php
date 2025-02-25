@@ -1974,6 +1974,10 @@ public function newUser(Request $request)
             return Resp::error(['message' => $validator->errors()]);
         }
         $verify = ModelsVerify::where('escort_id', $id)->first();
+        $profile = Profile::where('escort_id', $id)->first();
+        if(!$profile){
+            return Resp::error(['message' => 'Profile not found']);
+        }
 
 
         if (!$verify) {
@@ -1982,11 +1986,14 @@ public function newUser(Request $request)
 
         if ($request->action == 1) {
             $verify->verified_status = 1;
+            $profile->verified_status = 1;
         } elseif ($request->action == 0) {
             $verify->verified_status = 4;
+            $profile->verified_status =4;
         }
         //$verify->escort()->update(['verified_status' => $verify->verified_status]);
         $verify->save();
+        $profile->save();
         $escort_profile = BaseProfile::where('escort_id', $id)->update(['verified_status' => $verify->verified_status]);
         return Resp::success(['message' => 'Verification status updated successfully']);
     }
@@ -3706,5 +3713,76 @@ public function newUser(Request $request)
         $email->setBodyRecoveryEmail('recover-password-admin', ['recovery_token' => $token, 'user' => $user]);
         $email->send();
         return Resp::success(['message' => 'Password recovery token sent successfully']);
+    }
+
+
+
+    public function mediaSingle(Request $request)
+    {
+        $slug=$request->input('upload_type') || $request->query('upload_type');
+        $is_temp=$request->input('is_temp');
+
+        if($slug == 'advert'){
+            $escort_id=$request->input('escort_id');
+        try {
+            $file = $request->file('file');
+            $fileExtension = $file->getClientOriginalExtension();
+            $fileName = $request->input('type') . '_' . time() . '.' . $fileExtension;
+
+            $userFolder = 'uploads/media/user_' . $escort_id;
+            $directoryPath = public_path($userFolder);
+
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }
+
+            $file->move($directoryPath, $fileName);
+            $media = new Media();
+            $media->escort_id = (int)$escort_id;
+            $media->type = $request->type;
+            $media->path = $userFolder . '/' . $fileName;
+            $media->save();
+
+            return Resp::success(['media' => $media,'slug'=>$slug]);
+        } catch (\Exception $e) {
+            return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
+        }
+        
+        }else{
+            
+        $currentUser = auth()->user();
+        if (!$currentUser) {
+            return Resp::error(['error' => 'Unauthorized'], 401);
+        }
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:jpeg,png,jpg,gif,mp4,avi,mkv|max:5000000',
+            'type' => 'required|string|in:gallery,private_gallery,promo_video',
+        ]);
+
+        if ($validator->fails()) {
+            return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        }
+        try {
+            $file = $request->file('file');
+            $fileExtension = $file->getClientOriginalExtension();
+            $fileName = $request->input('type') . '_' . time() . '.' . $fileExtension;
+
+            $userFolder = 'uploads/media/user_' . $currentUser->id;
+            $directoryPath = public_path($userFolder);
+
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }
+            $file->move($directoryPath, $fileName);
+            $media = new Media();
+            $media->escort_id = $currentUser->id;
+            $media->type = $request->type;
+            $media->path = $userFolder . '/' . $fileName;
+            $media->save();
+            return Resp::success(['media' => $media]);
+        } catch (\Exception $e) {
+            return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
+        }
+        }
     }
 }

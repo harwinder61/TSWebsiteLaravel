@@ -998,8 +998,8 @@ public function deleteProfile(Request $request)
 
             // If Veriff responds with an error, run fallback logic
             if ($response->failed()) {
-                return Resp::error(['message' => 'Something went wrong.'.$response->body()]);
-                Log::error('Veriff API call failed: ' . $response->body());
+                return Resp::error(['message' => 'Something went wrong.'.$response->json()]);
+                Log::error('Veriff API call failed: ' . $response->json());
                 //return $this->fallbackLogic($request);
             }
 
@@ -1042,7 +1042,7 @@ public function deleteProfile(Request $request)
 
             // If Veriff responds with an error, run fallback logic
             if ($response->failed()) {
-                return Resp::error(['message' => 'Something went wrong.'.$response->body()]);
+                return Resp::error(['message' => 'Something went wrong.'.$response->json()]);
                 Log::error('Veriff API call failed: ' . $response->body());
                 //return $this->fallbackLogic($request);
             }
@@ -1101,7 +1101,7 @@ public function deleteProfile(Request $request)
                 
                 return Resp::error([
                     'success' => false,
-                    'message' => 'Data submission failed: '.$response->body(),
+                    'message' => 'Data submission failed: '.$response->json(),
                     'data' => $veriffData
                 ], 400);
             }
@@ -1140,7 +1140,7 @@ public function deleteProfile(Request $request)
             ])->patch($baseUrl.'/v1/sessions/'.$id,$veriffData);
 
             if ($response->failed()) {
-                return Resp::error(['message' => 'Something went wrong.'.$response->body(),'data' => $veriffData]);
+                return Resp::error(['message' => 'Something went wrong.'.$response->json(),'data' => $veriffData]);
                
                 //return $this->fallbackLogic($request);
             }
@@ -1173,7 +1173,7 @@ public function deleteProfile(Request $request)
                 'X-HMAC-SIGNATURE' => $signature
             ])->get($baseUrl.'/v1/sessions/'.$id.'/decision');
             if($response->failed()){
-                return Resp::error(['message' => 'Something went wrong.'.$response->body(),'data' => $id]);
+                return Resp::error(['message' => 'Something went wrong.'.$response->json(),'data' => $id]);
                
                 //return $this->fallbackLogic($request);
             }
@@ -1256,7 +1256,17 @@ public function deleteProfile(Request $request)
                         }
                         Log::info("Record updated successfully");
                     }else{
-                        Log::info("Record not found!");
+                        $record = new Verify();
+                        $record->escort_id = $data['vendorData'];
+                        $record->verified_status = 1;
+                        $record->action = $data['action'];
+                        $record->save();
+                        if($profile){
+                            $profile->verified_status=1;
+                            $profile->save();
+                            Log::info("Profile verified status updated");
+                        }
+                        Log::info("Record Created and updated successfully!");
                     }
 
                 }else{
