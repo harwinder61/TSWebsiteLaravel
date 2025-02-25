@@ -92,7 +92,6 @@ class AuthController extends Controller
         //     $decrypted_password = Crypt::decryptString($user->secret);
         //     Log::info('Decrypted Password: ' . $decrypted_password);
         // }
-    
         // Send verification email
         EmailHelper::sendDynamicEmail(
             'ts_email_verification',
@@ -103,13 +102,11 @@ class AuthController extends Controller
             ],
             $user->email
         );
-    
         // Create user profile
         $escort = Profile::create([
             'name' => $user->username,
             'escort_id' => $user->id,
         ]);
-    
         // Return success response
         return Resp::success(['message' => 'User registered successfully', 'response' => $user], 201);
     }
