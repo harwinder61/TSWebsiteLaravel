@@ -630,6 +630,91 @@ public function deleteProfile(Request $request)
 //     }
 
 
+// public function updateMedia(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'gallery' => 'array',                   
+//         'gallery.*' => 'exists:media,id',      
+//         'private_gallery' => 'array',            
+//         'private_gallery.*' => 'exists:media,id', 
+//         'promo_video' => 'exists:media,id',                                                                                                             
+//         'description' => 'nullable|string',
+//     ]);
+
+//     // Return validation errors if any
+//     if ($validator->fails()) {
+//         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+//     }
+
+//     // $promo_type = null;
+//     // if ($promo_video = " ") {
+//     //     $promo_type = 'promo_video';
+//     // }
+
+
+
+//     $user = auth()->user();
+//     $profile = Profile::where('escort_id', $user->id)->first(); // Initialize profile here
+
+//     if ($request->has('gallery')) {
+//         $galleryIds = collect($request->input('gallery'))->flatten()->toArray();
+        
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'gallery')
+//             ->whereIn('id', $galleryIds)
+//             ->update(['is_temp' => false]);
+
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'gallery')
+//             ->whereNotIn('id', $galleryIds)
+//             ->forceDelete();
+//     }
+
+//     if ($request->has('private_gallery')) {
+//         $privateGalleryIds = collect($request->input('private_gallery'))->flatten()->toArray();
+        
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'private_gallery')
+//             ->whereIn('id', $privateGalleryIds)
+//             ->update(['is_temp' => false]);
+
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'private_gallery')
+//             ->whereNotIn('id', $privateGalleryIds)
+//             ->forceDelete();
+//     }
+
+//     if ($request->has('promo_video') && $request->input('promo_video') !== null) {
+//         $promoVideoId = $request->input('promo_video');
+        
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'promo_video')
+//             ->where('id', $promoVideoId)
+//             ->update(['is_temp' => false]);
+
+//         Media::where('escort_id', $user->id)
+//             ->where('type', 'promo_video')
+//             ->where('id', '!=', $promoVideoId)
+//             ->forceDelete();
+//     }
+
+//     if ($request->has('description')) {
+//         if ($profile) {
+//             $profile->description = $request->input('description');
+//             $profile->save();
+//         }
+//     }
+
+//     if ($request->has('gallery') && $request->has('private_gallery') && $request->has('promo_video') && $request->has('description')) {
+//         if ($profile) {
+//             $profile->is_media = 1;
+//             $profile->save();
+//         }
+//     }
+
+//     return Resp::success(['message' => 'Media updated successfully', 'profile' => $profile]);
+// }
+
 public function updateMedia(Request $request)
 {
     $validator = Validator::make($request->all(), [
@@ -637,7 +722,7 @@ public function updateMedia(Request $request)
         'gallery.*' => 'exists:media,id',      
         'private_gallery' => 'array',            
         'private_gallery.*' => 'exists:media,id', 
-        'promo_video' => 'exists:media,id',                                                                                                             
+        'promo_video' => 'nullable|exists:media,id', // Updated to allow null
         'description' => 'nullable|string',
     ]);
 
@@ -677,7 +762,7 @@ public function updateMedia(Request $request)
             ->forceDelete();
     }
 
-    if ($request->has('promo_video')) {
+    if ($request->has('promo_video') && $request->input('promo_video') !== null) {
         $promoVideoId = $request->input('promo_video');
         
         Media::where('escort_id', $user->id)
