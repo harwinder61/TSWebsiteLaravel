@@ -63,6 +63,7 @@ use Modules\Admin\app\Models\WhatsappLogs;
 use App\Mail\WhatsappHelper;
 use Illuminate\Support\Facades\Crypt;
 use Modules\Admin\app\Models\SmsLogs;
+use App\Models\Tslogo;
 
 
 
@@ -80,8 +81,42 @@ class AdminController extends Controller
         $this->smsService = $smsService;
     }   
 
-
-
+    public function tsLogo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:5000000',
+        ]);
+    
+        if ($validator->fails()) {
+            return Resp::error(['message' => $validator->errors()->first()]);
+        }
+    
+        if ($request->hasFile('logo')) {
+            $logo = $request->file('logo');
+            $logoName = 'logo_' . time() . '.' . $logo->getClientOriginalExtension();
+    
+            $userFolder = 'uploads/logos/user_' ;
+    
+            $directoryPath = public_path($userFolder);
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }
+    
+            $logo->move($directoryPath, $logoName);
+    
+            // Save the logo information in the ts_logo table
+            $tsLogo = new Tslogo();
+            $tsLogo->logo_path = $userFolder . '/' . $logoName; // assuming you have a logo_path field
+            $tsLogo->save();
+    
+            return Resp::success([
+                'message' => 'Logo uploaded successfully',
+                'logo_path' => $userFolder . '/' . $logoName,
+            ]);
+        }
+    
+        return Resp::error(['message' => 'No logo file found'], 400);
+    }
 
     public function userDelete($id, Request $request)
     {
@@ -343,6 +378,104 @@ class AdminController extends Controller
 
 
 
+// public function newUser(Request $request)
+// {   
+//     // Validate the incoming request
+//     $validator = Validator::make($request->all(), [
+//         'username' => 'required|string|max:255|unique:users,username',
+//         'email' => 'required|string|email|max:255|unique:users,email',
+//         'password' => 'required|string|min:8',
+//         'user_type' => 'required|integer|in:1,2,3',
+//         'first_name' => 'required|string|max:255',
+//         'last_name' => 'required|string|max:255',
+//         'phone_number' => 'nullable',
+//         'account_origin' => 'string|in:admin,site',
+//         'verified_status' => 'integer|in:0,1',
+//         // 'sms' => 'nullable|integer|in:0,1'
+//     ]);
+
+//     if ($validator->fails()) {
+//         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+//     }
+
+//     // Determine status for the new user
+//     $status = $request->sms;
+
+//     $verification_token = Str::random(30);
+//     $email_verified_code = $request->user_type == 2 ? 0 : 1;
+
+//     $verified_status = $request->verified_status;
+//     // Create the user
+//     $user = AuthUser::create([
+//         'username' => $request->username,
+//         'email' => $request->email,
+//         'password' => Hash::make($request->password),
+//         'user_type' => $request->user_type,
+//         'firstname' => $request->first_name,
+//         'lastname' => $request->last_name,
+//         'email_verified' => $email_verified_code,
+//         'phone_number' => $request->phone_number,
+//         'account_origin' => $request->account_origin,
+//         'verification_token' => $verification_token,
+//         'status' => $status,
+//         // 'secret' => $request->user_type == 2 ? Crypt::encryptString($request->password) : null, // Encrypt password for user_type 2
+//     ]);
+
+//     $user_id = $user->id;
+//     $escort = Profile::create([
+//         'name' => $user->username,
+//         'escort_id' => $user->id,
+//         'phone_number' => $request->phone_number,
+//         'verified_status' => $verified_status
+//     ]);
+
+//     // Prepare dynamic data for the SMS template
+//     $dynamicData = [
+//         '[USER_LOGIN]' => $user->username,
+//         '[LOGIN_URL]' => env('WEBAPP_URL') . "/account-verification?token=" . $verification_token,
+//         '[USER_PASSWORD]' => $request->password,
+//         '[USER_NAME]' => $user->firstname . ' ' . $user->lastname
+//     ];
+
+//     // // Send SMS if SMS is requested (sms == 1)
+//     // if ($request->sms == 1) {
+//     //     if ($request->user_type == 2) {
+//     //         $recipientPhone = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER');
+            
+//     //         // Pass the user object as the fourth parameter
+//     //         $smsResponse = SmsHelper::dynamicsendSms(
+//     //             'admin_new_user_added',
+//     //             $dynamicData,
+//     //             $recipientPhone,
+//     //             $user , // Pass the user object here,
+//     //             true
+//     //         );
+
+//     //         Log::info('SMS sending attempt for user ' . $user->id . ': ' . $smsResponse);
+//     //     }
+//     // }
+
+//     // Handle email notification for user type 3
+//     if ($request->user_type == 3) {
+//         $dynamicData = [
+//             '[USER_LOGIN]' => $user->username,
+//             '[USER_PASSWORD]' => $request->password,
+//             '[LOGIN_URL]' => env('LOGIN_URL')
+//         ];
+//         try {
+//             EmailHelper::sendDynamicEmail(
+//                 'ts_admin_welcome_email',
+//                 $dynamicData,
+//                 $user->email
+//             );
+//             Log::info('Verification email sent to: ' . $user->email);
+//         } catch (\Exception $e) {
+//             Log::error('Failed to send verification email to ' . $user->email . ': ' . $e->getMessage());
+//         }
+//     }
+//     return Resp::success(['message' => 'User created successfully', 'user' => $user]);
+// }
+
 public function newUser(Request $request)
 {   
     // Validate the incoming request
@@ -355,18 +488,30 @@ public function newUser(Request $request)
         'last_name' => 'required|string|max:255',
         'phone_number' => 'nullable',
         'account_origin' => 'string|in:admin,site',
-        // 'sms' => 'nullable|integer|in:0,1'
+        'verify' => 'nullable|integer|in:0,1',
     ]);
 
     if ($validator->fails()) {
         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
 
+
+
+    // Log the incoming request data
+    Log::info('Request Data: ', $request->all());
+
     // Determine status for the new user
     $status = $request->sms;
-
     $verification_token = Str::random(30);
     $email_verified_code = $request->user_type == 2 ? 0 : 1;
+    $verified_status = $request->verify;
+
+    if($verified_status == " "){
+        $verified_status = 0;
+    }
+
+    // Log the verified status
+    Log::info('Verified Status: ', ['verified_status' => $verified_status]);
 
     // Create the user
     $user = AuthUser::create([
@@ -381,15 +526,22 @@ public function newUser(Request $request)
         'account_origin' => $request->account_origin,
         'verification_token' => $verification_token,
         'status' => $status,
-        // 'secret' => $request->user_type == 2 ? Crypt::encryptString($request->password) : null, // Encrypt password for user_type 2
     ]);
 
     $user_id = $user->id;
     $escort = Profile::create([
         'name' => $user->username,
         'escort_id' => $user->id,
-        'phone_number' => $request->phone_number
+        'phone_number' => $request->phone_number,
+        'verified_status' => $verified_status
     ]);
+
+    // Log if profile creation failed
+    if (!$escort) {
+        Log::error('Failed to create profile for user ID: ' . $user->id);
+    } else {
+        Log::info('Profile created successfully for user ID: ' . $user->id);
+    }
 
     // Prepare dynamic data for the SMS template
     $dynamicData = [
@@ -398,24 +550,6 @@ public function newUser(Request $request)
         '[USER_PASSWORD]' => $request->password,
         '[USER_NAME]' => $user->firstname . ' ' . $user->lastname
     ];
-
-    // // Send SMS if SMS is requested (sms == 1)
-    // if ($request->sms == 1) {
-    //     if ($request->user_type == 2) {
-    //         $recipientPhone = !empty($request->phone_number) ? $request->phone_number : env('TWILIO_PHONE_NUMBER');
-            
-    //         // Pass the user object as the fourth parameter
-    //         $smsResponse = SmsHelper::dynamicsendSms(
-    //             'admin_new_user_added',
-    //             $dynamicData,
-    //             $recipientPhone,
-    //             $user , // Pass the user object here,
-    //             true
-    //         );
-
-    //         Log::info('SMS sending attempt for user ' . $user->id . ': ' . $smsResponse);
-    //     }
-    // }
 
     // Handle email notification for user type 3
     if ($request->user_type == 3) {
@@ -437,6 +571,7 @@ public function newUser(Request $request)
     }
     return Resp::success(['message' => 'User created successfully', 'user' => $user]);
 }
+
 
 
 
