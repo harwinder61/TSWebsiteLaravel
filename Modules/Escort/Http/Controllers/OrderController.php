@@ -110,9 +110,10 @@ class OrderController extends Controller
                         ->orWhere(function ($q) use ($start_date2, $end_date2) {
                             $q->whereBetween('start_date', [$start_date2, $end_date2]);
                         });
-                })->get();
-
-            if ($weekly_sub_exists->isNotEmpty()) {
+                })->exists();
+                // ->get();
+                // if ($weekly_sub_exists->isNotEmpty())
+            if ($weekly_sub_exists) {
                 return Resp::error(['error' => 'Weekly subscription is already owned by someone']);
             }
         }
