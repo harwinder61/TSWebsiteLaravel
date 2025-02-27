@@ -33,4 +33,6 @@ Route::get('all-user-list',[SubscriptionController::class,'getAllUserList']);
 Route::get('/dynamic-pages-list',[FanController::class,'getDynamicPagesList']);
 Route::post('/get-profiles',[FanController::class,'getMultipleProfiles']);
 
+Route::get('ts-week-subscriptions',[SubscriptionController::class,'getTSWeekSubscriptions']);
+
 

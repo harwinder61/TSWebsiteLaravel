@@ -25,7 +25,8 @@ class SubscriptionController extends Controller
             'locations',
             'slugToLocation',
             'listReviews',
-            'getEscortFanlist'
+            'getEscortFanlist',
+            'getTSWeekSubscriptions'
         ]);
     }
 
@@ -2021,5 +2022,42 @@ class SubscriptionController extends Controller
         $region['subscription_count'] = $region_data->subscription_count;
 
         return Resp::success(['location_type' => $location->type, 'data' => ['region' => $region]]);
+    }
+
+
+
+
+
+
+    public function getTSWeekSubscriptions(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            $subscriptions = EscortSubscription::query();
+
+            $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
+                ->select('subscriptions.*', 'plans.title as plan_title')
+                ->where('subscriptions.end_date', '>', now())
+                ->where('subscriptions.is_hidden', 0)
+                ->where('subscriptions.plan_code',"P101");
+
+            $result = $subscriptions->with([
+                'escort',
+                // 'escort.profile.county',
+                // 'escort.profile.city',
+                // 'escort.profile.region',
+                // 'escort.profile.reviews',
+                // 'escort.profile.media',
+                'escort.profile.rates',
+                'orders',
+                'media'
+            ])->get();
+
+            return Resp::success([
+                "list" => $result,
+                ]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => 'Something went wrong' . $e->getMessage()]);
+        }
     }
 }
