@@ -101,6 +101,7 @@ class OrderController extends Controller
         if ($request->input('plan_code') == "P101") {
             $weekly_sub_exists = Subscription::where('plan_code', $request->input('plan_code'))
                 ->where('status', 'ACTIVE')
+                ->where('end_date', '>', now())
                 ->where(function ($query) use ($start_date2, $end_date2) {
                     $query->where(function ($q) use ($start_date2, $end_date2) {
                         $q->where('start_date', '<=', $end_date2)
