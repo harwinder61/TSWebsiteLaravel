@@ -104,8 +104,8 @@ class OrderController extends Controller
                 ->where('end_date', '>', now())
                 ->where(function ($query) use ($start_date2, $end_date2) {
                     $query->where(function ($q) use ($start_date2, $end_date2) {
-                        $q->where('start_date', '<=', $end_date2)
-                            ->where('end_date', '>=', $start_date2);
+                        $q->where('start_date', '<', $end_date2)
+                            ->where('end_date', '>', $start_date2);
                     })
                         ->orWhere(function ($q) use ($start_date2, $end_date2) {
                             $q->whereBetween('start_date', [$start_date2, $end_date2]);
