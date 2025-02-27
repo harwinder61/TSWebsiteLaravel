@@ -2039,7 +2039,8 @@ class SubscriptionController extends Controller
                 ->select('subscriptions.*', 'plans.title as plan_title')
                 ->where('subscriptions.end_date', '>', now())
                 ->where('subscriptions.is_hidden', 0)
-                ->where('subscriptions.plan_code',"P101");
+                ->where('subscriptions.plan_code',"P101")
+                ->where('subscriptions.status','ACTIVE');
 
             $result = $subscriptions->with([
                 'escort',
