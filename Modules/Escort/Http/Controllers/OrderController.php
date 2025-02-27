@@ -71,7 +71,9 @@ class OrderController extends Controller
         $sub_exists = Subscription::where('escort_id', $user->id)->first();
         $days = $plan->days;
         $end_date = date('Y-m-d', strtotime($request->input('start_date') . " + $days days"));
-
+        if ($request->input('plan_code') == 'P101') {
+            $end_date = date('Y-m-d', strtotime($end_date . " -1 day")); // Subtract one day for p101 plan_code
+        }
 
         $subscription_count = Subscription::where('plan_code', $request->input('plan_code'))
             ->where('status', 'ACTIVE')
@@ -114,7 +116,12 @@ class OrderController extends Controller
                 // ->get();
                 // if ($weekly_sub_exists->isNotEmpty())
             if ($weekly_sub_exists) {
-                return Resp::error(['error' => 'Weekly subscription is already owned by someone']);
+                return Resp::error([
+                'error' => 'Weekly subscription is already owned by someone',
+                'payload'=>[
+                    'start_date'=>$start_date2,
+                    'end_date'=>$end_date2
+                ]]);
             }
         }
 
