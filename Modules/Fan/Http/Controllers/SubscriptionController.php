@@ -785,13 +785,24 @@ class SubscriptionController extends Controller
             }
 
             $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            $currentWeek = $request->query('current_week', false); // Check if "current_week" is passed
             if ($byPlanOrder) {
+
+                $whereClause = "";
+            // Add current week filter ONLY if "current_week" is passed
                 // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                 // as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
-                $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
-                as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+                // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
+                if($currentWeek){
+                    $rawSubQuary = '(SELECT escort_id, MIN(end_date) as latest_end_date, MIN(id)
+                    as max_id FROM subscriptions WHERE end_date > NOW() GROUP BY escort_id, plan_code) as latest_subscription';
 
+                }else{
+                    $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                    as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
 
+                }
             } else {
                 // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                 // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
