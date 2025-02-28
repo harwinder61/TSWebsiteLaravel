@@ -820,24 +820,20 @@ class SubscriptionController extends Controller
                 ) as latest_subscription';
             }
 
+            if ($byPlanOrder && $currentWeek) {
+                // Focus ONLY on P101: Oldest subscription in current/future weeks
+                $subscriptions->where('plan_code', 'P101')
+                              ->orderBy('start_date', 'asc'); // Oldest first
+            }else{
+                $subscriptions->join(
+                    \DB::raw($rawSubQuary),
+                    'subscriptions.id',
+                    '=',
+                    'latest_subscription.max_id'
 
-
-
-
-
-
-
-
-
-            $subscriptions->join(
-                \DB::raw($rawSubQuary),
-                'subscriptions.id',
-                '=',
-                'latest_subscription.max_id'
-
-            )
-                ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-
+                )->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
+            }
+            
             $perPage = $request->query('per_page', 18);
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
