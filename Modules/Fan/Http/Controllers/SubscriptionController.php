@@ -825,7 +825,7 @@ class SubscriptionController extends Controller
                 ) as latest_subscription';
             }
 
-
+            if(!$currentWeek){
                 $subscriptions->join(
                     \DB::raw($rawSubQuary),
                     'subscriptions.id',
@@ -833,7 +833,7 @@ class SubscriptionController extends Controller
                     'latest_subscription.max_id'
 
                 )->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-            
+                }
 
             $perPage = $request->query('per_page', 18);
             $page = $request->query('page', 1);
