@@ -786,23 +786,28 @@ class SubscriptionController extends Controller
 
             $byPlanOrder = filter_var($request->query('byPlanOrder'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             $currentWeek = $request->query('current_week', false); // Check if "current_week" is passed
+
+
+            if($currentWeek){
+                $weekStart = now()->startOfWeek(); // Monday 
+                $weekEnd = now()->endOfWeek(); // Sunday
+                //die($weekStart->toDateTimeString() . ' - ' . $weekEnd->toDateTimeString());
+                $subscriptions->where('subscriptions.plan_code', 'P101')
+                ->where('subscriptions.start_date', '<=', $weekEnd) // Starts before the week ends
+                ->where('subscriptions.end_date', '>=', $weekStart); // Ends after the week starts
+        
+            }
+
+            
             if ($byPlanOrder) {
 
-                $whereClause = "";
-            // Add current week filter ONLY if "current_week" is passed
                 // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                 // as max_id FROM subscriptions GROUP BY escort_id) as latest_subscription';
                 // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                 // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
-                if($currentWeek){
-                    $rawSubQuary = '(SELECT escort_id, MIN(end_date) as latest_end_date, MIN(id)
-                    as max_id FROM subscriptions WHERE end_date > NOW() GROUP BY escort_id, plan_code) as latest_subscription';
-
-                }else{
-                    $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
+                $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                     as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
-
-                }
+                
             } else {
                 // $rawSubQuary = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
                 // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
@@ -820,11 +825,7 @@ class SubscriptionController extends Controller
                 ) as latest_subscription';
             }
 
-            if ($byPlanOrder && $currentWeek) {
-                // Focus ONLY on P101: Oldest subscription in current/future weeks
-                $subscriptions->where('plan_code', 'P101')
-                              ->orderBy('start_date', 'asc'); // Oldest first
-            }else{
+
                 $subscriptions->join(
                     \DB::raw($rawSubQuary),
                     'subscriptions.id',
@@ -832,8 +833,8 @@ class SubscriptionController extends Controller
                     'latest_subscription.max_id'
 
                 )->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id');
-            }
             
+
             $perPage = $request->query('per_page', 18);
             $page = $request->query('page', 1);
             $offset = ($page - 1) * $perPage;
