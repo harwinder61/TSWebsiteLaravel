@@ -488,7 +488,7 @@ public function newUser(Request $request)
         'last_name' => 'required|string|max:255',
         'phone_number' => 'nullable',
         'account_origin' => 'string|in:admin,site',
-        'verify' => 'nullable|integer|in:0,1',
+        // 'verify' => 'nullable|integer|in:0,1',
     ]);
 
     if ($validator->fails()) {
@@ -533,7 +533,7 @@ public function newUser(Request $request)
         'name' => $user->username,
         'escort_id' => $user->id,
         'phone_number' => $request->phone_number,
-        'verified_status' => $verified_status
+        // 'verified_status' => $verified_status
     ]);
 
     // Log if profile creation failed
