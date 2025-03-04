@@ -506,9 +506,9 @@ public function newUser(Request $request)
     $email_verified_code = $request->user_type == 2 ? 0 : 1;
     $verified_status = $request->verify;
 
-    if($verified_status == " "){
-        $verified_status = 0;
-    }
+    // if($verified_status == " "){
+    //     $verified_status = 0;
+    // }
 
     // Log the verified status
     Log::info('Verified Status: ', ['verified_status' => $verified_status]);
