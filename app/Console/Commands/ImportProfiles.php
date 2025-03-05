@@ -39,7 +39,7 @@ class ImportProfiles extends Command
             return 1;
         }
 
-        $total = 786; // total number of items, e.g., number of rows in CSV
+        $total = 4; // total number of items, e.g., number of rows in CSV
         $bar = $this->output->createProgressBar($total);
 
         $priceMapping = [
@@ -286,6 +286,7 @@ class ImportProfiles extends Command
                 }
 
                 if($i==4){
+                    break;
                     //print_r($formattedRates);
                     //print_r($rowData);
                     //$this->info($username."   ".$email);
