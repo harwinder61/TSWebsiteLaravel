@@ -285,7 +285,7 @@ class ImportProfiles extends Command
                     $this->error("Failed to create user for row : " . $i);
                 }
 
-                if($i==2){
+                if($i==4){
                     //print_r($formattedRates);
                     //print_r($rowData);
                     //$this->info($username."   ".$email);
