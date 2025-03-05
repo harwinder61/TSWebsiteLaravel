@@ -9,6 +9,7 @@ use App\Models\Media;
 use Illuminate\Support\Facades\Hash;
 use Modules\Escort\app\Models\ProfileRates;
 use App\Models\Location;
+use Illuminate\Support\Facades\File;
 
 class ImportProfiles extends Command
 {
@@ -248,17 +249,49 @@ class ImportProfiles extends Command
                 $imageLinks = explode(',', $rowData['imagelinks']); // Convert to array
 
                 if($profile){
+
                     foreach ($imageLinks as $link) {
                         $link = trim($link); // Trim whitespace
-                    
-                        // Create a media entry for each image link
+                
+                        // Extract filename from the URL
+                        $imageName = basename($link);
+                        $userFolder = 'uploads/media/user_' . $profile->escort_id; // Use the escort ID
+                
+                        // Create the directory if it doesn't exist
+                        $directoryPath = public_path($userFolder);
+                        if (!File::isDirectory($directoryPath)) {
+                            File::makeDirectory($directoryPath, 0755, true);
+                        }
+                
+                        // Download the image from the URL
+                        $imageData = file_get_contents($link);
+                        //Log::info('Image downloaded: ' . $link);
+                        if ($imageData === false) {
+                            continue; // Skip this image if download fails
+                        }
+                
+                        // Save the image to the server
+                        file_put_contents($directoryPath . '/' . $imageName, $imageData);
+                
+                        // Create a new media entry
                         Media::create([
-                            'type' => 'gallery', // Assuming type is 'gallery'
-                            'path' => $link, // The image URL
-                            'is_temp'=>0,
-                            'escort_id' => $profile->escort_id, // Assuming you want to link it to the user
+                            'type' => 'gallery', // Set the type accordingly
+                            'path' => $userFolder . '/' . $imageName, // Store the path as in the API
+                            'is_temp' => 0,
+                            'escort_id' => $profile->escort_id, // Link it to the user
                         ]);
                     }
+                    // foreach ($imageLinks as $link) {
+                    //     $link = trim($link); // Trim whitespace
+                    
+                    //     // Create a media entry for each image link
+                    //     Media::create([
+                    //         'type' => 'gallery', // Assuming type is 'gallery'
+                    //         'path' => $link, // The image URL
+                    //         'is_temp'=>0,
+                    //         'escort_id' => $profile->escort_id, // Assuming you want to link it to the user
+                    //     ]);
+                    // }
                 }
 
 
@@ -282,7 +315,7 @@ class ImportProfiles extends Command
                     ]);
                 }
                 }catch(\Exception $e){
-                    $this->error("Failed to create user for row : " . $i);
+                    $this->error("Failed to create user for row : " . $i. ' Error: ' . $e->getMessage());
                 }
 
                 if($i==4){
