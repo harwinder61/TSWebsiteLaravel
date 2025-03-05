@@ -158,6 +158,7 @@ class ImportProfiles extends Command
                         'email' => $email,
                         'password' => Hash::make("12345678"),
                         'user_type' => 2,
+                        'email_verified'=>1
                     ]);
                     if(!$user){
                         $this->error("Failed to create user for row : " . $i);
