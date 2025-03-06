@@ -18,7 +18,7 @@ class ImportProfiles extends Command
      *
      * @var string
      */
-    protected $signature = 'app:import-profiles';
+    protected $signature = 'app:import-profiles {limit=4 : The number of profiles to import}';
 
     /**
      * The console command description.
@@ -40,7 +40,9 @@ class ImportProfiles extends Command
             return 1;
         }
 
-        $total = 4; // total number of items, e.g., number of rows in CSV
+        $i=1;
+        $limit=$this->argument('limit');
+        $total = $limit; // total number of items, e.g., number of rows in CSV
         $bar = $this->output->createProgressBar($total);
 
         $priceMapping = [
@@ -69,12 +71,14 @@ class ImportProfiles extends Command
             "Webcam" => 230,
         ];
 
+
+        $this->info("Importing profiles...");
         // Open the CSV file for reading.
         if (($handle = fopen($filePath, 'r')) !== false) {
             // Assuming the first row contains headers.
             $header = fgetcsv($handle, 1000, ',');
             //$this->info("\nHeader: " . print_r($header, true));
-            $i=1;
+            
             $bar->start();
 
             
@@ -122,7 +126,16 @@ class ImportProfiles extends Command
                     $ethnicityArray = explode(',', $ethnicity); // Split into an array
 
                     // Check for variations of "Other" or "Mixed"
-                    if (in_array('Other', $ethnicityArray) || in_array('other', $ethnicityArray) || in_array('Mixed', $ethnicityArray) || in_array('mixed', $ethnicityArray)) {
+                    if (in_array('Other', $ethnicityArray) 
+                    || in_array('other', $ethnicityArray) 
+                    || in_array('Mixed', $ethnicityArray) 
+                    || in_array('mixed', $ethnicityArray)
+                    || in_array('any other', $ethnicityArray)
+                    || in_array('Any other', $ethnicityArray)
+                    || in_array('Any other Black', $ethnicityArray)
+                    // || in_array('Caribbean background', $ethnicityArray)
+                    || in_array('Black British', $ethnicityArray)) 
+                    {
                        $ethnicity = 'Others'; // Set to "Others" if "Other" or "Mixed" is found
                     } else {
                         $ethnicity = trim($ethnicityArray[0]); // Use the first value if none of those are found
@@ -130,7 +143,12 @@ class ImportProfiles extends Command
                 } else {
                 
                     // If it's a single value, check for "Other"
-                   if (stripos($ethnicity, 'other') !== false) {
+                   if ((stripos($ethnicity, 'other') !== false) 
+                   || (stripos($ethnicity, 'any other') !== false)
+                   || (stripos($ethnicity, 'Any other') !== false)
+                   || (stripos($ethnicity, 'Any other Black') !== false)
+                //    || (stripos($ethnicity, 'Caribbean background') !== false)
+                   || (stripos($ethnicity, 'Black British') !== false)) {
                       $ethnicity = 'Others'; // Set to "Others" if "Other" is found
                    } else {
                      $ethnicity = trim($ethnicity); // Just trim it
@@ -265,7 +283,19 @@ class ImportProfiles extends Command
                         }
                 
                         // Download the image from the URL
-                        $imageData = file_get_contents($link);
+                        //$imageData = file_get_contents($link);
+                        if (!empty($link)) {
+                            // Download the image from the URL
+                            $imageData = file_get_contents($link);
+                            
+                            if ($imageData === false) {
+                                continue; // Skip this image if download fails
+                            }
+                        } else {
+                            // Optionally log or handle the empty link case
+                            // Log::warning("Empty link encountered, skipping.");
+                            continue; // Skip this iteration if the link is empty
+                        }
 
                         if ($imageData === false) {
                             continue; // Skip this image if download fails
@@ -309,7 +339,8 @@ class ImportProfiles extends Command
                     $this->error("Failed to create user for row : " . $i. ' Error: ' . $e->getMessage());
                 }
 
-                if($i==4){
+                if($i==$limit){
+                    //print_r($rowData);
                     break;
                     //print_r($formattedRates);
                     //print_r($rowData);
