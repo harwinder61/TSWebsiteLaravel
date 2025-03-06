@@ -53,20 +53,20 @@ class ImportProfiles extends Command
             "Fetish" => 700,
             "French Kiss" => 800,
             "GFE" => 900,
-            "Massage" => 1000,
-            "Modelling" => 1100,
-            "OW" => 1200,
-            "OWO" => 1300,
-            "PSE" => 1400,
-            "Phone" => 1500,
-            "Quickie" => 1600,
-            "Role play" => 1700,
-            "Stress Relief" => 1800,
-            "Strip-tease" => 1900,
-            "Tantric Massage" => 2000,
-            "Travel" => 2100,
-            "WS" => 2200,
-            "Webcam" => 2300,
+            "Massage" => 100,
+            "Modelling" => 110,
+            "OW" => 120,
+            "OWO" => 130,
+            "PSE" => 140,
+            "Phone" => 150,
+            "Quickie" => 160,
+            "Role play" => 170,
+            "Stress Relief" => 180,
+            "Strip-tease" => 190,
+            "Tantric Massage" => 200,
+            "Travel" => 210,
+            "WS" => 220,
+            "Webcam" => 230,
         ];
 
         // Open the CSV file for reading.
@@ -158,7 +158,7 @@ class ImportProfiles extends Command
                         'email' => $email,
                         'password' => Hash::make("12345678"),
                         'user_type' => 2,
-                        'email_verified'=>1
+                        'account_origin'=>'admin'
                     ]);
                     if(!$user){
                         $this->error("Failed to create user for row : " . $i);
@@ -209,11 +209,11 @@ class ImportProfiles extends Command
                         '4_hour' => $rate['duration'] === '4 hours' ? ($rate['incall'] === '-' ? 0 : (int)str_replace('£', '', $rate['incall'])) : 0,
                         'overnight' => $rate['duration'] === 'Overnight' ? ($rate['incall'] === '-' ? 0 : (int)str_replace('£', '', $rate['incall'])) : 0,
                         ];
-                        if($category=="Incall"){
+                        if($rate['incall'] !== '-'){
                             $profile->update([
                                 'is_incall_enabled'=>1
                             ]);
-                        }else if($category=="Outcall"){
+                        }else if($rate['outcall'] !== '-'){
                             $profile->update([
                                 'is_outcall_enabled'=>1
                             ]);
@@ -266,7 +266,7 @@ class ImportProfiles extends Command
                 
                         // Download the image from the URL
                         $imageData = file_get_contents($link);
-                        //Log::info('Image downloaded: ' . $link);
+
                         if ($imageData === false) {
                             continue; // Skip this image if download fails
                         }
@@ -282,17 +282,7 @@ class ImportProfiles extends Command
                             'escort_id' => $profile->escort_id, // Link it to the user
                         ]);
                     }
-                    // foreach ($imageLinks as $link) {
-                    //     $link = trim($link); // Trim whitespace
-                    
-                    //     // Create a media entry for each image link
-                    //     Media::create([
-                    //         'type' => 'gallery', // Assuming type is 'gallery'
-                    //         'path' => $link, // The image URL
-                    //         'is_temp'=>0,
-                    //         'escort_id' => $profile->escort_id, // Assuming you want to link it to the user
-                    //     ]);
-                    // }
+
                 }
 
 
@@ -323,7 +313,6 @@ class ImportProfiles extends Command
                     break;
                     //print_r($formattedRates);
                     //print_r($rowData);
-                    //$this->info($username."   ".$email);
                 }
                 $i++;                
                 $bar->advance();
