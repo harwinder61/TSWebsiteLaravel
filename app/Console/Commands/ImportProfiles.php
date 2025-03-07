@@ -183,6 +183,14 @@ class ImportProfiles extends Command
                     }
                     $profile= '';
                     if($user){
+                        $num=ltrim($rowData['phone number'], "'");
+                        $phone_number_exist = BaseProfile::where('phone_number', $num)->first();
+                        if($phone_number_exist){
+                            // $this->error("Phone number already exists for row : " . $i);
+                            // print_r($phone_number_exist);
+                            continue;
+
+                        }
                         $profile = BaseProfile::create([
                             'name'=>$rowData['name'],
                             'escort_id'=>$user->id,
