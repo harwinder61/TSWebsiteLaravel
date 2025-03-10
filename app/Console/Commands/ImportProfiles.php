@@ -81,11 +81,17 @@ class ImportProfiles extends Command
             
             $bar->start();
 
-            
+            echo "\n";
 
             // Loop through each remaining row.
             while (($row = fgetcsv($handle, 0, ',')) !== false) {
 
+                if($i==$limit){
+                    //print_r($rowData);
+                    break;
+                    //print_r($formattedRates);
+                    //print_r($rowData);
+                }
                 if (count($row) !== count($header)) {
                     $this->warn("Skipping malformed row: " . implode(',', $row));
                     continue;
@@ -101,7 +107,7 @@ class ImportProfiles extends Command
                     $birthDate = $birthYear . '-01-01'; // Set the date to January 1st of the birth year
                 } else {
                     $birthDate = null; // Handle the case where age is not found
-            }
+                }
 
                 // Assuming $rowData['name'] contains the name
                 $name = strtolower(trim($rowData['name'])); // Convert to lowercase and trim spaces
@@ -170,6 +176,17 @@ class ImportProfiles extends Command
 
                 $email = $username . '@transbunnies.com'; // Create email address
 
+
+                $num=ltrim($rowData['phone number'], "'");
+                $phone_number_exist = BaseProfile::where('phone_number', $num)->first();
+                if($phone_number_exist){
+                    
+                     $this->error("Phone number already exists for user : " . $phone_number_exist->name);
+                    // print_r($phone_number_exist);
+                    $i++;
+                    continue;
+
+                }
                 try{
                     $user= User::create([
                         'username' => $username,
@@ -183,14 +200,7 @@ class ImportProfiles extends Command
                     }
                     $profile= '';
                     if($user){
-                        $num=ltrim($rowData['phone number'], "'");
-                        $phone_number_exist = BaseProfile::where('phone_number', $num)->first();
-                        if($phone_number_exist){
-                            // $this->error("Phone number already exists for row : " . $i);
-                            // print_r($phone_number_exist);
-                            continue;
 
-                        }
                         $profile = BaseProfile::create([
                             'name'=>$rowData['name'],
                             'escort_id'=>$user->id,
