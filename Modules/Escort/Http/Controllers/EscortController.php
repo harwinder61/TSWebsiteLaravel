@@ -1084,7 +1084,8 @@ public function updateMedia(Request $request)
 
             // If Veriff responds with an error, run fallback logic
             if ($response->failed()) {
-                return Resp::error(['message' => 'Something went wrong.'.$response->json()]);
+
+                return response()->json(['message' => 'Something went wrong.','data'=>$response->json()],400);
                 Log::error('Veriff API call failed: ' . $response->json());
                 //return $this->fallbackLogic($request);
             }
@@ -1128,8 +1129,8 @@ public function updateMedia(Request $request)
 
             // If Veriff responds with an error, run fallback logic
             if ($response->failed()) {
-                return Resp::error(['message' => 'Something went wrong.'.$response->json()]);
-                Log::error('Veriff API call failed: ' . $response->body());
+                //return Resp::error(['message' => 'Something went wrong.'.$response->json()]);
+                return response()->json(['message' => 'Something went wrong.','data'=>$response->json()],400);
                 //return $this->fallbackLogic($request);
             }
 
@@ -1185,11 +1186,13 @@ public function updateMedia(Request $request)
             if ($response->failed()) {
                 
                 
-                return Resp::error([
-                    'success' => false,
-                    'message' => 'Data submission failed: '.$response->json(),
-                    'data' => $veriffData
-                ], 400);
+                // return Resp::error([
+                //     'success' => false,
+                //     'message' => 'Data submission failed: '.$response->json(),
+                //     'data' => $veriffData
+                // ], 400);
+
+                return response()->json(['message' => 'Data submission failed','data'=>$response->json()],400);
             }
 
             return response()->json([
@@ -1226,8 +1229,8 @@ public function updateMedia(Request $request)
             ])->patch($baseUrl.'/v1/sessions/'.$id,$veriffData);
 
             if ($response->failed()) {
-                return Resp::error(['message' => 'Something went wrong.'.$response->json(),'data' => $veriffData]);
-               
+                //return Resp::error(['message' => 'Something went wrong.'.$response->json(),'data' => $veriffData]);
+                return response()->json(['message' => 'Something went wrong.','data'=>$response->json()],400);
                 //return $this->fallbackLogic($request);
             }
 
