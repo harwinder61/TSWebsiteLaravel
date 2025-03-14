@@ -56,10 +56,9 @@ class ImportProfiles extends Command
             // "French Kiss" => 800,
             "GFE" => 900,
             // "Massage" => 100,
-            // "Modelling" => 110, 
+            // "Modelling" => 110,
             "OW" => 120,
             "OWO" => 130,
-            //fdsfd
             // "PSE" => 140,
             // "Phone" => 150,
             // "Quickie" => 160,
@@ -109,15 +108,17 @@ class ImportProfiles extends Command
 
                 $ageString = $rowData['Age'];
                 preg_match('/(\d+)\s+years?\s+old/', $ageString, $matches); // Extract the age using regex
-
+                $age = null;
+                $this->info("age is ". $matches[1] . '------'. $matches[0]);
                 if (!empty($matches[1])) {
-                    $age = (int)$matches[1]; // Convert the extracted age to an integer
+                    
+                    $age = (int) $matches[1]; // Convert the extracted age to an integer
                     $birthYear = date('Y') - $age; // Calculate the birth year
                     $birthDate = $birthYear . '-01-01'; // Set the date to January 1st of the birth year
                 } else {
                     $birthDate = null; // Handle the case where age is not found
                 }
-
+                $this->info("final age is  ". $age);
                 // Assuming $rowData['name'] contains the name
                 $name = strtolower(trim($rowData['name'])); // Convert to lowercase and trim spaces
                 // Sanitize the username to remove non-ASCII characters
@@ -279,7 +280,8 @@ class ImportProfiles extends Command
                             'verified_status'=> 1,
                             'is_profile'=>1,
                             'is_media'=>1,
-                            'date_of_birth'=>$birthDate
+                            'date_of_birth'=>$birthDate,
+                            'age' => (int) trim($age) 
 
 
                         ]);

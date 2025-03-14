@@ -72,6 +72,7 @@ class BaseProfile extends Model
         'rates',
         'nationality',
         'verified_status',
+        'age',
         
         
     ];
