@@ -940,6 +940,7 @@ public function updateMedia(Request $request)
                 'manyvids_handle' => $request->input('manyvids_handle'),
                 'fancentro_handle' => $request->input('fancentro_handle'),
                 'country_code' => $request->input('country_code'),
+                'age' => $request->input('age'),
             ]);
             if (!$updated) {
                 return Resp::error(['error' => 'Failed to update profile'], 500);
