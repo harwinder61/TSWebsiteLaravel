@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('profiles', function (Blueprint $table) {
+        Schema::table('profile', function (Blueprint $table) {
             $table->integer('age')->nullable(); // Adding 'age' as an integer field
             //
         });
@@ -22,7 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('profiles', function (Blueprint $table) {
+        Schema::table('profile', function (Blueprint $table) {
             //
         });
     }
