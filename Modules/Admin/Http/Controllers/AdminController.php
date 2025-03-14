@@ -3069,7 +3069,8 @@ public function newUser(Request $request)
             'city_id' => $city_id,
             'region_id' => $region_id,
             'county_id' => $county_id,
-            'allow_whatsapp' => $allow_whatsapp
+            'allow_whatsapp' => $allow_whatsapp,
+            'age' => $request->input('age'),
         ]);
         if (!$updated) {
             return Resp::error(['error' => 'Failed to update profile'], 500);
