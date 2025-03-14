@@ -46,35 +46,41 @@ class ImportProfiles extends Command
         $bar = $this->output->createProgressBar($total);
 
         $priceMapping = [
-            "A Levels" => 100,
-            "BDSM" => 200,
-            "DUO" => 300,
-            "Dining" => 400,
+            // "A Levels" => 100,
+            // "BDSM" => 200,
+            // "DUO" => 300,
+            // "Dining" => 400,
             "Domination" => 500,
-            "Escorting" => 600,
+            // "Escorting" => 600,
             "Fetish" => 700,
-            "French Kiss" => 800,
+            // "French Kiss" => 800,
             "GFE" => 900,
-            "Massage" => 100,
-            "Modelling" => 110,
+            // "Massage" => 100,
+            // "Modelling" => 110, 
             "OW" => 120,
             "OWO" => 130,
-            "PSE" => 140,
-            "Phone" => 150,
-            "Quickie" => 160,
-            "Role play" => 170,
-            "Stress Relief" => 180,
-            "Strip-tease" => 190,
-            "Tantric Massage" => 200,
-            "Travel" => 210,
+            //fdsfd
+            // "PSE" => 140,
+            // "Phone" => 150,
+            // "Quickie" => 160,
+            // "Role play" => 170,
+            // "Stress Relief" => 180,
+            // "Strip-tease" => 190,
+            // "Tantric Massage" => 200,
+            // "Travel" => 210,
             "WS" => 220,
-            "Webcam" => 230,
+            // "Webcam" => 230,
+            "DTF" => 110,   
+            "CIM" =>  100,
+            "CUM" => 100
+
         ];
 
 
-        $this->info("Importing profiles...");
+        $this->info("Importing profiles 4 ...");
         // Open the CSV file for reading.
         if (($handle = fopen($filePath, 'r')) !== false) {
+
             // Assuming the first row contains headers.
             $header = fgetcsv($handle, 1000, ',');
             //$this->info("\nHeader: " . print_r($header, true));
@@ -83,10 +89,13 @@ class ImportProfiles extends Command
 
             echo "\n";
 
+
             // Loop through each remaining row.
             while (($row = fgetcsv($handle, 0, ',')) !== false) {
 
                 if($i==$limit){
+                    $this->info('importing numbers in break ');
+
                     //print_r($rowData);
                     break;
                     //print_r($formattedRates);
@@ -163,6 +172,10 @@ class ImportProfiles extends Command
 
                 // Map the services to the desired format   
                 $extra_services = array_map(function($service) use ($priceMapping) {
+                    // Skip the service if it's not found in the $priceMapping
+                    // if (!in_array($service, $priceMapping)) {
+                    //     return null; // Return null if the service does not exist in priceMapping
+                    // }
                     $service = trim($service); // Trim whitespace
                     $service = trim($service, '"'); // Trim quotes
                     $service = str_replace('"', '', $service); // Remove any remaining quotes
@@ -176,15 +189,66 @@ class ImportProfiles extends Command
 
                 $email = $username . '@transbunnies.com'; // Create email address
 
+                $this->info('importing numbers in befor phone ');
 
                 $num=ltrim($rowData['phone number'], "'");
                 $phone_number_exist = BaseProfile::where('phone_number', $num)->first();
+                $this->info("Importing profiles...", 'importing numbers checking');
                 if($phone_number_exist){
                     
-                     $this->error("Phone number already exists for user : " . $phone_number_exist->name);
+                     $this->error("Phone number already exists for user : " . $phone_number_exist->name . $phone_number_exist->escort_id);
                     // print_r($phone_number_exist);
+
+
+                    // preg_match('/clad\/(\d+)\//', $rowData['imagelinks'], $matches);
+
+                
+                    // if (isset($matches[1])) {
+                    //     $id = $matches[1];
+                        
+                    //     // Define the path to the folder containing images
+                    //     $directoryPath = storage_path('app/public/images'); // Adjust based on where your images are stored
+    
+                    //     // Fetch all image files that match the pattern 335869648_*.jpg
+                    //     $files = File::files($directoryPath);
+    
+                    //     // Filter files that match the pattern
+                    //     $imageFiles = array_filter($files, function ($file) use ($id) {
+                    //         return preg_match('/^' . preg_quote($id, '/') . '_\d+\.jpeg$/', $file->getFilename());
+                    //     });
+                    //     $this->info('before images' . count($imageFiles) . $directoryPath);
+
+                    //     // Display the images and their paths
+                    //     foreach ($imageFiles as $image) {
+                    //         $userFolder = 'uploads/media/user_' . $phone_number_exist->escort_id;
+                    //         $directoryPath = public_path($userFolder);
+                    //         if (!File::isDirectory($directoryPath)) {
+                    //             File::makeDirectory($directoryPath, 0755, true);
+                    //         }
+                    //         $this->info('This is a log message from .'. $directoryPath);
+                    //         $this->info("image name final--.>" . $directoryPath .'/' . $image->getFilename());
+                    //         // Copy the image to the new folder
+                    //         File::copy($image->getRealPath(), $directoryPath .'/' . $image->getFilename());
+
+                    //          // Create a new media entry
+                    //     Media::create([
+                    //         'type' => 'gallery', // Set the type accordingly
+                    //         'path' => $userFolder . '/' . $image->getFilename(), // Store the path as in the API
+                    //         'is_temp' => 0,
+                    //         'escort_id' => $phone_number_exist->escort_id, // Link it to the user
+                    //     ]);
+                    //     }
+                    // } else {
+                    //     echo "No matching ID found.";
+                    // }
+    
+
+
                     $i++;
                     continue;
+
+
+
 
                 }
                 try{
@@ -283,61 +347,106 @@ class ImportProfiles extends Command
                 }
 
 
-                $imageLinks = explode(',', $rowData['imagelinks']); // Convert to array
 
-                if($profile){
+                preg_match('/clad\/(\d+)\//', $rowData['imagelinks'], $matches);
 
-                    foreach ($imageLinks as $link) {
-                        $link = trim($link); // Trim whitespace
                 
-                        // Extract filename from the URL
-                        $imageName = basename($link);
-                        $userFolder = 'uploads/media/user_' . $profile->escort_id; // Use the escort ID
-                
-                        // Create the directory if it doesn't exist
+                if (isset($matches[1])) {
+                    $id = $matches[1];
+                    
+                    // Define the path to the folder containing images
+                    $directoryPath = storage_path('app/public/images'); // Adjust based on where your images are stored
+
+                    // Fetch all image files that match the pattern 335869648_*.jpg
+                    $files = File::files($directoryPath);
+
+                    // Filter files that match the pattern
+                    $imageFiles = array_filter($files, function ($file) use ($id) {
+                        return preg_match('/^' . preg_quote($id, '/') . '_\d+\.jpeg$/', $file->getFilename());
+                    });
+                    $this->info('before images' . count($imageFiles) . $directoryPath);
+
+                    // Display the images and their paths
+                    foreach ($imageFiles as $image) {
+                        $userFolder = 'uploads/media/user_' . $profile->escort_id;
                         $directoryPath = public_path($userFolder);
                         if (!File::isDirectory($directoryPath)) {
                             File::makeDirectory($directoryPath, 0755, true);
                         }
-                
-                        // Download the image from the URL
-                        //$imageData = file_get_contents($link);
-                        if (!empty($link)) {
-                            // Download the image from the URL
-                            $imageData = file_get_contents($link);
-                            
-                            if ($imageData === false) {
-                                continue; // Skip this image if download fails
-                            }
-                        } else {
-                            // Optionally log or handle the empty link case
-                            // Log::warning("Empty link encountered, skipping.");
-                            continue; // Skip this iteration if the link is empty
-                        }
+                        $this->info('This is a log message from .'. $directoryPath);
+                        $this->info("image name final--.>" . $directoryPath .'/' . $image->getFilename());
+                        // Copy the image to the new folder
+                        File::copy($image->getRealPath(), $directoryPath .'/' . $image->getFilename());
 
-                        if ($imageData === false) {
-                            continue; // Skip this image if download fails
-                        }
-                
-                        // Save the image to the server
-                        file_put_contents($directoryPath . '/' . $imageName, $imageData);
-                
-                        // Create a new media entry
-                        Media::create([
-                            'type' => 'gallery', // Set the type accordingly
-                            'path' => $userFolder . '/' . $imageName, // Store the path as in the API
-                            'is_temp' => 0,
-                            'escort_id' => $profile->escort_id, // Link it to the user
-                        ]);
+                         // Create a new media entry
+                    Media::create([
+                        'type' => 'gallery', // Set the type accordingly
+                        'path' => $userFolder . '/' . $image->getFilename(), // Store the path as in the API
+                        'is_temp' => 0,
+                        'escort_id' => $profile->escort_id, // Link it to the user
+                    ]);
                     }
-
+                } else {
+                    echo "No matching ID found.";
                 }
+
+
+              
+                // $imageLinks = explode(',', $rowData['imagelinks']); // Convert to array
+
+                // if($profile){
+
+                //     foreach ($imageLinks as $link) {
+                //         $link = trim($link); // Trim whitespace
+                
+                //         // Extract filename from the URL
+                //         $imageName = basename($link);
+                //         $userFolder = 'uploads/media/user_' . $profile->escort_id; // Use the escort ID
+                
+                //         // Create the directory if it doesn't exist
+                //         $directoryPath = public_path($userFolder);
+                //         if (!File::isDirectory($directoryPath)) {
+                //             File::makeDirectory($directoryPath, 0755, true);
+                //         }
+                
+                //         // Download the image from the URL
+                //         //$imageData = file_get_contents($link);
+                //         if (!empty($link)) {
+                //             // Download the image from the URL
+                //             $imageData = file_get_contents($link);
+                            
+                //             if ($imageData === false) {
+                //                 continue; // Skip this image if download fails
+                //             }
+                //         } else {
+                //             // Optionally log or handle the empty link case
+                //             // Log::warning("Empty link encountered, skipping.");
+                //             continue; // Skip this iteration if the link is empty
+                //         }
+
+                //         if ($imageData === false) {
+                //             continue; // Skip this image if download fails
+                //         } 
+                
+                //         // Save the image to the server
+                //         file_put_contents($directoryPath . '/' . $imageName, $imageData);
+                
+                //         // Create a new media entry
+                //         Media::create([
+                //             'type' => 'gallery', // Set the type accordingly
+                //             'path' => $userFolder . '/' . $imageName, // Store the path as in the API
+                //             'is_temp' => 0,
+                //             'escort_id' => $profile->escort_id, // Link it to the user
+                //         ]);
+                //     }
+
+                // }
 
 
                 // Handle location
                 $location = $rowData['Location'];
                 $locationParts = explode('-', $location); // Split the string by the hyphen
-                $city = trim($locationParts[0]); // Get the first part and trim whitespace
+                $city = trim($locationParts[1]); // Get the first part and trim whitespace
                 $county_data='';
                 $location_data=Location::where('name','like','%'.$city.'%')->
                                         where('type','city')->first();
