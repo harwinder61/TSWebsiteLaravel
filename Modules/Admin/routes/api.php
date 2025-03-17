@@ -217,3 +217,4 @@ Route::get('/test-inactivity-emails', function () {
   $scheduledEmails = new ScheduledEmails();
   return $scheduledEmails->sendInactivityEmails();
 });
+// Route::post('/header-logo',[AdminController::class,'headerLogo']);
