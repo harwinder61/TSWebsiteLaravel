@@ -40,7 +40,7 @@ class EscortController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm','newVerifyEmail','veriffSession','veriffDocumentUpload','veriffDocumentCompleted','veriffStatus','VeriffDecision','getVeriffStatus','veriffWebhook','veriffEventWebhook']);
+        $this->middleware(AuthMiddleware::class)->except(['profileViews','inquiryForm','newVerifyEmail','veriffSession','veriffDocumentUpload','veriffDocumentCompleted','veriffStatus','VeriffDecision','getVeriffStatus','veriffWebhook','veriffEventWebhook','veriffFullAutoWebhook']);
     } 
  
 
@@ -1372,6 +1372,57 @@ public function updateMedia(Request $request)
             return Resp::json(['data' => $request->all()]);
         }catch(\Exception $e){
             return Resp::error(['message' => 'Webhook processing failed: ' . $e->getMessage()]);
+        }
+    }
+
+    public function veriffFullAutoWebhook(Request $request){
+        try {
+
+            $data=$request->all();
+            Log::info('Veriff fullAuto Webhook triggered');
+            Log::info($request->all());
+
+
+        $verification = $data['data']['verification'];
+        if(!isset($verification)){
+            Log::info('verification field not found in data');
+        }
+
+        // Check if decision is "approved"
+        if ( $verification['decision'] == "approved" ) {
+
+            // For example, let's assume you use 'attemptId' to find the record
+            $record = Verify::where('escort_id', $data['vendorData'])->first();
+            $profile = Profile::where('escort_id', $data['vendorData'])->first();
+            if ($record && $profile) {
+                // Update fields as needed. For instance, update the status and approval time.
+                $record->verified_status = 1;
+                $record->save();
+
+                $profile->verified_status = 1;
+                $profile->save();
+
+                Log::info('Record updated successfully for user ');
+                return response()->json(['message' => 'Record updated successfully'], 200);
+            } else {
+                //Log::info("User not found !!");
+                Log::warning('Record not found!!');
+                return response()->json(['message' => 'Record not found'], 404);
+            }
+            }
+
+            Log::info("Webhook processed successfully");
+            // Return 200 OK to acknowledge receipt
+            return response()->json([
+                'success' => true,
+                'message' => 'Webhook processed successfully',
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            
+            return Resp::error([
+                'message' => 'Webhook processing failed: ' . $e->getMessage()
+            ]);
         }
     }
 
