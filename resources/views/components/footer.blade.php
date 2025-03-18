@@ -72,7 +72,7 @@
                             <tbody>
                                 <tr>
                                     <td colspan="2" valign="middle" id="credit"
-                                        style="border-radius: 6px; border: 0; line-height: 150%; padding: 24px 0; font-family: &quot;Helvetica Neue&quot;,Helvetica,Roboto,Arial,sans-serif; font-weight: 400; padding-top: 0px; padding-bottom: 0px; text-align: center; color: #ce0000; font-size: 16px;"
+                                        style="border-radius: 6px; border: 0; line-height: 150%; padding: 24px 0; font-family: &quot;Helvetica Neue&quot;,Helvetica,Roboto,Arial,sans-serif; font-weight: 400; padding-top: 0px; padding-bottom: 0px; text-align: center; color: #ce0000; font-size: 14px;"
                                         align="center">
                                         © {{ date('Y') }}, Transbunnies. All Rights Reserved.
                                     </td>
