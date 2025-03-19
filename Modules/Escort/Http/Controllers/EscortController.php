@@ -1408,13 +1408,7 @@ public function updateMedia(Request $request)
             Log::info('Decision is approved from veriff');
             // For example, let's assume you use 'attemptId' to find the record
             $record = Verify::where('escort_id', $data['vendorData'])->first();
-            if(!$record){
-                $record = new Verify();
-                $record->escort_id = $data['vendorData'];
-                $record->verified_status = 1;
-                // $record->action = $data['action'];
-                $record->save();
-            }
+            
             $profile = Profile::where('escort_id', $data['vendorData'])->first();
             if ($record && $profile) {
                 // Update fields as needed. For instance, update the status and approval time.
@@ -1422,6 +1416,7 @@ public function updateMedia(Request $request)
                 $record->save();
 
                 $profile->verified_status = 1;
+                $profile->verification_status_text = "Verification is Approved";
                 $profile->save();
 
                 Log::info('User successfully verified!');
@@ -1436,13 +1431,6 @@ public function updateMedia(Request $request)
             Log::info('Decision is resubmission requested from veriff');
             // For example, let's assume you use 'attemptId' to find the record
             $record = Verify::where('escort_id', $data['vendorData'])->first();
-            if(!$record){
-                $record = new Verify();
-                $record->escort_id = $data['vendorData'];
-                $record->verified_status = 0;
-                // $record->action = $data['action'];
-                $record->save();
-            }
             $profile = Profile::where('escort_id', $data['vendorData'])->first();
             if ($record && $profile) {
                 // Update fields as needed. For instance, update the status and approval time.
@@ -1450,6 +1438,7 @@ public function updateMedia(Request $request)
                 $record->save();
 
                 $profile->verified_status = 0;
+                $profile->verification_status_text = "Please submit your proper documents again!";
                 $profile->save();
 
                 Log::info('User set to unverified!');
@@ -1464,13 +1453,7 @@ public function updateMedia(Request $request)
             Log::info('Decision is abandoned from veriff');
             // For example, let's assume you use 'attemptId' to find the record
             $record = Verify::where('escort_id', $data['vendorData'])->first();
-            if(!$record){
-                $record = new Verify();
-                $record->escort_id = $data['vendorData'];
-                $record->verified_status = 0;
-                // $record->action = $data['action'];
-                $record->save();
-            }
+            
             $profile = Profile::where('escort_id', $data['vendorData'])->first();
             if ($record && $profile) {
                 // Update fields as needed. For instance, update the status and approval time.
@@ -1478,6 +1461,7 @@ public function updateMedia(Request $request)
                 $record->save();
 
                 $profile->verified_status = 0;
+                $profile->verification_status_text = "Verification is Abandoned";
                 $profile->save();
 
                 Log::info('User set to unverified!');
@@ -1492,13 +1476,7 @@ public function updateMedia(Request $request)
             Log::info('Decision is expired from veriff');
             // For example, let's assume you use 'attemptId' to find the record
             $record = Verify::where('escort_id', $data['vendorData'])->first();
-            if(!$record){
-                $record = new Verify();
-                $record->escort_id = $data['vendorData'];
-                $record->verified_status = 0;
-                // $record->action = $data['action'];
-                $record->save();
-            }
+            
             $profile = Profile::where('escort_id', $data['vendorData'])->first();
             if ($record && $profile) {
                 // Update fields as needed. For instance, update the status and approval time.
@@ -1506,6 +1484,7 @@ public function updateMedia(Request $request)
                 $record->save();
 
                 $profile->verified_status = 0;
+                $profile->verification_status_text = "Verification is expired";
                 $profile->save();
 
                 Log::info('User set to  unverified!');
@@ -1520,13 +1499,7 @@ public function updateMedia(Request $request)
             Log::info('Decision is declined from veriff');
             // For example, let's assume you use 'attemptId' to find the record
             $record = Verify::where('escort_id', $data['vendorData'])->first();
-            if(!$record){
-                $record = new Verify();
-                $record->escort_id = $data['vendorData'];
-                $record->verified_status = 4;
-                // $record->action = $data['action'];
-                $record->save();
-            }
+            
             $profile = Profile::where('escort_id', $data['vendorData'])->first();
             if ($record && $profile) {
                 // Update fields as needed. For instance, update the status and approval time.
@@ -1534,6 +1507,7 @@ public function updateMedia(Request $request)
                 $record->save();
 
                 $profile->verified_status = 4;
+                $profile->verification_status_text = "Verification is Declined";
                 $profile->save();
 
                 Log::info('User verified status set to declined!');
