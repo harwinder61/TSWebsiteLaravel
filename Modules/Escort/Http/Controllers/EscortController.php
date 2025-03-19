@@ -1331,56 +1331,58 @@ public function updateMedia(Request $request)
             Log::info("Event webhook triggered");
             Log::info($request->all());
 
-            if($data && isset($data['action'])){
-                if($data['action'] == "submitted" && $data['code'] == 7002){
-                    $record = Verify::where('escort_id', $data['vendorData'])->first();
-                    $profile = Profile::where('escort_id', $data['vendorData'])->first();
-                    if($record){
-                        $record->verified_status = 1;
-                        $record->action = $data['action'];
-                        $record->save();
-                        if($profile){
-                            $profile->verified_status=1;
-                            $profile->save();
-                            Log::info("Profile verified status updated");
-                        }
-                        Log::info("Record updated successfully");
-                    }else{
-                        $record = new Verify();
-                        $record->escort_id = $data['vendorData'];
-                        $record->verified_status = 1;
-                        $record->action = $data['action'];
-                        $record->save();
-                        if($profile){
-                            $profile->verified_status=1;
-                            $profile->save();
-                            Log::info("Profile verified status updated");
-                        }
-                        Log::info("Record Created and updated successfully!");
-                    }
+            // if($data && isset($data['action'])){
+            //     if($data['action'] == "submitted" && $data['code'] == 7002){
+            //         $record = Verify::where('escort_id', $data['vendorData'])->first();
+            //         $profile = Profile::where('escort_id', $data['vendorData'])->first();
+            //         if($record){
+            //             $record->verified_status = 1;
+            //             $record->action = $data['action'];
+            //             $record->save();
+            //             if($profile){
+            //                 $profile->verified_status=1;
+            //                 $profile->save();
+            //                 Log::info("Profile verified status updated");
+            //             }
+            //             Log::info("Record updated successfully");
+            //         }else{
+            //             $record = new Verify();
+            //             $record->escort_id = $data['vendorData'];
+            //             $record->verified_status = 1;
+            //             $record->action = $data['action'];
+            //             $record->save();
+            //             if($profile){
+            //                 $profile->verified_status=1;
+            //                 $profile->save();
+            //                 Log::info("Profile verified status updated");
+            //             }
+            //             Log::info("Record Created and updated successfully!");
+            //         }
 
-                }else{
-                    $record=Verify::where('escort_id', $data['vendorData'])->first();
-                    if($record){
-                        $record->action = $data['action'];
-                        $record->save();
-                        Log::info("Record updated successfully");
-                    }
-                }
-            }
-
+            //     }else{
+            //         $record=Verify::where('escort_id', $data['vendorData'])->first();
+            //         if($record){
+            //             $record->action = $data['action'];
+            //             $record->save();
+            //             Log::info("Record updated successfully");
+            //         }
+            //     }
+            // }
+            Log::info("Event webhook processed successfully");
             return Resp::json(['data' => $request->all()]);
         }catch(\Exception $e){
+            Log::error("Event webhook processing failed: " . $e->getMessage());
             return Resp::error(['message' => 'Webhook processing failed: ' . $e->getMessage()]);
         }
     }
 
+    //Veriff decision webhook to auto verify user
     public function veriffFullAutoWebhook(Request $request){
         try {
 
             $data=$request->all();
-            Log::info('Veriff fullAuto Webhook triggered');
-            Log::info($request->all());
+            Log::info('Veriff fullAuto decision Webhook triggered');
+            Log::info($data);
 
 
         $verification = $data['data']['verification'];
@@ -1393,6 +1395,13 @@ public function updateMedia(Request $request)
 
             // For example, let's assume you use 'attemptId' to find the record
             $record = Verify::where('escort_id', $data['vendorData'])->first();
+            if(!$record){
+                $record = new Verify();
+                $record->escort_id = $data['vendorData'];
+                $record->verified_status = 1;
+                // $record->action = $data['action'];
+                $record->save();
+            }
             $profile = Profile::where('escort_id', $data['vendorData'])->first();
             if ($record && $profile) {
                 // Update fields as needed. For instance, update the status and approval time.
@@ -1402,14 +1411,14 @@ public function updateMedia(Request $request)
                 $profile->verified_status = 1;
                 $profile->save();
 
-                Log::info('Record updated successfully for user ');
+                Log::info('User successfully verified!');
                 return response()->json(['message' => 'Record updated successfully'], 200);
             } else {
                 //Log::info("User not found !!");
                 Log::warning('Record not found!!');
                 return response()->json(['message' => 'Record not found'], 404);
             }
-            }
+        }
 
             Log::info("Webhook processed successfully");
             // Return 200 OK to acknowledge receipt
@@ -1419,7 +1428,7 @@ public function updateMedia(Request $request)
                 'data' => $data
             ]);
         } catch (\Exception $e) {
-            
+            Log::error("Webhook processing failed: " . $e->getMessage());
             return Resp::error([
                 'message' => 'Webhook processing failed: ' . $e->getMessage()
             ]);
