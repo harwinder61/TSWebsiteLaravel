@@ -466,9 +466,9 @@ public function deleteProfile(Request $request)
         try {
             $user = auth()->user();
             $verification_exists=Verify::where('escort_id',$user->id)->first();
-            if($verification_exists){
-                return Resp::error(['message'=>"User already exists in verification table!"]);
-            }
+            // if($verification_exists){
+            //     return Resp::error(['message'=>"User already exists in verification table!"]);
+            // }
 
             $profile = Profile::where('escort_id', $user->id)->first();
             if(!$profile){
@@ -525,19 +525,32 @@ public function deleteProfile(Request $request)
             $selfieImage = $request->file('selfie_image');
             $selfieImageName = 'selfie_' . time() . '_' . uniqid() . '.' . $selfieImage->getClientOriginalExtension();
             $selfieImage->move($directoryPath, $selfieImageName);
-    
-            // Save to Database
-            $verify = new Verify();
-            $verify->passport_image = $userFolder . '/' . $passportImageName;
-            $verify->selfie_image = $userFolder . '/' . $selfieImageName;
-            $verify->escort_id = $userId;
-            $verify->verified_status = 2;
-            $verify->save();
-            $profile = $user->profile;
-            $profile->verified_status = 2;
-            $profile->save();
-            // $verify->verified_status = 2;
-            // $verify->save();
+
+            $verify= Verify::where('escort_id', $user->id)->first();
+            if(!$verify){
+                // Save to Database
+                $verify = new Verify();
+                $verify->passport_image = $userFolder . '/' . $passportImageName;
+                $verify->selfie_image = $userFolder . '/' . $selfieImageName;
+                $verify->escort_id = $userId;
+                $verify->verified_status = 2;
+                $verify->save();
+                $profile = $user->profile;
+                $profile->verified_status = 2;
+                $profile->save();
+                // $verify->verified_status = 2;
+                // $verify->save();
+            }else{
+                $verify->passport_image = $userFolder . '/' . $passportImageName;
+                $verify->selfie_image = $userFolder . '/' . $selfieImageName;
+                $verify->escort_id = $userId;
+                $verify->verified_status = 2;
+                $verify->save();
+                $profile = $user->profile;
+                $profile->verified_status = 2;
+                $profile->save();
+            }
+            
     
             return Resp::success([
                 'message' => 'Verify details saved successfully',
@@ -1392,7 +1405,7 @@ public function updateMedia(Request $request)
 
         // Check if decision is "approved"
         if ( $verification['decision'] == "approved" ) {
-
+            Log::info('Decision is approved from veriff');
             // For example, let's assume you use 'attemptId' to find the record
             $record = Verify::where('escort_id', $data['vendorData'])->first();
             if(!$record){
@@ -1412,13 +1425,126 @@ public function updateMedia(Request $request)
                 $profile->save();
 
                 Log::info('User successfully verified!');
-                return response()->json(['message' => 'Record updated successfully'], 200);
+                //return response()->json(['message' => 'Record updated successfully'], 200);
             } else {
                 //Log::info("User not found !!");
                 Log::warning('Record not found!!');
-                return response()->json(['message' => 'Record not found'], 404);
+                //return response()->json(['message' => 'Record not found'], 404);
             }
         }
+        else if ( $verification['decision'] == 'resubmission_requested' ) {
+            Log::info('Decision is resubmission requested from veriff');
+            // For example, let's assume you use 'attemptId' to find the record
+            $record = Verify::where('escort_id', $data['vendorData'])->first();
+            if(!$record){
+                $record = new Verify();
+                $record->escort_id = $data['vendorData'];
+                $record->verified_status = 0;
+                // $record->action = $data['action'];
+                $record->save();
+            }
+            $profile = Profile::where('escort_id', $data['vendorData'])->first();
+            if ($record && $profile) {
+                // Update fields as needed. For instance, update the status and approval time.
+                $record->verified_status = 0;
+                $record->save();
+
+                $profile->verified_status = 0;
+                $profile->save();
+
+                Log::info('User set to unverified!');
+
+            } else {
+
+                Log::warning('Record not found!!');
+
+            }
+        }
+        else if ( $verification['decision'] == "abandoned" ) {
+            Log::info('Decision is abandoned from veriff');
+            // For example, let's assume you use 'attemptId' to find the record
+            $record = Verify::where('escort_id', $data['vendorData'])->first();
+            if(!$record){
+                $record = new Verify();
+                $record->escort_id = $data['vendorData'];
+                $record->verified_status = 0;
+                // $record->action = $data['action'];
+                $record->save();
+            }
+            $profile = Profile::where('escort_id', $data['vendorData'])->first();
+            if ($record && $profile) {
+                // Update fields as needed. For instance, update the status and approval time.
+                $record->verified_status = 0;
+                $record->save();
+
+                $profile->verified_status = 0;
+                $profile->save();
+
+                Log::info('User set to unverified!');
+
+            } else {
+
+                Log::warning('Record not found!!');
+
+            }
+        }
+        else if ( $verification['decision'] == "expired" ) {
+            Log::info('Decision is expired from veriff');
+            // For example, let's assume you use 'attemptId' to find the record
+            $record = Verify::where('escort_id', $data['vendorData'])->first();
+            if(!$record){
+                $record = new Verify();
+                $record->escort_id = $data['vendorData'];
+                $record->verified_status = 0;
+                // $record->action = $data['action'];
+                $record->save();
+            }
+            $profile = Profile::where('escort_id', $data['vendorData'])->first();
+            if ($record && $profile) {
+                // Update fields as needed. For instance, update the status and approval time.
+                $record->verified_status = 0;
+                $record->save();
+
+                $profile->verified_status = 0;
+                $profile->save();
+
+                Log::info('User set to  unverified!');
+
+            } else {
+
+                Log::warning('Record not found!!');
+
+            }
+        }
+        else if ( $verification['decision'] == "declined" ) {
+            Log::info('Decision is declined from veriff');
+            // For example, let's assume you use 'attemptId' to find the record
+            $record = Verify::where('escort_id', $data['vendorData'])->first();
+            if(!$record){
+                $record = new Verify();
+                $record->escort_id = $data['vendorData'];
+                $record->verified_status = 4;
+                // $record->action = $data['action'];
+                $record->save();
+            }
+            $profile = Profile::where('escort_id', $data['vendorData'])->first();
+            if ($record && $profile) {
+                // Update fields as needed. For instance, update the status and approval time.
+                $record->verified_status = 4;
+                $record->save();
+
+                $profile->verified_status = 4;
+                $profile->save();
+
+                Log::info('User verified status set to declined!');
+
+            } else {
+
+                Log::warning('Record not found!!');
+
+            }
+        }
+
 
             Log::info("Webhook processed successfully");
             // Return 200 OK to acknowledge receipt
