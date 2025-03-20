@@ -3654,12 +3654,13 @@ public function newUser(Request $request)
             if ($valiadtor->fails()) {
                 return Resp::error([$valiadtor->errors()]);
             }
-            $data = BaseSettings::with('media')->where('key', '=', $request->key)->first();
+            $data = BaseSettings::where('key', '=', $request->key)->first();
             if (!$data) {
                 return Resp::error([
                     'error' => 'No Advert Image found!'
                 ]);
             }
+            $data->load('media');
             $updatedData = $data->update([
                 'value' => $request->image_id
             ]);
@@ -3709,12 +3710,13 @@ public function newUser(Request $request)
                 ]);
             }
             $data = BaseSettings::where('key', '=', $slug)->first();
-            $data->load('media');
+            
             if (!$data) {
                 return Resp::error([
                     'error' => 'No Advert Images found!'
                 ]);
             }
+            $data->load('media');
             return Resp::success(['data' => $data]);
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
