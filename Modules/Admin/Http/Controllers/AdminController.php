@@ -3650,6 +3650,7 @@ public function newUser(Request $request)
             $valiadtor = Validator::make($request->all(), [
                 'image_id' => 'required|exists:media,id',
                 'key' => 'required|exists:settings,key',
+                'custom_link' => 'nullable|string',
             ]);
             if ($valiadtor->fails()) {
                 return Resp::error([$valiadtor->errors()]);
@@ -3662,7 +3663,8 @@ public function newUser(Request $request)
             }
             $data->load('media');
             $updatedData = $data->update([
-                'value' => $request->image_id
+                'value' => $request->image_id,
+                'custom_link' => $request->custom_link
             ]);
             return Resp::success(['message' => 'Home page images updated successfully', 'data' => $data]);
         } catch (\Exception $e) {
