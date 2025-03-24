@@ -64,6 +64,7 @@ use App\Mail\WhatsappHelper;
 use Illuminate\Support\Facades\Crypt;
 use Modules\Admin\app\Models\SmsLogs;
 use App\Models\Tslogo;
+use Propaganistas\LaravelPhone\PhoneNumber;
 
 
 
@@ -306,7 +307,8 @@ class AdminController extends Controller
         Log::info('SMS sending attempt for user ' . $user->id . ': ' . $smsResponse);
 
         return Resp::success([
-            'message' => 'SMS sent successfully'
+            'message' => 'SMS sent successfully',
+            'smsResponse' => $smsResponse
         ]);
     } catch (\Exception $e) {
         Log::error('Failed to send SMS to user ' . $user->id . ': ' . $e->getMessage());
@@ -479,6 +481,8 @@ class AdminController extends Controller
 
 public function newUser(Request $request)
 {   
+    $phone=new PhoneNumber($request->phone_number);
+    $country=$phone->getCountry();    
     // Validate the incoming request
     $validator = Validator::make($request->all(), [
         'username' => 'required|string|max:255|unique:users,username',
@@ -496,7 +500,8 @@ public function newUser(Request $request)
         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
 
-
+echo $phone->getCountry();
+die("");
 
     // Log the incoming request data
     Log::info('Request Data: ', $request->all());
@@ -527,6 +532,7 @@ public function newUser(Request $request)
         'account_origin' => $request->account_origin,
         'verification_token' => $verification_token,
         'status' => $status,
+        'secret' => $request->user_type == 2 ? Crypt::encryptString($request->password) : null,
     ]);
 
     $user_id = $user->id;
