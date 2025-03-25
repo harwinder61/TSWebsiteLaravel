@@ -798,6 +798,29 @@ class SubscriptionController extends Controller
         
             }
 
+            //for edit modal on plans page
+            $tsweek_modal=$request->query("tsweek_modal");
+            if($tsweek_modal){
+                $weekStart = now()->startOfWeek(); // Monday 
+                $weekEnd = now()->endOfWeek(); // Sunday
+                
+                echo($weekStart->toDateTimeString() . ' - ' . $weekEnd->toDateTimeString());
+                $subscriptions->where('subscriptions.plan_code', 'P101')
+                              ->where(function($query) use ($weekStart, $weekEnd) {
+                               $query->where(function($q) use ($weekStart, $weekEnd) {
+                                  $q->where('subscriptions.start_date', '<=', $weekEnd)
+                                     ->where('subscriptions.end_date', '>=', $weekStart);
+                                   })
+                                ->orWhere(function($q) use ($weekStart) {
+                                   $q->where('subscriptions.start_date', '>=', $weekStart);
+                                  
+                                  //  ->limit(1);     
+                                  });
+                 })
+                 ->orderBy('subscriptions.start_date', 'asc');
+                 //->limit(1);
+            }
+
             
             if ($byPlanOrder) {
 
@@ -825,7 +848,8 @@ class SubscriptionController extends Controller
                 ) as latest_subscription';
             }
 
-            if(!$currentWeek){
+            if(!$currentWeek && $tsweek_modal!=true){
+                
                 $subscriptions->join(
                     \DB::raw($rawSubQuary),
                     'subscriptions.id',
