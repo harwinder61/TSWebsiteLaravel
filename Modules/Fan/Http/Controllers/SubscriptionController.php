@@ -804,7 +804,7 @@ class SubscriptionController extends Controller
                 $weekStart = now()->startOfWeek(); // Monday 
                 $weekEnd = now()->endOfWeek(); // Sunday
                 
-                echo($weekStart->toDateTimeString() . ' - ' . $weekEnd->toDateTimeString());
+                // echo($weekStart->toDateTimeString() . ' - ' . $weekEnd->toDateTimeString());
                 $subscriptions->where('subscriptions.plan_code', 'P101')
                               ->where(function($query) use ($weekStart, $weekEnd) {
                                $query->where(function($q) use ($weekStart, $weekEnd) {
