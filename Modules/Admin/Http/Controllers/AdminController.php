@@ -481,8 +481,7 @@ class AdminController extends Controller
 
 public function newUser(Request $request)
 {   
-    $phone=new PhoneNumber($request->phone_number);
-    $country=$phone->getCountry();    
+    
     // Validate the incoming request
     $validator = Validator::make($request->all(), [
         'username' => 'required|string|max:255|unique:users,username',
@@ -500,8 +499,7 @@ public function newUser(Request $request)
         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
     }
 
-echo $phone->getCountry();
-die("");
+
 
     // Log the incoming request data
     Log::info('Request Data: ', $request->all());
