@@ -556,6 +556,7 @@ public function newUser(Request $request)
         '[USER_NAME]' => $user->firstname . ' ' . $user->lastname
     ];
 
+    
     // Handle email notification for user type 3
     if ($request->user_type == 3) {
         $dynamicData = [
