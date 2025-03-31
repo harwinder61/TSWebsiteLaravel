@@ -2282,7 +2282,9 @@ public function newUser(Request $request)
         }
         $forum->category_id = $category_data->id;
         $forum->save();
-        $category_data->increment('count');
+        // if($forum->is_approved == 1 ){
+        //     $category_data->increment('count');
+        // }
         return Resp::success([
             'message' => 'Forum created successfully',
             'forum' => $forum,
@@ -3499,7 +3501,15 @@ public function newUser(Request $request)
     public function forumCategories(Request $request)
     {
         try {
-            $categories = ForumCategory::all();
+            // $categories = ForumCategory::all();
+            // $categories = ForumCategory::with(['forums' => function($query) {
+            //     $query->where('is_approved', 1);
+            // }])->get();
+
+            $categories = ForumCategory::withCount(['forums' => function($query) {
+                $query->where('is_approved', 1);
+            }])->get();
+
             return Resp::success(['categories' => $categories]);
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
