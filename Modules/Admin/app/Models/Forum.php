@@ -17,6 +17,9 @@ class Forum extends Model
         'author_id','is_approved'
         ,'category_slug','upvotes'] ;
 
+    protected $casts =[
+        'upvotes'=>'json'
+    ];
     public function postComments(){
         return $this->hasMany(Comment::class,'forum_id','id');
     }

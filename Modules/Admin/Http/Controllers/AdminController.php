@@ -3518,24 +3518,53 @@ public function newUser(Request $request)
 
 
     public function updateUpvote(Request $request){
-        try{
-            $forum=Forum::find($request->forum_id);
-            $user=auth()->user();
-            if(!$user){
+        try {
+            $forum = Forum::find($request->forum_id);
+            $user = auth()->user();
+        
+            if (!$user) {
                 return Resp::error(['message' => 'User not logged in']);
             }
-            if(!$forum){
+            if (!$forum) {
                 return Resp::error(['message' => 'Forum not found']);
             }
-
-            if($request->input('upvote') ==true){
-                $forum->upvotes = $forum->upvotes + 1;
-            }else if($request->input('upvote') ==false){
-                $forum->upvotes = $forum->upvotes - 1;
+        
+            // Get current upvotes as array (ensure it's always an array)
+            $upvotes = $forum->upvotes ?? [];
+        
+            // Cast to array in case it's stored as JSON string
+            if (!is_array($upvotes)) {
+                $upvotes = json_decode($upvotes, true) ?? [];
             }
+
+            if(!is_array($upvotes)){
+                $upvotes = [];
+            }
+        
+            $userId = $user->id;
+            $action = $request->boolean('upvote'); // Use boolean() to get true/false
+        
+            if ($action === true) {
+                // Add user ID if not exists using strict check
+                if (!in_array($userId, $upvotes, true)) {
+                    $upvotes[] = $userId;
+                }
+            } else {
+                // Remove all occurrences of user ID
+                $upvotes = array_filter($upvotes, function ($id) use ($userId) {
+                    return $id !== $userId;
+                });
+            }
+        
+            // Update and save with proper JSON encoding
+            $forum->upvotes = array_values($upvotes); // Re-index array
             $forum->save();
-            return Resp::success(['message' => 'Upvote updated successfully','data'=>$forum]);
-        }catch(\Exception $e){
+        
+            return Resp::success([
+                'message' => 'Upvote updated successfully',
+                'data' => $forum
+            ]);
+        } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
         }
     }
