@@ -3517,6 +3517,30 @@ public function newUser(Request $request)
     }
 
 
+    public function updateUpvote(Request $request){
+        try{
+            $forum=Forum::find($request->forum_id);
+            $user=auth()->user();
+            if(!$user){
+                return Resp::error(['message' => 'User not logged in']);
+            }
+            if(!$forum){
+                return Resp::error(['message' => 'Forum not found']);
+            }
+
+            if($request->input('upvote') ==true){
+                $forum->upvotes = $forum->upvotes + 1;
+            }else if($request->input('upvote') ==false){
+                $forum->upvotes = $forum->upvotes - 1;
+            }
+            $forum->save();
+            return Resp::success(['message' => 'Upvote updated successfully','data'=>$forum]);
+        }catch(\Exception $e){
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
+
+
     public function fetchDroppableFields(Request $request)
     {
         try {

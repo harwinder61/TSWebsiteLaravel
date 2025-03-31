@@ -48,7 +48,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('settings', function (Blueprint $table) {
-            //$table->dropUnique(['key']);
+            $table->dropUnique(['key']);
         });
     }
 };
