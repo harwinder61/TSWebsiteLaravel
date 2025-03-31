@@ -1788,6 +1788,10 @@ public function newUser(Request $request)
         if ($request->query('category')) {
             $forums->where('category_slug', $request->query('category'));
         }
+
+        if($request->query('main_site')){
+            $forums->where('is_approved',1);
+        }
         $perPage = $request->query('per_page', 10);
         $page = $request->query('page', 1);
         $offset = ($page - 1) * $perPage;
