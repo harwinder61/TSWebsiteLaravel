@@ -8,7 +8,7 @@ class BaseSettings extends Model
 {
     protected $table = 'settings';
     protected $fillable = [
-        'key','value'
+        'key','value','custom_link'
     ];
 
     protected $casts  =  [

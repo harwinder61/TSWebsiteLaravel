@@ -137,6 +137,8 @@ Route::get('/get-forum',[AdminController::class,'getForum']);
 Route::post('/send-email',[AdminController::class,'sendEmail']);
 Route::get('/get-dropdowns',[AdminController::class,'fetchDroppableFields']);
 Route::get('/forum-categories',[AdminController::class,'forumCategories']);
+Route::post('/forum-upvote',[AdminController::class,'updateUpvote']);
+
 Route::post('/post-comment',[AdminController::class,'postComment']);
 Route::get('/get-forum-post/{id}',[AdminController::class,'getForumPost']); 
 Route::post('/create-forum',[AdminController::class,'createForum']);
@@ -217,3 +219,4 @@ Route::get('/test-inactivity-emails', function () {
   $scheduledEmails = new ScheduledEmails();
   return $scheduledEmails->sendInactivityEmails();
 });
+// Route::post('/header-logo',[AdminController::class,'headerLogo']);

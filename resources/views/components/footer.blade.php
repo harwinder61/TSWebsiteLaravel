@@ -40,7 +40,7 @@
                                         style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
                                         align="center" width="33%">
                                         <a href="https://transbunnies.com/ts-login" target="_blank"
-                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Log
+                                            style="text-align: center; font-size: 14px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Log
                                             In</a>
 
                                     </td>
@@ -50,7 +50,7 @@
                                         style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
                                         align="center" width="33%">
                                         <a href="https://transbunnies.com/de/ts-contact/" target="_blank"
-                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Contact
+                                            style="text-align: center; font-size: 14px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Contact
                                             Us</a>
                                     </td>
                                     <td valign="middle" style="padding: 0; border-radius: 6px; text-align: center;"
@@ -59,7 +59,7 @@
                                         style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
                                         align="center" width="33%">
                                         <a href="https://transbunnies.com" target="_blank"
-                                            style="text-align: center; font-size: 18px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Transbunnies.com</a>
+                                            style="text-align: center; font-size: 14px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Transbunnies.com</a>
                                     </td>
                                 </tr>
                             </tbody>
@@ -72,7 +72,7 @@
                             <tbody>
                                 <tr>
                                     <td colspan="2" valign="middle" id="credit"
-                                        style="border-radius: 6px; border: 0; line-height: 150%; padding: 24px 0; font-family: &quot;Helvetica Neue&quot;,Helvetica,Roboto,Arial,sans-serif; font-weight: 400; padding-top: 0px; padding-bottom: 0px; text-align: center; color: #ce0000; font-size: 22px;"
+                                        style="border-radius: 6px; border: 0; line-height: 150%; padding: 24px 0; font-family: &quot;Helvetica Neue&quot;,Helvetica,Roboto,Arial,sans-serif; font-weight: 400; padding-top: 0px; padding-bottom: 0px; text-align: center; color: #ce0000; font-size: 14px;"
                                         align="center">
                                         © {{ date('Y') }}, Transbunnies. All Rights Reserved.
                                     </td>

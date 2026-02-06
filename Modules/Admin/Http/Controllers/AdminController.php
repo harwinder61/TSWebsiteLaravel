@@ -64,6 +64,7 @@ use App\Mail\WhatsappHelper;
 use Illuminate\Support\Facades\Crypt;
 use Modules\Admin\app\Models\SmsLogs;
 use App\Models\Tslogo;
+use Propaganistas\LaravelPhone\PhoneNumber;
 
 
 
@@ -80,6 +81,7 @@ class AdminController extends Controller
     {
         $this->smsService = $smsService;
     }   
+
 
     public function tsLogo(Request $request)
     {
@@ -305,7 +307,8 @@ class AdminController extends Controller
         Log::info('SMS sending attempt for user ' . $user->id . ': ' . $smsResponse);
 
         return Resp::success([
-            'message' => 'SMS sent successfully'
+            'message' => 'SMS sent successfully',
+            'smsResponse' => $smsResponse
         ]);
     } catch (\Exception $e) {
         Log::error('Failed to send SMS to user ' . $user->id . ': ' . $e->getMessage());
@@ -478,6 +481,7 @@ class AdminController extends Controller
 
 public function newUser(Request $request)
 {   
+    
     // Validate the incoming request
     $validator = Validator::make($request->all(), [
         'username' => 'required|string|max:255|unique:users,username',
@@ -526,6 +530,7 @@ public function newUser(Request $request)
         'account_origin' => $request->account_origin,
         'verification_token' => $verification_token,
         'status' => $status,
+        'secret' => $request->user_type == 2 ? Crypt::encryptString($request->password) : null,
     ]);
 
     $user_id = $user->id;
@@ -551,6 +556,7 @@ public function newUser(Request $request)
         '[USER_NAME]' => $user->firstname . ' ' . $user->lastname
     ];
 
+    
     // Handle email notification for user type 3
     if ($request->user_type == 3) {
         $dynamicData = [
@@ -1782,6 +1788,10 @@ public function newUser(Request $request)
         if ($request->query('category')) {
             $forums->where('category_slug', $request->query('category'));
         }
+
+        if($request->query('main_site')){
+            $forums->where('is_approved',1);
+        }
         $perPage = $request->query('per_page', 10);
         $page = $request->query('page', 1);
         $offset = ($page - 1) * $perPage;
@@ -2272,7 +2282,9 @@ public function newUser(Request $request)
         }
         $forum->category_id = $category_data->id;
         $forum->save();
-        $category_data->increment('count');
+        // if($forum->is_approved == 1 ){
+        //     $category_data->increment('count');
+        // }
         return Resp::success([
             'message' => 'Forum created successfully',
             'forum' => $forum,
@@ -3489,8 +3501,69 @@ public function newUser(Request $request)
     public function forumCategories(Request $request)
     {
         try {
-            $categories = ForumCategory::all();
+            // $categories = ForumCategory::all();
+            // $categories = ForumCategory::with(['forums' => function($query) {
+            //     $query->where('is_approved', 1);
+            // }])->get();
+
+            $categories = ForumCategory::withCount(['forums' => function($query) {
+                $query->where('is_approved', 1);
+            }])->get();
+
             return Resp::success(['categories' => $categories]);
+        } catch (\Exception $e) {
+            return Resp::error(['message' => $e->getMessage()]);
+        }
+    }
+
+
+    public function updateUpvote(Request $request){
+        try {
+            $forum = Forum::find($request->forum_id);
+            $user = auth()->user();
+        
+            if (!$user) {
+                return Resp::error(['message' => 'User not logged in']);
+            }
+            if (!$forum) {
+                return Resp::error(['message' => 'Forum not found']);
+            }
+        
+            // Get current upvotes as array (ensure it's always an array)
+            $upvotes = $forum->upvotes ?? [];
+        
+            // Cast to array in case it's stored as JSON string
+            if (!is_array($upvotes)) {
+                $upvotes = json_decode($upvotes, true) ?? [];
+            }
+
+            if(!is_array($upvotes)){
+                $upvotes = [];
+            }
+        
+            $userId = $user->id;
+            $action = $request->boolean('upvote'); // Use boolean() to get true/false
+        
+            if ($action === true) {
+                // Add user ID if not exists using strict check
+                if (!in_array($userId, $upvotes, true)) {
+                    $upvotes[] = $userId;
+                }
+            } else {
+                // Remove all occurrences of user ID
+                $upvotes = array_filter($upvotes, function ($id) use ($userId) {
+                    return $id !== $userId;
+                });
+            }
+        
+            // Update and save with proper JSON encoding
+            $forum->upvotes = array_values($upvotes); // Re-index array
+            $forum->save();
+        
+            return Resp::success([
+                'message' => 'Upvote updated successfully',
+                'data' => $forum
+            ]);
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);
         }
@@ -3649,18 +3722,21 @@ public function newUser(Request $request)
             $valiadtor = Validator::make($request->all(), [
                 'image_id' => 'required|exists:media,id',
                 'key' => 'required|exists:settings,key',
+                'custom_link' => 'nullable|string',
             ]);
             if ($valiadtor->fails()) {
                 return Resp::error([$valiadtor->errors()]);
             }
-            $data = BaseSettings::with('media')->where('key', '=', $request->key)->first();
+            $data = BaseSettings::where('key', '=', $request->key)->first();
             if (!$data) {
                 return Resp::error([
                     'error' => 'No Advert Image found!'
                 ]);
             }
+            $data->load('media');
             $updatedData = $data->update([
-                'value' => $request->image_id
+                'value' => $request->image_id,
+                'custom_link' => $request->custom_link
             ]);
             return Resp::success(['message' => 'Home page images updated successfully', 'data' => $data]);
         } catch (\Exception $e) {

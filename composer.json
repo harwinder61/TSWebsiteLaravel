@@ -15,6 +15,7 @@
         "laravel/socialite": "^5.17",
         "laravel/tinker": "^2.9",
         "nwidart/laravel-modules": "^11.0",
+        "propaganistas/laravel-phone": "^5.3",
         "socialiteproviders/twitter": "^4.1",
         "stripe/stripe-php": "^16.1",
         "symfony/http-client": "*",

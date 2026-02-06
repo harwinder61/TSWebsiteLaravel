@@ -72,3 +72,4 @@ Route::patch('/v1/session/{id}',[EscortController::class,'veriffStatus']);
 Route::get('/v1/sessions/decision/{id}',[EscortController::class,'VeriffDecision']);
 Route::post('/verify/webhook',[EscortController::class,'veriffWebhook']);
 Route::post('/verify/event-webhook',[EscortController::class,'veriffEventWebhook']);
+Route::post('/verify/full-auto-webhook',[EscortController::class,'veriffFullAutoWebhook']);

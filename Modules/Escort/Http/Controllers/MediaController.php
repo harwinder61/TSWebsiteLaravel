@@ -73,6 +73,35 @@ class MediaController extends Controller
             return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
         }
         
+        }if(($request->input("type") == 'settings')){
+            Log::info('settings slug passed');
+            Log::info($request->all());
+            $currentUser = auth()->user();
+            $escort_id=$currentUser->id;
+        try {
+            $file = $request->file('file');
+            $fileExtension = $file->getClientOriginalExtension();
+            $fileName = $request->input('type') . '_' . time() . '.' . $fileExtension;
+
+            $userFolder = 'settings';
+            $directoryPath = public_path($userFolder);
+
+            if (!File::isDirectory($directoryPath)) {
+                File::makeDirectory($directoryPath, 0755, true);
+            }
+
+            $file->move($directoryPath, $fileName);
+            $media = new Media();
+            $media->escort_id = (int)$escort_id;
+            $media->type = 'settings';
+            $media->path = $userFolder . '/' . $fileName;
+            $media->save();
+
+            return Resp::success(['media' => $media,'slug'=>$slug]);
+        } catch (\Exception $e) {
+            return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
+        }
+        
         }else{
             
         $currentUser = auth()->user();

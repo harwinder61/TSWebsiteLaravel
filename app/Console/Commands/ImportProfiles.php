@@ -277,7 +277,7 @@ class ImportProfiles extends Command
                             'ethnicity'=> $ethnicity,
                             //'nationality'=> $ethnicity,
                             'description'=> $rowData['description'],
-                            'verified_status'=> 1,
+                            'verified_status'=> 0,
                             'is_profile'=>1,
                             'is_media'=>1,
                             'date_of_birth'=>$birthDate,

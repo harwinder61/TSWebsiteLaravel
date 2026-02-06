@@ -15,8 +15,11 @@ class Forum extends Model
         'title','category','description',
         'status','tags','region','slug',
         'author_id','is_approved'
-        ,'category_slug'] ;
+        ,'category_slug','upvotes'] ;
 
+    protected $casts =[
+        'upvotes'=>'json'
+    ];
     public function postComments(){
         return $this->hasMany(Comment::class,'forum_id','id');
     }

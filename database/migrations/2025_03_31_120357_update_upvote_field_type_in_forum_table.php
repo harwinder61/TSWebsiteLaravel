@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('profile', function (Blueprint $table) {
-            $table->integer('age')->nullable(); // Adding 'age' as an integer field
-            //
+        Schema::table('forum', function (Blueprint $table) {
+            $table->json('upvotes')->default("[]")->nullable()->change();
         });
     }
 
@@ -22,8 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('profile', function (Blueprint $table) {
-            $table->dropColumn('age');
+        Schema::table('forum', function (Blueprint $table) {
+            $table->integer('upvotes')->default(0)->nullable()->change();
+            
         });
     }
 };
