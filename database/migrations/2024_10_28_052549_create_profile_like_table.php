@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('profile_like', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('escort_id')->references('escort_id')->on('profile');
-            $table->foreignId('fan_id')->constrained('users');
+            $table->foreignId('escort_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('fan_id')->constrained('users')->onDelete('cascade');
             $table->boolean('is_like');
             $table->timestamps();
         });

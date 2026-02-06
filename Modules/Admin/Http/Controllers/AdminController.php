@@ -913,7 +913,7 @@ public function newUser(Request $request)
 
             // Check if page is valid
             if ($page < 1 || $page > $totalPages) {
-                return Resp::message('Invalid page number', 401);
+                return Resp::error(['error' => 'Invalid page number'], 'Invalid page number', 400);
             }
 
             $offset = ($page - 1) * $perPage;
@@ -3708,12 +3708,15 @@ public function newUser(Request $request)
                 ]);
             }
             $data = BaseSettings::where('key', '=', $slug)->first();
-            $data->load('media');
+            
             if (!$data) {
                 return Resp::error([
                     'error' => 'No Advert Images found!'
                 ]);
             }
+            
+            $data->load('media');
+            
             return Resp::success(['data' => $data]);
         } catch (\Exception $e) {
             return Resp::error(['message' => $e->getMessage()]);

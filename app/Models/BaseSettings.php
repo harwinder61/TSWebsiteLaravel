@@ -16,7 +16,24 @@ class BaseSettings extends Model
     ];
 
     public function media(){
-        return $this->belongsTo(Media::class,'value','id');
+        // Extract the ID from the JSON value
+        // If value is a JSON object/array, get the first element or the id property
+        $mediaId = null;
+        
+        if (is_array($this->value)) {
+            // If value is an array, check if it has an 'id' key or use first element
+            $mediaId = $this->value['id'] ?? (is_numeric($this->value[0] ?? null) ? $this->value[0] : null);
+        } elseif (is_numeric($this->value)) {
+            // If value is already numeric, use it directly
+            $mediaId = $this->value;
+        }
+        
+        if ($mediaId) {
+            return $this->belongsTo(Media::class, null, 'id')->where('id', $mediaId);
+        }
+        
+        // Return an empty relationship if no valid ID found
+        return $this->belongsTo(Media::class)->whereNull('id');
     }
 
     

@@ -15,7 +15,7 @@ return new class extends Migration
             $sampleData = [
                 [
                     'key' => 'HOME_AD_IMAGE',
-                    'value' => 1,
+                    'value' => json_encode(1),
                 ]
                 
             ];

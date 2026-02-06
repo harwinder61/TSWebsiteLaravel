@@ -19,35 +19,35 @@ return new class extends Migration
                 ],
                 [
                     'key' => 'P101',
-                    'value' => 1,
+                    'value' => json_encode(1),
                 ],
                 [
                     'key' => 'P102',
-                    'value' => 1,
+                    'value' => json_encode(1),
                 ],
                 [
                     'key' => 'P103',
-                    'value' => 1,
+                    'value' => json_encode(1),
                 ],
                 [
                     'key' => 'P104',
-                    'value' => 1,
+                    'value' => json_encode(1),
                 ],
                 [
                     'key' => 'P105',
-                    'value' => 1,
+                    'value' => json_encode(1),
                 ],
                 [
                     'key' => 'P106',
-                    'value' => 1,
+                    'value' => json_encode(1),
                 ],
                 [
                     'key' => 'TSWEEK',
-                    'value' => 1,
+                    'value' => json_encode(1),
                 ],
                 [
                     'key' => 'PPV',
-                    'value' => 1,
+                    'value' => json_encode(1),
                 ],
                 
             ];
