@@ -2,6 +2,7 @@
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Modules\Admin\Http\Controllers\AdminController;
+use Modules\Admin\Http\Controllers\DiditController;
 use Modules\Admin\Http\Controllers\FanController;
 use Modules\Admin\Http\Controllers\EscortController;
 use App\Models\User;
@@ -125,6 +126,8 @@ Route::middleware(['jwt_auth:admin'])->group(function(){
        Route::post('/delete-fan-escort-all',[AdminController::class,'deleteFanEscortAll']);
        Route::post('/media/single',[AdminController::class,'mediaSingle']);
        Route::post('/ts-logo',[AdminController::class,'tsLogo']);
+       Route::post('/admin/didit/update-status/{user_id}', [DiditController::class, 'updateVerificationStatus']);
+
     });
 
 
@@ -209,6 +212,10 @@ Route::post('/add-comment/{id}',[AdminController::class,'addComment']);
 Route::get('/send-inactivity-emails', [AuthController::class, 'sendInactivityEmails']);
 Route::post('/admin/register', [AdminController::class, 'register']);
 Route::get('/admin/auto-login', [AdminController::class, 'autoLogin']);
+Route::post('/admin/didit/create-session', [DiditController::class, 'createVerificationSession']);
+Route::post('/admin/didit/callback', [DiditController::class, 'handleDiditCallback']);
+Route::get('/admin/didit/session-status/{session_id}', [DiditController::class, 'getSessionStatus']);
+Route::get('/admin/didit/verifications', [DiditController::class, 'getVerifications']);
 Route::post('/admin/recover-password', [AdminController::class, 'recoverAdminPassword']);
 // Route::get('/test-sms', function () {
 //   $smsService = new \App\Services\TwilioSmsService();

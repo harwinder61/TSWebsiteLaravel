@@ -7,18 +7,39 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Escort\app\Models\Escort;
 use App\Models\User;
 use Modules\Fan\app\Models\Fan;
-// use Modules\Escort\Database\Factories\EscortFactory;
 
 class Verify extends Model
 {
     use HasFactory;
 
     /**
-     * The attributes that are mass assignable.
+     * The table associated with the model.
      */
-    protected $table="verify";
-    protected $fillable = ['passport_image','selfie_image','verified_status','action'];
+    protected $table = "verify";
 
+    /**
+     * The attributes that are mass assignable.
+     * I have added 'escort_id' and the new 'didit_' fields here.
+     */
+    protected $fillable = [
+        'escort_id',            // <--- CRITICAL FIX for your error
+        'fan_id',
+        'passport_image',
+        'selfie_image',
+        'verified_status',
+        'action',
+        
+        // Didit Integration Fields
+        'didit_session_id',
+        'didit_workflow_id',
+        'didit_session_token',
+        'didit_status',
+        'didit_completed_at',
+        
+        // Admin Manual Review Fields
+        'admin_notes',
+        'admin_reviewed_at'
+    ];
 
     public function escort()
     {
@@ -37,8 +58,7 @@ class Verify extends Model
 
     public function profile()
     {
-        return $this->belongsTo(Profile::class, 'escort_id', 'id');
+        // specific to your structure: Verify shares the same User ID as Profile
+        return $this->belongsTo(Profile::class, 'escort_id', 'escort_id'); 
     }
-
-
 }

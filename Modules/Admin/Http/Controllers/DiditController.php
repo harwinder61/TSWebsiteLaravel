@@ -3,13 +3,13 @@
 namespace Modules\Admin\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Services\Resp;
+use App\Services\Resp; // Ensure this Service exists in your app
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
-use Modules\Escort\app\Models\Profile;
-use Modules\Escort\app\Models\Verify;
+use Modules\Escort\app\Models\Profile; // Kept your specific namespace
+use Modules\Escort\app\Models\Verify;  // Kept your specific namespace
 use App\Models\User;
 
 class DiditController extends Controller
@@ -32,6 +32,7 @@ class DiditController extends Controller
     public function createVerificationSession(Request $request)
     {
         try {
+            // 1. Validate Input
             $validator = Validator::make($request->all(), [
                 'user_id' => 'required|exists:users,id',
             ]);
@@ -40,29 +41,36 @@ class DiditController extends Controller
                 return Resp::error(['message' => $validator->errors()], 'Validation failed', 422);
             }
 
+            // 2. Check Configuration
+            if (empty($this->diditWorkflowId)) {
+                return Resp::error(['message' => 'DIDIT_WORKFLOW_ID is not configured in .env'], 'Configuration Error', 500);
+            }
+
             $user = User::findOrFail($request->user_id);
-            
-            // Prepare DIDiT session creation payload
+
+            // 3. Prepare Payload
             $payload = [
-                'workflow_id' => $this->diditWorkflowId,
-                'vendor_data' => $user->id . '_' . $user->username,
-                'callback' => env('APP_URL') . '/api/admin/didit/callback',
-                'callback_method' => 'both',
-                'metadata' => [
-                    'user_id' => $user->id,
-                    'email' => $user->email,
+                'workflow_id'     => $this->diditWorkflowId,
+                'vendor_data'     => (string) $user->id,
+                'callback'        => env('APP_URL') . '/api/admin/didit/callback',
+                // Remove 'callback_method' entirely, or use lowercase 'post'
+                // 'callback_method' => 'post', 
+                'metadata'        => [
+                    'user_id'  => $user->id,
                     'username' => $user->username,
-                    'type' => 'age_verification'
+                    'email'    => $user->email,
                 ],
+                // 'contact_details' is sometimes required depending on workflow settings
                 'contact_details' => [
                     'email' => $user->email,
                 ]
             ];
 
-            // Call DIDiT API to create session
+            // 4. Send Request to DIDiT
             $response = Http::withHeaders([
-                'x-api-key' => $this->diditApiKey,
-                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer ' . $this->diditApiKey, // Standard Auth header for v3
+                'x-api-key'     => $this->diditApiKey,             // Some endpoints might still use this
+                'Content-Type'  => 'application/json',
             ])->post($this->diditBaseUrl . '/session/', $payload);
 
             if (!$response->successful()) {
@@ -71,31 +79,30 @@ class DiditController extends Controller
             }
 
             $sessionData = $response->json();
+            $sessionId   = $sessionData['session_id'] ?? $sessionData['id'] ?? null;
+            $sessionUrl  = $sessionData['url'] ?? null;
 
-            // Store DIDiT session info in database
-            $verify = Verify::firstOrCreate(
-                ['escort_id' => $user->id],
+            if (!$sessionId) {
+                return Resp::error(['message' => 'Provider did not return a Session ID'], 'API Error', 500);
+            }
+
+            // 5. Update/Create Database Record
+            // We use updateOrCreate to ensure we don't duplicate records if the user tries again
+            $verify = Verify::updateOrCreate(
+                ['escort_id' => $user->id], // Lookup by this column
                 [
-                    'verified_status' => 2, // Pending
-                    'didit_session_id' => $sessionData['session_id'],
-                    'didit_session_token' => $sessionData['session_token'],
-                    'didit_workflow_id' => $this->diditWorkflowId,
+                    'verified_status'     => 2, // 2 = Pending
+                    'didit_session_id'    => $sessionId,
+                    'didit_workflow_id'   => $this->diditWorkflowId,
+                    'didit_session_token' => $sessionData['session_token'] ?? null,
+                    'updated_at'          => now()
                 ]
             );
 
-            // Update existing record if needed
-            if ($verify->didit_session_id !== $sessionData['session_id']) {
-                $verify->update([
-                    'didit_session_id' => $sessionData['session_id'],
-                    'didit_session_token' => $sessionData['session_token'],
-                    'verified_status' => 2,
-                ]);
-            }
-
             return Resp::success([
-                'session_id' => $sessionData['session_id'],
-                'verification_url' => $sessionData['url'],
-                'session_token' => $sessionData['session_token'],
+                'session_id'       => $sessionId,
+                'verification_url' => $sessionUrl,
+                'session_token'    => $sessionData['session_token'] ?? null,
             ], 'Verification session created', 201);
 
         } catch (\Exception $e) {
@@ -111,50 +118,65 @@ class DiditController extends Controller
     public function handleDiditCallback(Request $request)
     {
         try {
-            Log::info('DIDiT Callback received', $request->all());
+            Log::info('DIDiT Callback Received:', $request->all());
 
-            $sessionId = $request->query('verificationSessionId');
-            $status = $request->query('status'); // Approved, Declined, In Review
+            // 1. Retrieve Data (Callbacks are usually POST bodies)
+            $sessionId = $request->input('session_id') ?? $request->input('id');
+            $status    = $request->input('status');
+            $decision  = $request->input('decision'); // Some workflows use 'decision'
+
+            // Fallback to query parameters if POST body is empty
+            if (!$sessionId) {
+                $sessionId = $request->query('session_id') ?? $request->query('verificationSessionId');
+                $status    = $request->query('status');
+            }
 
             if (!$sessionId) {
                 return Resp::error(['message' => 'Missing session ID'], 'Bad request', 400);
             }
 
-            // Retrieve verification record by session ID
+            // 2. Find the Verification Record
             $verify = Verify::where('didit_session_id', $sessionId)->first();
+
+            // Fallback: Try finding by vendor_data (user_id) if passed
+            if (!$verify && $request->input('vendor_data')) {
+                $verify = Verify::where('escort_id', $request->input('vendor_data'))->first();
+            }
 
             if (!$verify) {
                 return Resp::error(['message' => 'Verification record not found'], 'Not found', 404);
             }
 
-            // Update verification status based on DIDiT response
-            $statusMap = [
-                'Approved' => 1,
-                'Declined' => 4,
-                'In Review' => 2,
-            ];
+            // 3. Map the Status
+            $statusNormalized = strtolower($status ?? $decision ?? '');
+            
+            // Default to 'Pending' (2)
+            $newStatus = 2; 
 
-            $newStatus = $statusMap[$status] ?? 2;
+            if (in_array($statusNormalized, ['approved', 'verified', 'completed'])) {
+                $newStatus = 1; // Verified
+            } elseif (in_array($statusNormalized, ['declined', 'rejected', 'failed'])) {
+                $newStatus = 4; // Rejected
+            } elseif (in_array($statusNormalized, ['review', 'in_review'])) {
+                $newStatus = 2; // Pending/Review
+            }
 
+            // 4. Update Verify Table
             $verify->update([
-                'verified_status' => $newStatus,
-                'didit_status' => $status,
+                'verified_status'    => $newStatus,
+                'didit_status'       => $status,
                 'didit_completed_at' => now(),
             ]);
 
-            // Update profile verified status as well
+            // 5. Update Profile Table (Sync status)
             $profile = Profile::where('escort_id', $verify->escort_id)->first();
             if ($profile) {
                 $profile->update(['verified_status' => $newStatus]);
             }
 
-            Log::info('Verification status updated', [
-                'user_id' => $verify->escort_id,
-                'didit_status' => $status,
-                'app_status' => $newStatus,
-            ]);
+            Log::info("Verification updated for User {$verify->escort_id}: Status {$newStatus}");
 
-            return Resp::success(['message' => 'Verification processed successfully']);
+            return Resp::success(['message' => 'Callback processed successfully']);
 
         } catch (\Exception $e) {
             Log::error('DIDiT Callback Error: ' . $e->getMessage());
@@ -163,18 +185,18 @@ class DiditController extends Controller
     }
 
     /**
-     * Retrieve verification session status from DIDiT
+     * Retrieve verification session status from DIDiT manually
      * GET /api/admin/didit/session-status/{session_id}
      */
     public function getSessionStatus($sessionId)
     {
         try {
             $response = Http::withHeaders([
-                'x-api-key' => $this->diditApiKey,
+                'Authorization' => 'Bearer ' . $this->diditApiKey,
+                'x-api-key'     => $this->diditApiKey,
             ])->get($this->diditBaseUrl . '/session/' . $sessionId);
 
             if (!$response->successful()) {
-                Log::error('DIDiT Session Fetch Error: ' . $response->status());
                 return Resp::error(['message' => 'Failed to retrieve session'], 'DIDiT API Error', 400);
             }
 
@@ -187,46 +209,60 @@ class DiditController extends Controller
     }
 
     /**
-     * Get list of DIDiT verifications (replacing old verification list)
+     * Get list of DIDiT verifications
      * GET /api/admin/didit/verifications
      */
     public function getVerifications(Request $request)
     {
         try {
-            $query = Verify::with(['user', 'profile']);
+            // Eager load relationships
+            // Ensure your Verify model has: public function user() { return $this->belongsTo(User::class, 'escort_id'); }
+            $query = Verify::with(['profile']);
+            
+            if (method_exists(Verify::class, 'user')) {
+                $query->with('user');
+            }
 
-            // Filter by verified_status
-            if ($request->has('verified_status')) {
+            // 1. Filter by Status
+            if ($request->has('verified_status') && $request->filled('verified_status')) {
                 $statusCodes = explode(',', $request->query('verified_status'));
                 $query->whereIn('verified_status', $statusCodes);
             } else {
-                // Default to pending, approved, in review
+                // Default view: show all relevant statuses
                 $query->whereIn('verified_status', [1, 2, 3, 4]);
             }
 
-            // Search by username or email
-            if ($request->has('s')) {
+            // 2. Search Logic (Grouped OR clauses)
+            if ($request->has('s') && $request->filled('s')) {
                 $searchTerm = $request->query('s');
-                $query->whereHas('user', function ($q) use ($searchTerm) {
-                    $q->where('username', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('email', 'like', '%' . $searchTerm . '%');
+                
+                $query->where(function ($q) use ($searchTerm) {
+                    // Search in User table
+                    if (method_exists(Verify::class, 'user')) {
+                        $q->whereHas('user', function ($uq) use ($searchTerm) {
+                            $uq->where('username', 'like', '%' . $searchTerm . '%')
+                               ->orWhere('email', 'like', '%' . $searchTerm . '%');
+                        });
+                    }
+                    // Search in Profile table (e.g. ID or Name)
+                    $q->orWhere('escort_id', $searchTerm); 
                 });
             }
 
-            // Pagination
+            // 3. Pagination
             $perPage = (int)$request->query('per_page', 10);
             $verifications = $query->orderBy('updated_at', 'desc')->paginate($perPage);
 
             $pagination = [
-                'total_results' => $verifications->count(),
-                'total_pages' => $verifications->lastPage(),
-                'page' => $verifications->currentPage(),
-                'page_size' => $verifications->perPage(),
+                'total_results' => $verifications->total(), // Correct: Gets total DB count
+                'total_pages'   => $verifications->lastPage(),
+                'page'          => $verifications->currentPage(),
+                'page_size'     => $verifications->perPage(),
             ];
 
             return Resp::success([
                 'verifications' => $verifications->items(),
-                'pagination' => $pagination,
+                'pagination'    => $pagination,
             ]);
 
         } catch (\Exception $e) {
@@ -244,7 +280,7 @@ class DiditController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'action' => 'required|in:approve,reject,review',
-                'notes' => 'nullable|string|max:500',
+                'notes'  => 'nullable|string|max:500',
             ]);
 
             if ($validator->fails()) {
@@ -253,37 +289,32 @@ class DiditController extends Controller
 
             $statusMap = [
                 'approve' => 1,
-                'reject' => 4,
-                'review' => 2,
+                'reject'  => 4,
+                'review'  => 2,
             ];
 
-            $verify = Verify::where('escort_id', $userId)->first();
-            if (!$verify) {
-                return Resp::error(['message' => 'Verification record not found'], 'Not found', 404);
-            }
+            // Use updateOrCreate: This allows admins to manually verify a user 
+            // even if the user never started a Didit session.
+            $verify = Verify::updateOrCreate(
+                ['escort_id' => $userId],
+                [
+                    'verified_status'   => $statusMap[$request->action],
+                    'admin_notes'       => $request->notes,
+                    'admin_reviewed_at' => now(),
+                ]
+            );
 
-            $newStatus = $statusMap[$request->action];
-            $verify->update([
-                'verified_status' => $newStatus,
-                'admin_notes' => $request->notes,
-                'admin_reviewed_at' => now(),
-            ]);
-
-            // Update profile
+            // Sync Profile
             $profile = Profile::where('escort_id', $userId)->first();
             if ($profile) {
-                $profile->update(['verified_status' => $newStatus]);
+                $profile->update(['verified_status' => $verify->verified_status]);
             }
 
-            $actionText = match($request->action) {
-                'approve' => 'Approved',
-                'reject' => 'Rejected',
-                'review' => 'Marked for Review',
-            };
+            $actionText = ucfirst($request->action);
 
             return Resp::success([
-                'message' => 'Verification status ' . $actionText,
-                'new_status' => $newStatus,
+                'message'    => "Verification status updated: $actionText",
+                'new_status' => $verify->verified_status,
             ]);
 
         } catch (\Exception $e) {
