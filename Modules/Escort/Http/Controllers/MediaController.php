@@ -64,7 +64,9 @@ class MediaController extends Controller
             $media->escort_id = (int)$escort_id;
             $media->type = $request->type;
             $media->path = $userFolder . '/' . $fileName;
+            $media->nsfw_status = $request->input('nsfw_status', 'unapproved');
             $media->save();
+            $media->refresh();
             Log::info('media saved in advert ');
             Log::info('escort id is =========== '.$escort_id);
 
@@ -95,7 +97,9 @@ class MediaController extends Controller
             $media->escort_id = (int)$escort_id;
             $media->type = 'settings';
             $media->path = $userFolder . '/' . $fileName;
+            $media->nsfw_status = $request->input('nsfw_status', 'unapproved');
             $media->save();
+            $media->refresh();
 
             return Resp::success(['media' => $media,'slug'=>$slug]);
         } catch (\Exception $e) {
@@ -132,7 +136,9 @@ class MediaController extends Controller
             $media->escort_id = $currentUser->id;
             $media->type = $request->type;
             $media->path = $userFolder . '/' . $fileName;
+            $media->nsfw_status = $request->input('nsfw_status', 'unapproved');
             $media->save();
+            $media->refresh();
             return Resp::success(['media' => $media]);
         } catch (\Exception $e) {
             return Resp::error(['error' => 'Failed to save media: ' . $e->getMessage()], 500);
