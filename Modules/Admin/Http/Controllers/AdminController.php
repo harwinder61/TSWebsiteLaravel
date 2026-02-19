@@ -3395,7 +3395,8 @@ public function newUser(Request $request)
                 'title' => '',
                 'description' => '',
                 'alternative_text' => '',
-                'caption' => ''
+                'caption' => '',
+                'nsfw_status' => '',
             ]);
             if ($validator->fails()) {
                 return Resp::error(['message' => $validator->errors()]);
@@ -3408,7 +3409,8 @@ public function newUser(Request $request)
                 'title' => $request->title,
                 'description' => $request->description,
                 "alternative_text" => $request->alternative_text,
-                'caption' => $request->caption
+                'caption' => $request->caption,
+                'nsfw_status' => $request->nsfw_status
             ]);
             return Resp::success(['message' => 'Media updated successfully']);
         } catch (\Exception $e) {
