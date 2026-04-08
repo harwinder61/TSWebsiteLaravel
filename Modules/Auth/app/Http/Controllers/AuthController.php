@@ -98,6 +98,8 @@ class AuthController extends Controller
         //     Log::info('Decrypted Password: ' . $decrypted_password);
         // }
         // Send verification email
+        // Log::info("DIDiT Webhook received", ['webapp_url' => env('WEBAPP_URL'), 'verification_token' => $verification_token]);
+
         EmailHelper::sendDynamicEmail(
             'ts_email_verification',
             [

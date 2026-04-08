@@ -39,7 +39,7 @@
                                                                         <div id="body_content_inner"
                                                                             style="color: #333; text-align: left; font-size: 14px; line-height: 24px; font-family: &quot;Helvetica Neue&quot;,Helvetica,Roboto,Arial,sans-serif; font-weight: 400;"
                                                                             align="left">
-                                                                            {!! $body !!}
+                                                                            {!! $body ?? ''  !!}
                                                                         </div>
                                                                     </td>
                                                                 </tr>
