@@ -2,6 +2,7 @@
 
 namespace Modules\Admin\Http\Controllers;
 
+use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\Controller;
 use App\Models\BaseReviews;
 use App\Models\ForumCategory;
@@ -795,62 +796,102 @@ public function newUser(Request $request)
         ]);
     }
 
+    private function handleImageUpload(Request $request)
+    {
+        if (!$request->hasFile('image')) {
+            return null;
+        }
+
+        $file = $request->file('image');
+        $fileName = 'location_' . time() . '_' . Str::random(5) . '.' . $file->getClientOriginalExtension();
+        $folder = 'uploads/locations';
+        $directoryPath = public_path($folder);
+
+        if (!File::isDirectory($directoryPath)) {
+            File::makeDirectory($directoryPath, 0755, true);
+        }
+
+        $file->move($directoryPath, $fileName);
+        
+        return $folder . '/' . $fileName;
+    }
+
+
+    // Helper function to get latitude and longitude of city
+    public function getCoordinates(string $cityName): array
+    {
+        $url = "https://nominatim.openstreetmap.org/search?q=" . urlencode($cityName) . "&format=json&limit=1";
+        
+        $data = Http::withHeaders(['User-Agent' => 'FoxyDevils/1.0'])
+                    ->get($url)
+                    ->json();
+
+        if (!empty($data)) {
+            return [
+                'latitude'  => (float) ($data[0]['lat'] ?? null),
+                'longitude' => (float) ($data[0]['lon'] ?? null),
+            ];
+        }
+
+        return ['latitude' => null, 'longitude' => null];
+    }
 
 
     public function addLocation(Request $request)
     {
-
         try {
             $type = $request->type;
-            if ($type == 'region') {
-                $location = Location::create([
-                    'name' => $request->region,
-                    'type' => 'region',
-                    'parent_id' => null,
-                    'slug' => Str::slug($request->region),
-                ]);
-                return Resp::success(['message' => 'Region added successfully', 'location' => $location]);
-            } else if ($type == 'county') {
+            $imagePath = $this->handleImageUpload($request);
 
-                $region = Location::where('type', 'region')->where('id', $request->region)->first();
-                if (!$region) {
-                    return Resp::error(['message' => 'Region not found']);
-                }
+            switch ($type) {
+                case 'region':
+                    $name = $request->region;
+                    $parentId = null;
+                    $coordinates = $this->getCoordinates($name);
+                    break;
 
-                $location = Location::create([
-                    'name' => $request->county,
-                    'type' => 'county',
-                    'parent_id' => $region->id,
-                    'slug' => Str::slug($request->county),
-                ]);
-                return Resp::success(['message' => 'County added successfully', 'location' => $location]);
-            } else if ($type == 'city') {
-                $region = Location::where('type', 'region')->where('id', $request->region)->first();
-                if (!$region) {
-                    return Resp::error(['message' => 'Region not found']);
-                }
+                case 'county':
+                    $name = $request->county;
+                    $region = Location::where(['type' => 'region', 'id' => $request->region])->first();
+                    if (!$region) return Resp::error(['message' => 'Region not found']);
+                    $parentId = $region->id;
+                    $coordinates = $this->getCoordinates($name);
+                    break;
 
-                $county = Location::where('type', 'county')
-                    ->where('id', $request->county)
-                    ->where('parent_id', $region->id)
-                    ->first();
-                if (!$county) {
-                    return Resp::error(['message' => 'County not found']);
-                }
-                $location = Location::create([
-                    'name' => $request->city,
-                    'type' => 'city',
-                    'parent_id' => $county->id,
-                    'slug' => Str::slug($request->city),
-                ]);
-                return Resp::success(['message' => 'City added successfully', 'location' => $location]);
+                case 'city':
+                    $name = $request->city;
+                    $county = Location::where(['type' => 'county', 'id' => $request->county, 'parent_id' => $request->region])->first();
+                    if (!$county) return Resp::error(['message' => 'Parent hierarchy (Region/County) not found']);
+                    $parentId = $county->id;
+                    $coordinates = $this->getCoordinates($name);
+                    break;
+
+                default:
+                    return Resp::error(['message' => 'Please enter a valid location type']);
             }
 
-            return Resp::success(['message' => 'Please enter a valid location type']);
+            $location = Location::create([
+                'name'      => $name,
+                'type'      => $type,
+                'parent_id' => $parentId,
+                'slug'      => Str::slug($name),
+                'image'     => $imagePath,
+                'latitude'  => $coordinates['latitude'] ?? null,
+                'longitude' => $coordinates['longitude'] ?? null,
+            ]);
+
+            return Resp::success([
+                'message'  => ucfirst($type) . ' added successfully', 
+                'location' => $location,
+                'warning'  => ($location->latitude === null) ? 'Coordinates not found for this city' : null,
+            ]);
+
         } catch (\Exception $e) {
             return Resp::error(['message' => 'Something went wrong', 'error' => $e->getMessage()]);
         }
     }
+
+    
 
     public function deleteLocation($id, Request $request)
     {
@@ -3576,7 +3617,7 @@ public function newUser(Request $request)
     {
         try {
             $data = BaseSettings::all();
-            if (!$data) {
+            if ($data->isEmpty()) {
                 return Resp::error([
                     'error' => 'No dropdown fields found'
                 ]);
