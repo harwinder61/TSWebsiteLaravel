@@ -711,7 +711,13 @@ class SubscriptionController extends Controller
                 $minRating = max(1, min(5, floatval($minRating)));
                 
                 $subscriptions->whereHas('escort.profile', function($profileQuery) use ($minRating) {
-                    $profileQuery->whereRaw('COALESCE(avg_rating, 0) >= ?', [$minRating]);
+                    // Use a subquery to calculate the average of the 5 rating columns dynamically
+                    $profileQuery->whereRaw('(
+                        SELECT COALESCE(AVG((photo_accuracy + service + clean_liness + location + value_for_money) / 5.0), 0)
+                        FROM reviews
+                        WHERE reviews.escort_id = profile.id 
+                        AND reviews.status = 1
+                    ) >= ?', [$minRating]);
                 });
             }
 
