@@ -410,9 +410,24 @@ class SubscriptionController extends Controller
             'latest_subscription.max_id'
         )
             ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id')
-            ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
-            ->selectRaw('locations.id, COUNT(*) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug')
-            ->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type');
+            ->where(function($q) {
+    $q->whereNull('subscriptions.extra_location')
+      ->orWhereRaw('JSON_LENGTH(subscriptions.extra_location) = 0');
+})
+            // ->leftJoin('locations', 'profile.city_id', '=', 'locations.id')
+            ->leftJoin('locations as city', 'profile.city_id', '=', 'city.id')
+            ->whereNotNull('city.id')
+            // ->selectRaw('locations.id, COUNT(*) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug')
+            // ->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type');
+              ->selectRaw('
+                city.id,
+                COUNT(*) as subscription_count,
+                city.name as city_name,
+                city.type as location_type,
+                city.slug,
+                city.image
+            ')
+            ->groupBy('city.id', 'city.name', 'city.slug', 'city.type', 'city.image');
 
         // $rawSubQuary2 = '(SELECT escort_id, MAX(end_date) as latest_end_date, MAX(id)
         // as max_id FROM subscriptions GROUP BY escort_id, plan_code) as latest_subscription';
@@ -435,13 +450,17 @@ class SubscriptionController extends Controller
                 'latest_subscription.max_id'
             )
             ->whereColumn('subscriptions.id', '=', 'latest_subscription.max_id')
-            // ->crossJoin('locations')
-            ->leftJoin('locations', 'locations.id', '=', 'locations.id') // Change from crossJoin to leftJoin
-            ->whereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(locations.id AS CHAR))')
+              ->whereNotNull('subscriptions.extra_location')
+    ->whereRaw('JSON_LENGTH(subscriptions.extra_location) > 0')
+            ->crossJoin('locations')
+            // ->leftJoin('locations', 'locations.id', '=', 'locations.id') // Change from crossJoin to leftJoin
+            // ->whereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(locations.id AS CHAR))')
+            ->where('locations.type', 'city')
+->whereRaw('JSON_CONTAINS(subscriptions.extra_location, CAST(locations.id AS CHAR))')
             // ->selectRaw('locations.id, COUNT(*) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug')
-            ->selectRaw('locations.id, COUNT(*) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug')
+            ->selectRaw('locations.id, COUNT(*) as subscription_count, locations.name as city_name, locations.type as location_type, locations.slug as slug,  locations.image')
 
-            ->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type');
+            ->groupBy('locations.id', 'locations.name', 'locations.slug', 'locations.type',  'locations.image');
 
         // Convert Eloquent builders to Query builders
         $primaryLocationsQuery = $primaryLocations->toBase();
@@ -453,8 +472,8 @@ class SubscriptionController extends Controller
         // Sum up the counts for duplicate locations
         $finalResult = \DB::table(\DB::raw("({$result->toSql()}) as combined"))
             ->mergeBindings($result)
-            ->selectRaw('id, SUM(subscription_count) as subscription_count, city_name, location_type, slug')
-            ->groupBy('id', 'city_name', 'location_type', 'slug');
+            ->selectRaw('id, SUM(subscription_count) as subscription_count, city_name, location_type, slug,  image')
+            ->groupBy('id', 'city_name', 'location_type', 'slug',  'image');
 
         return Resp::success(["list" => $finalResult->get()]);
     }

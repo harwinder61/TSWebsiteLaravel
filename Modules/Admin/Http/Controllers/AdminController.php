@@ -870,15 +870,19 @@ public function newUser(Request $request)
                     return Resp::error(['message' => 'Please enter a valid location type']);
             }
 
-            $location = Location::create([
+            $location = Location::updateOrCreate(
+               [ 
                 'name'      => $name,
                 'type'      => $type,
                 'parent_id' => $parentId,
+                ],
+               [ 
                 'slug'      => Str::slug($name),
                 'image'     => $imagePath,
                 'latitude'  => $coordinates['latitude'] ?? null,
                 'longitude' => $coordinates['longitude'] ?? null,
-            ]);
+                ]
+            );
 
             return Resp::success([
                 'message'  => ucfirst($type) . ' added successfully', 
