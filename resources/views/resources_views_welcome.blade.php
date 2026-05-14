@@ -1,16 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'Welcome to Transbunnies')
+@section('title', 'Welcome to Foxy Devils')
 
 @section('content')
 <div class="container-custom">
 <div class="welcome-content">
-    <p>Hi tsadmin,</p>
+    <p>Hi admin,</p>
 
     <p>
-        Thanks for creating an account on Transbunnies: TS Escorts Shemales in UK & London. 
+        Thanks for creating an account on Foxy Devils:Escorts Shemales in UK & London. 
         We are building your advert ready for launch day on Monday 10th May 2021 to get you calls immediately. 
-        Once Transbunnies is live you can access your account to edit and update your profile, 
+        Once Foxy Devils is live you can access your account to edit and update your profile, 
         change your password and more at 
         <a href="https://transbunnies.com/de/ts-account/
 " class="text-red">

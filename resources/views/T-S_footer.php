@@ -14,11 +14,11 @@
         <ul style="list-style: none; padding: 0; display: flex; justify-content: center; gap: 20px;">
             <li><a href="{{ route('login') }}">Log In</a></li>
             <li><a href="{{ route('contact') }}">Contact Us</a></li>
-            <li><a href="{{ route('home') }}">Transbunnies.com</a></li>
+            <li><aFoxyDevils.com href="{{ route('home') }}">FoxyDevils.com</a></li>
         </ul>
     </nav>
 
     <p style="text-align: center; color: #666;">
-        © {{ date('Y') }}, Transbunnies. All Rights Reserved.
+        © {{ date('Y') }}, Foxy Devils. All Rights Reserved.
     </p>
 </footer>   

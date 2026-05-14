@@ -734,7 +734,7 @@ class SubscriptionController extends Controller
                     $profileQuery->whereRaw('(
                         SELECT COALESCE(AVG((photo_accuracy + service + clean_liness + location + value_for_money) / 5.0), 0)
                         FROM reviews
-                        WHERE reviews.escort_id = profile.id 
+                        WHERE reviews.escort_id = profile.escort_id
                         AND reviews.status = 1
                     ) >= ?', [$minRating]);
                 });

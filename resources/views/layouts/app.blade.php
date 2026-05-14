@@ -9,10 +9,10 @@
 
 <body>
     <div id="wrapper" dir="ltr"
-        style="background-color: #fdfdfd; margin: 0; padding: 70px 0; width: 100%; padding-top: 70px; padding-bottom: px; -webkit-text-size-adjust: none;"
+        style="background-color: #fdfdfd; margin: 0; padding: 20px 0; width: 100%; padding-top: 20px; padding-bottom:20px; -webkit-text-size-adjust: none;"
         bgcolor="#fdfdfd" width="100%">
         <table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%">
-            <tbody>
+            <!-- <tbody>
                 <tr>
                     <td align="center" valign="top">
                         <table border="0" cellpadding="0" cellspacing="0" width="600" id="template_container"
@@ -21,10 +21,10 @@
                             <tbody>
                                 <tr>
                                     <td align="center" valign="top">
-                                        <!-- Body -->
-                                        <table border="0" cellpadding="0" cellspacing="0" width="600"
+                                        Body -->
+                                        <!-- <table border="0" cellpadding="0" cellspacing="0" width="600"
                                             id="template_body">
-                                            <tbody>
+                                            <tbody> -->
                                                 @include('components.header')
                                                 <tr>
                                                     <td valign="top" id="body_content"
@@ -35,7 +35,7 @@
                                                             <tbody>
                                                                 <tr>
                                                                     <td valign="top"
-                                                                        style="padding: 48px 48px 32px; padding-left: 48px; padding-right: 48px;">
+                                                                        style="padding: 18px 48px 32px; padding-left: 48px; padding-right: 48px;">
                                                                         <div id="body_content_inner"
                                                                             style="color: #333; text-align: left; font-size: 14px; line-height: 24px; font-family: &quot;Helvetica Neue&quot;,Helvetica,Roboto,Arial,sans-serif; font-weight: 400;"
                                                                             align="left">

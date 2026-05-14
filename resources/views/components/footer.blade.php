@@ -10,15 +10,15 @@
                                 <tr>
                                     <td id="template_social" style="text-align: center; padding: 0; border-radius: 6px;"
                                         align="center">
-                                        <a href="https://x.com/tsgirldirectory" target="_blank"
+                                        <a href="https://x.com/" target="_blank"
                                             style="font-weight: normal; color: #ce0000; text-decoration: none;">
-                                            <img src="https://transbunnies.com/wp-content/themes/transbunnies/img/download.png"
-                                                style="border: none; display: inline-block; font-weight: bold; outline: none; text-decoration: none; text-transform: capitalize; vertical-align: middle; margin-right: 10px; max-width: 100%; font-size: 14px; line-height: 24px; width: 70px; height: 50px;"
-                                                border="0" width="70" height="50">
+                                            <img src="https://img.freepik.com/premium-vector/new-twitter-logo-x-2023-twitter-x-logo-vector-download_691560-10806.jpg?semt=ais_hybrid&w=740&q=80" alt ="img"
+                                                style="border: none; display: inline-block; font-weight: bold; outline: none; text-decoration: none; text-transform: capitalize; vertical-align: middle; margin-right: 10px; max-width: 100%; font-size: 14px; line-height: 24px; width: 45px; height: 45px;"
+                                                border="0" width="45" height="45">
                                         </a>
-                                        <a href="https://www.instagram.com/transbunnies/" target="_blank"
+                                        <a href="https://www.instagram.com/" target="_blank"
                                             style="font-weight: normal; text-decoration: underline; color: #ce0000;">
-                                            <img src="https://transbunnies.com/wp-content/themes/transbunnies/img/email-insta.png"
+                                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmHOhhwWQZNbSclpqxVrB4fNYa8F5K9Ehl9A&s" alt="img"
                                                 style="border: none; display: inline-block; font-weight: bold; outline: none; text-decoration: none; text-transform: capitalize; vertical-align: middle; max-width: 100%; font-size: 14px; line-height: 24px; margin-right: 0; width: 45px; height: 45px;"
                                                 border="0" width="45" height="45">
                                         </a>
@@ -39,7 +39,7 @@
                                     <td valign="middle"
                                         style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
                                         align="center" width="33%">
-                                        <a href="https://transbunnies.com/ts-login" target="_blank"
+                                        <a href="https://foxydevils.com/login" target="_blank"
                                             style="text-align: center; font-size: 14px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Log
                                             In</a>
 
@@ -49,7 +49,7 @@
                                     <td valign="middle"
                                         style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
                                         align="center" width="33%">
-                                        <a href="https://transbunnies.com/de/ts-contact/" target="_blank"
+                                        <a href="https://foxydevils.com/contact/" target="_blank"
                                             style="text-align: center; font-size: 14px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Contact
                                             Us</a>
                                     </td>
@@ -58,8 +58,8 @@
                                     <td valign="middle"
                                         style="padding: 0; border-radius: 6px; text-align: center; width: 33%;"
                                         align="center" width="33%">
-                                        <a href="https://transbunnies.com" target="_blank"
-                                            style="text-align: center; font-size: 14px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Transbunnies.com</a>
+                                        <a href="https://foxydevils.com" target="_blank"
+                                            style="text-align: center; font-size: 14px; color: #000; text-decoration: none; font-weight: bold; padding: 8px 0;font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;">Foxy devils.com</a>
                                     </td>
                                 </tr>
                             </tbody>
@@ -74,7 +74,7 @@
                                     <td colspan="2" valign="middle" id="credit"
                                         style="border-radius: 6px; border: 0; line-height: 150%; padding: 24px 0; font-family: &quot;Helvetica Neue&quot;,Helvetica,Roboto,Arial,sans-serif; font-weight: 400; padding-top: 0px; padding-bottom: 0px; text-align: center; color: #ce0000; font-size: 14px;"
                                         align="center">
-                                        © {{ date('Y') }}, Transbunnies. All Rights Reserved.
+                                        © {{ date('Y') }}, Foxy Devils. All Rights Reserved.
                                     </td>
                                 </tr>
                             </tbody>
