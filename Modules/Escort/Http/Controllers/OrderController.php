@@ -70,7 +70,36 @@ class OrderController extends Controller
 
         $sub_exists = Subscription::where('escort_id', $user->id)->first();
         $days = $plan->days;
-        $end_date = date('Y-m-d', strtotime($request->input('start_date') . " + $days days"));
+        
+        Log::info("P105 DEBUG - Plan code: " . $request->input('plan_code'));
+        Log::info("P105 DEBUG - User ID: " . $user->id);
+        Log::info("P105 DEBUG - Start date from request: " . $request->input('start_date'));
+        Log::info("P105 DEBUG - Days from plan: " . $days);
+        
+        // P105 cumulative duration logic
+        if ($request->input('plan_code') == 'P105') {
+            $existing_p105_subscription = Subscription::where('escort_id', $user->id)
+                ->where('plan_code', 'P105')
+                ->where('status', 'ACTIVE')
+                ->where('end_date', '>', now())
+                ->orderBy('end_date', 'desc')
+                ->first();
+            
+            Log::info("P105 DEBUG - Existing subscription found: " . ($existing_p105_subscription ? 'YES' : 'NO'));
+            if ($existing_p105_subscription) {
+                Log::info("P105 DEBUG - Existing end date: " . $existing_p105_subscription->end_date);
+                // Add 28 days to existing end date
+                $end_date = date('Y-m-d', strtotime($existing_p105_subscription->end_date . " + 28 days"));
+                Log::info("P105 DEBUG - New end date (cumulative): " . $end_date);
+            } else {
+                // First P105 purchase - use 28 days from start date
+                $end_date = date('Y-m-d', strtotime($request->input('start_date') . " + 28 days"));
+                Log::info("P105 DEBUG - New end date (first purchase): " . $end_date);
+            }
+        } else {
+            $end_date = date('Y-m-d', strtotime($request->input('start_date') . " + $days days"));
+            Log::info("P105 DEBUG - End date (other plan): " . $end_date);
+        }
         if ($request->input('plan_code') == 'P101') {
             $end_date = date('Y-m-d', strtotime($end_date . " -1 day")); // Subtract one day for p101 plan_code
         }
@@ -315,21 +344,73 @@ class OrderController extends Controller
             }
             $days = $plan->days;
 
+            Log::info("P105 WEBHOOK DEBUG - Order ID: " . $order->id);
+            Log::info("P105 WEBHOOK DEBUG - Plan code: " . $order->plan_code);
+            Log::info("P105 WEBHOOK DEBUG - Escort ID: " . $order->escort_id);
+            Log::info("P105 WEBHOOK DEBUG - Order start date: " . $order->start_date);
+            Log::info("P105 WEBHOOK DEBUG - Order end date: " . $order->end_date);
+            Log::info("P105 WEBHOOK DEBUG - Days from plan: " . $days);
 
-            //$subscription_exists=Subscription::where('escort_id',$order->escort_id)
-            //    ->where('plan_code',$order->plan_code)
-            //    ->where('status','ACTIVE')
-            //    ->first();
-
-
-            //if($subscription_exists){
-            //    return Resp::error(['Subscription already exists']);
-            //}
-            Log::info("Number of days from plans table : " . $days);
-            // Ensure the start_date is in the correct format
-            // Ensure the start_date is in the correct format
-            $start_date = Carbon::parse($order->start_date);
-            $end_date = $start_date->addDays($days)->subDay()->format('Y-m-d'); // Subtract one day from the calculated end date
+            // P105 cumulative duration logic - UPDATE existing subscription instead of creating new one
+            if ($order->plan_code == 'P105') {
+                $existing_p105_subscription = Subscription::where('escort_id', $order->escort_id)
+                    ->where('plan_code', 'P105')
+                    ->where('status', 'ACTIVE')
+                    ->where('end_date', '>', now())
+                    ->orderBy('end_date', 'desc')
+                    ->first();
+                
+                Log::info("P105 WEBHOOK DEBUG - Existing subscription found: " . ($existing_p105_subscription ? 'YES' : 'NO'));
+                if ($existing_p105_subscription) {
+                    Log::info("P105 WEBHOOK DEBUG - Existing subscription ID: " . $existing_p105_subscription->id);
+                    Log::info("P105 WEBHOOK DEBUG - Existing end date: " . $existing_p105_subscription->end_date);
+                    // Use the order's end_date which was already calculated cumulatively in createOrder
+                    $new_end_date = $order->end_date;
+                    Log::info("P105 WEBHOOK DEBUG - New end date from order (cumulative): " . $new_end_date);
+                    
+                    // Update existing subscription
+                    $existing_p105_subscription->update([
+                        'end_date' => $new_end_date,
+                        'order_id' => $order->id,
+                        'image_id' => $order->image_id,
+                        'extra_location' => $extra_location
+                    ]);
+                    
+                    Log::info("P105 WEBHOOK DEBUG - Updated existing subscription ID: " . $existing_p105_subscription->id);
+                    
+                    // Send email notification
+                    EmailHelper::sendDynamicEmail(
+                        'ts_new_order_notification',
+                        [
+                            '[CUSTOMER_NAME]' => $user->username,
+                            '[PLAN_CODE]' => $plan->code,
+                            '[START_DATE]' => Carbon::parse($existing_p105_subscription->start_date)->format('Y-m-d'),
+                            '[END_DATE]' => Carbon::parse($new_end_date)->format('Y-m-d'),
+                            '[PRICE]' => $plan->price,
+                            '[TOTAL]' => $plan->price,
+                            '[PLAN_TITLE]' => $plan->title,
+                            '[ORDER_ID]' => $order->id,
+                            '[USER_EMAIL]' => $user->email,
+                            '[SUBSCRIPTION_ID]' => $existing_p105_subscription->id
+                        ],
+                        $user->email
+                    );
+                    
+                    return Resp::success(['subscription' => $existing_p105_subscription, 'order' => $order]);
+                } else {
+                    // First P105 purchase - use the order's end_date which was calculated in createOrder
+                    $start_date = Carbon::parse($order->start_date);
+                    $end_date = $order->end_date;
+                    Log::info("P105 WEBHOOK DEBUG - New start date (first purchase): " . $start_date->format('Y-m-d'));
+                    Log::info("P105 WEBHOOK DEBUG - New end date from order (first purchase): " . $end_date);
+                }
+            } else {
+                Log::info("P105 WEBHOOK DEBUG - Number of days from plans table : " . $days);
+                // Ensure the start_date is in the correct format
+                $start_date = Carbon::parse($order->start_date);
+                $end_date = $start_date->addDays($days)->subDay()->format('Y-m-d'); // Subtract one day from the calculated end date
+                Log::info("P105 WEBHOOK DEBUG - End date (other plan): " . $end_date);
+            }
             //old end_date calculation
             //$end_date = $start_date->addDays($days)->format('Y-m-d'); // Correctly calculate end date
 
