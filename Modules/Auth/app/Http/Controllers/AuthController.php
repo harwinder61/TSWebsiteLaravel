@@ -24,6 +24,7 @@ use Google_Client;
 use Modules\Admin\app\Models\EmailTemplates;
 use App\Mail\DynamicEmail;
 use App\Mail\EmailHelper;
+use Modules\Escort\app\Models\EscortSubscription;
 use Carbon\Carbon;
 use App\Console\Commands\ScheduledEmails;
 use App\Models\User;
@@ -347,6 +348,27 @@ class AuthController extends Controller
         Log::info('Calling sendInactivityEmails for all inactive users');
         $scheduledEmails = new ScheduledEmails();
         $scheduledEmails->sendInactivityEmails();
+
+        // Restore deleted profile within 30 days
+if ($user->is_delete == 1 && $user->delete_on) {
+
+    $deletedAt = Carbon::parse($user->delete_on);
+
+    if ($deletedAt->diffInDays(now()) <= 30) {
+
+        // Restore user
+        $user->is_delete = 0;
+        $user->delete_on = null;
+        $user->save();
+
+        // Restore ONLY active subscriptions
+        EscortSubscription::where('escort_id', $user->id)
+            ->where('end_date', '>=', now())
+            ->update([
+                'is_hidden' => 0
+            ]);
+    }
+}
 
         return Resp::success([
             'message' => 'Login successful',

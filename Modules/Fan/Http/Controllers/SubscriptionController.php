@@ -375,6 +375,9 @@ class SubscriptionController extends Controller
         $primaryLocations = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
             ->where('subscriptions.end_date', '>', now())
             ->where('subscriptions.is_hidden', 0)
+            ->whereHas('escort', function($query) {
+                $query->where('is_delete', 0);
+            })
             ->whereHas('escort.profile', function($query) {
                 $query->where('verified_status', 1);
             });
@@ -440,6 +443,9 @@ class SubscriptionController extends Controller
         $extraLocations = EscortSubscription::join('profile', 'subscriptions.escort_id', '=', 'profile.escort_id')
             ->where('subscriptions.end_date', '>', now())
             ->where('subscriptions.is_hidden', 0)
+            ->whereHas('escort', function($query) {
+                $query->where('is_delete', 0);
+            })
             ->whereHas('escort.profile', function($query) {
                 $query->where('verified_status', 1);
             })
@@ -471,6 +477,7 @@ class SubscriptionController extends Controller
 
         // Sum up the counts for duplicate locations
         $finalResult = \DB::table(\DB::raw("({$result->toSql()}) as combined"))
+        
             ->mergeBindings($result)
             ->selectRaw('id, SUM(subscription_count) as subscription_count, city_name, location_type, slug,  image')
             ->groupBy('id', 'city_name', 'location_type', 'slug',  'image');
@@ -493,7 +500,10 @@ class SubscriptionController extends Controller
             $subscriptions->leftJoin('plans', 'subscriptions.plan_code', '=', 'plans.code')
                 ->select('subscriptions.*', 'plans.title as plan_title')
                 ->where('subscriptions.end_date', '>', now())
-                ->where('subscriptions.is_hidden', 0);
+                ->where('subscriptions.is_hidden', 0)
+                ->whereHas('escort', function($query) {
+                    $query->where('is_delete', 0);
+                });
 
             // Verified status filter
             if (!$request->query('ignore_verified')) {

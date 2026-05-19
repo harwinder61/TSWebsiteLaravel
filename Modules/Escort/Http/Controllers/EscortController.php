@@ -6,11 +6,13 @@ use Modules\Escort\app\Models\Profile;
 use Modules\Escort\app\Models\ProfileRates;
 use Illuminate\Support\Facades\Response;
 use Modules\Auth\app\Http\Middleware\AuthMiddleware;
+use Modules\Escort\app\Models\EscortSubscription;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Region;
 use App\Models\Cities;
 use App\Models\Countries;
 use App\Models\Nationality;
+use Carbon\Carbon;
 use App\Services\Resp;
 use Illuminate\Support\Facades\Log;
 use Modules\Auth\app\Models\AuthUser;
@@ -20,7 +22,6 @@ use App\Models\Location;
 use Modules\Escort\app\Models\Inquiry;
 use App\Enums\InqueryFormSubject;
 use App\Models\Media;
-use Modules\Escort\app\Models\EscortSubscription;
 use Modules\Escort\app\Models\Verify;
 use Illuminate\Support\Facades\File;
 use App\Models\Plan;
@@ -373,6 +374,7 @@ class EscortController extends Controller
 // }
 // }}
 
+
 public function deleteProfile(Request $request)
 {
     $validator = Validator::make($request->all(), [
@@ -380,37 +382,135 @@ public function deleteProfile(Request $request)
     ]);
 
     if ($validator->fails()) {
-        return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+        return Resp::fieldErrors([
+            'field_errors' => $validator->errors()
+        ]);
     }
 
     $user = auth()->user();
-    if ($request->is_delete) {
-        $user->delete_on = now(); // Set to 30 days ago for immediate eligibility
+
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE PROFILE
+    |--------------------------------------------------------------------------
+    */
+    if ($request->is_delete == true) {
+
         $user->is_delete = 1;
+        $user->delete_on = now();
         $user->save();
 
-        // Delete associated profile
-        $profile = Profile::where('escort_id', $user->id)->first();
-        // if ($profile) {
-        //     $profile->delete();
-        // }
+        // Hide subscriptions
+        EscortSubscription::where('escort_id', $user->id)
+            ->update([
+                'is_hidden' => 1
+            ]);
 
-        // Send email notification
-        EmailHelper::sendDynamicEmail('ts_delete_profile', 
-            ['[USER_LOGIN]' => $user->username], 
-            $user->email);
-        
-        return Resp::success(['user' => $user], 'Profile deleted successfully');
-    } else {
-        if ($user->is_delete) {
-            $user->is_delete = 0; // Restore the account
-            $user->delete_on = null; // Clear the delete_on date
-            $user->save();
-            return Resp::success(['user' => $user], 'Profile restored successfully');
-        }
+       
+
+        // Send mail
+        EmailHelper::sendDynamicEmail(
+            'ts_delete_profile',
+            [
+                '[USER_LOGIN]' => $user->username
+            ],
+            $user->email
+        );
+
+        return Resp::success([
+            'user' => $user
+        ], 'Profile deleted successfully');
     }
-    return Resp::error(['message' => 'Invalid request']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESTORE PROFILE
+    |--------------------------------------------------------------------------
+    */
+    if ($request->is_delete == false) {
+
+        if ($user->is_delete != 1) {
+
+            return Resp::error([
+                'message' => 'Profile already active'
+            ]);
+        }
+
+        $deletedAt = Carbon::parse($user->delete_on);
+
+        // Restore within 30 days
+        if ($deletedAt->diffInDays(now()) <= 30) {
+
+            $user->is_delete = 0;
+            $user->delete_on = null;
+            $user->save();
+
+            // Restore subscriptions
+            EscortSubscription::where('escort_id', $user->id)
+                ->update([
+                    'is_hidden' => 0
+                ]);
+
+
+            return Resp::success([
+                'user' => $user
+            ], 'Profile restored successfully');
+        }
+
+        return Resp::error([
+            'message' => 'Restore period expired'
+        ]);
+    }
+
+    return Resp::error([
+        'message' => 'Invalid request'
+    ]);
 }
+// public function deleteProfile(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'is_delete' => 'required|boolean'
+//     ]);
+// 
+//     if ($validator->fails()) {
+//         return Resp::fieldErrors(['field_errors' => $validator->errors()]);
+//     }
+// 
+//     $user = auth()->user();
+//     if ($request->is_delete) {
+//         $user->delete_on = now(); // Set to 30 days ago for immediate eligibility
+//         $user->is_delete = 1;
+//         $user->save();
+// 
+//         // Also hide all subscriptions for this escort
+//         EscortSubscription::where('escort_id', $user->id)->update(['is_hidden' => 1]);
+// 
+//         // Delete associated profile
+//         $profile = Profile::where('escort_id', $user->id)->first();
+//         // if ($profile) {
+//         //     $profile->delete();
+//         // }
+// 
+//         // Send email notification
+//         EmailHelper::sendDynamicEmail('ts_delete_profile', 
+//             ['[USER_LOGIN]' => $user->username], 
+//             $user->email);
+//         
+//         return Resp::success(['user' => $user], 'Profile deleted successfully');
+//     } else {
+//         if ($user->is_delete) {
+//             $user->is_delete = 0; // Restore the account
+//             $user->delete_on = null; // Clear the delete_on date
+//             $user->save();
+//             
+//             // Also restore all subscriptions for this escort
+//             EscortSubscription::where('escort_id', $user->id)->update(['is_hidden' => 0]);
+//             
+//             return Resp::success(['user' => $user], 'Profile restored successfully');
+//         }
+//     }
+//     return Resp::error(['message' => 'Invalid request']);
+// }
 
 
 
@@ -430,6 +530,10 @@ public function deleteProfile(Request $request)
         if ($request->is_hidden) {
             $user->is_hidden = $request->is_hidden;
             $user->save();
+            
+            // Also update all subscriptions for this escort
+            EscortSubscription::where('escort_id', $user->id)->update(['is_hidden' => 1]);
+            
             EmailHelper::sendDynamicEmail('ts_hide_profile', 
             ['[USER_LOGIN]' => $user->username], 
             $user->email);
@@ -438,6 +542,10 @@ public function deleteProfile(Request $request)
         else{
             $user->is_hidden = $request->is_hidden;
             $user->save();
+            
+            // Also update all subscriptions for this escort
+            EscortSubscription::where('escort_id', $user->id)->update(['is_hidden' => 0]);
+            
             EmailHelper::sendDynamicEmail('ts_show_profile', 
             ['[USER_LOGIN]' => $user->username], 
             $user->email);
