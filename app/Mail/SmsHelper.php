@@ -54,6 +54,11 @@ class SmsHelper
 
     public static function dynamicsendSms($templateType, $dynamicData, $recipientSms, $user = null,$isWhatsapp = false)
 {
+
+  if (!env('TWILIO_PHONE_NUMBER')) {
+        Log::info('TWILIO_PHONE_NUMBER missing. SMS sending skipped.');
+        return false;
+    }
     // Check if the user object is valid
     if (!is_object($user) || $user === null) {
         Log::error('The user object is invalid or not passed correctly.');
